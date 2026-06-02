@@ -1,0 +1,12 @@
+{
+  "ignorePatterns": [
+    ".output/**",
+    "dist/**",
+    "node_modules/**",
+    "README.md",
+    "*.yaml",
+    "*.yml",
+    "*.json",
+    "**/*.svelte"
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "plugins": [],
+  "categories": {},
+  "rules": {},
+  "env": {
+    "builtin": true
+  },
+  "globals": {},
+  "ignorePatterns": [
+    ".output/**",
+    "dist/**",
+    "node_modules/**",
+    "README.md",
+    "*.yaml",
+    "*.yml",
+    "*.json",
+    ".wxt/**"
+  ]
+}
