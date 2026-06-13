@@ -40,6 +40,7 @@
             pkgs.just
             pkgs.bun
             pkgs.nodejs
+            pkgs.chromium
           ];
 
           shellHook = "lefthook install && cd extension && bun install --frozen-lockfile && just";
