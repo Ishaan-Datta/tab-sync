@@ -43,5 +43,5 @@ pre-push:
 
     - name: check build
       root: extension
-      run: bun run build
+      run: bun run build:check
       fail_text: "Build failed, run `bun run build`"
