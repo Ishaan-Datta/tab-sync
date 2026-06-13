@@ -7,6 +7,8 @@
     "dev:chrome": "wxt -b chrome",
     "build:chrome": "wxt build -b chrome",
     "postinstall": "wxt prepare",
+    "format:concatenated": "prettier --write \"ext-onetab-concatenated-sources-*.js\"",
+    "check:concatenated": "prettier --check \"ext-onetab-concatenated-sources-*.js\"",
     "test:e2e": "playwright test",
     "test:e2e:headed": "playwright test --headed"
   },
@@ -14,8 +16,10 @@
     "tinyglobby": "^0.2.15",
     "typescript": "^5.9.3",
     "wxt": "^0.20.20",
+    "@babel/parser": "^7.29.7",
     "@playwright/test": "^1.59.1",
-    "playwright-core": "^1.59.1"
+    "playwright-core": "^1.59.1",
+    "prettier": "^3.8.1"
   },
   "trustedDependencies": [
     "esbuild"

@@ -1,2 +1,89 @@
 // Copyright 2026 OneTab Ltd.  All rights reserved.
-function u(t){return!(t==null||!t||!(t+"").trim())}function r(t,e,l){if(!e)return null;try{if(e.tagName==="A"){if(e.href===t&&u(e.textContent))return e.textContent}else if(l==="down"){if(e.childNodes)for(let n of Array.from(e.childNodes)){let i=r(t,n,"down");if(u(i))return i}}else if(l==="up"){if(e.parentElement)return r(t,e.parentElement,"up")}else if(l==="both"){let n=r(t,e,"down");if(n||(n=r(t,e,"up")),u(n))return n}}catch(n){return console.log(n),null}}function f(t){return t&&(t=t.replace(/\s\s+/g," ").trim(),t)}function c(t){try{let e;try{let l=window.getSelection().extentNode;e=r(t,l,"both"),e=f(e)}catch(l){console.log(l)}if(e)return e;{let l=document.links;for(let n=0;n<l.length;n++){let i=l[n].href;if(new URL(i,document.baseURI).href===t){let o=l[n].textContent;if(o=f(o),!o)continue;return o}}}}catch(e){console.log(e)}return t}window.t||(window.t=!0,chrome.runtime.onMessage.addListener((t,e,l)=>{if(t.type==="getLinkTitle"){let n=t.url,i=c(n);l({url:n,title:i})}}));
+function hasNonBlankText(value) {
+  return !(value == null || !value || !(value + "").trim());
+}
+
+function findMatchingAnchorText(targetUrl, node, direction) {
+  if (!node) return null;
+
+  try {
+    if (node.tagName === "A") {
+      if (node.href === targetUrl && hasNonBlankText(node.textContent)) {
+        return node.textContent;
+      }
+    } else if (direction === "down") {
+      if (node.childNodes) {
+        for (const childNode of Array.from(node.childNodes)) {
+          const childText = findMatchingAnchorText(
+            targetUrl,
+            childNode,
+            "down",
+          );
+          if (hasNonBlankText(childText)) return childText;
+        }
+      }
+    } else if (direction === "up") {
+      if (node.parentElement) {
+        return findMatchingAnchorText(targetUrl, node.parentElement, "up");
+      }
+    } else if (direction === "both") {
+      let matchingText = findMatchingAnchorText(targetUrl, node, "down");
+      if (!matchingText)
+        matchingText = findMatchingAnchorText(targetUrl, node, "up");
+      if (hasNonBlankText(matchingText)) return matchingText;
+    }
+  } catch (error) {
+    console.log(error);
+    return null;
+  }
+}
+
+function normalizeText(value) {
+  return value && value.replace(/\s\s+/g, " ").trim();
+}
+
+function getLinkTitle(targetUrl) {
+  try {
+    let selectedLinkText;
+
+    try {
+      const selectedNode = window.getSelection().extentNode;
+      selectedLinkText = findMatchingAnchorText(
+        targetUrl,
+        selectedNode,
+        "both",
+      );
+      selectedLinkText = normalizeText(selectedLinkText);
+    } catch (error) {
+      console.log(error);
+    }
+
+    if (selectedLinkText) return selectedLinkText;
+
+    const links = document.links;
+    for (let index = 0; index < links.length; index++) {
+      const linkUrl = links[index].href;
+      if (new URL(linkUrl, document.baseURI).href === targetUrl) {
+        const linkText = normalizeText(links[index].textContent);
+        if (!linkText) continue;
+        return linkText;
+      }
+    }
+  } catch (error) {
+    console.log(error);
+  }
+
+  return targetUrl;
+}
+
+if (!window.t) {
+  window.t = true;
+
+  chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    if (message.type === "getLinkTitle") {
+      const url = message.url;
+      const title = getLinkTitle(url);
+      sendResponse({ url, title });
+    }
+  });
+}

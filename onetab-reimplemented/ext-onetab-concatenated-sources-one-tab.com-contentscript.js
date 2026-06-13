@@ -1,2 +1,35 @@
 // Copyright 2026 OneTab Ltd.  All rights reserved.
-window.addEventListener("message",async o=>{if(o.source!==window||o.origin!==window.location.origin||o.data?.direction!=="page-to-extension")return;const{id:e,request:r}=o.data;try{const i=await chrome.runtime.sendMessage({type:"contentscript-to-extension",request:r});o.source.postMessage({direction:"extension-to-page",id:e,response:i},o.origin)}catch(i){console.error(i),o.source.postMessage({direction:"extension-to-page",id:e,error:i.message},o.origin)}}),window.postMessage({__ONETAB_EXTENSION_PRESENT:!0},window.location.origin);
+window.addEventListener("message", async (event) => {
+  if (
+    event.source !== window ||
+    event.origin !== window.location.origin ||
+    event.data?.direction !== "page-to-extension"
+  ) {
+    return;
+  }
+
+  const { id, request } = event.data;
+
+  try {
+    const response = await chrome.runtime.sendMessage({
+      type: "contentscript-to-extension",
+      request,
+    });
+
+    event.source.postMessage(
+      { direction: "extension-to-page", id, response },
+      event.origin,
+    );
+  } catch (error) {
+    console.error(error);
+    event.source.postMessage(
+      { direction: "extension-to-page", id, error: error.message },
+      event.origin,
+    );
+  }
+});
+
+window.postMessage(
+  { __ONETAB_EXTENSION_PRESENT: true },
+  window.location.origin,
+);
