@@ -1,0 +1,19 @@
+{
+  "name": "onetab-reimplemented",
+  "version": "2.14.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev:chrome": "wxt -b chrome",
+    "build:chrome": "wxt build -b chrome",
+    "postinstall": "wxt prepare"
+  },
+  "devDependencies": {
+    "tinyglobby": "^0.2.15",
+    "typescript": "^5.9.3",
+    "wxt": "^0.20.20"
+  },
+  "trustedDependencies": [
+    "esbuild"
+  ]
+}
