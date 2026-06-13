@@ -39,12 +39,12 @@
       "keyword": "11"
    },
    "optional_host_permissions": [ "https://www.one-tab.com/*" ],
-   "optional_permissions": [ "readingList", "tabGroups", "bookmarks" ],
+   "optional_permissions": [ "readingList", "bookmarks" ],
    "options_ui": {
       "open_in_tab": true,
       "page": "options.html"
    },
-   "permissions": [ "favicon", "unlimitedStorage", "storage", "tabs", "activeTab", "scripting", "contextMenus" ],
+   "permissions": [ "favicon", "unlimitedStorage", "storage", "tabs", "activeTab", "scripting", "contextMenus", "tabGroups" ],
    "update_url": "https://clients2.google.com/service/update2/crx",
    "version": "2.14"
 }
