@@ -20,6 +20,12 @@
       let
         pkgs = import nixpkgs { inherit system; };
         fenixPkgs = fenix.packages.${system};
+
+        browsers =
+          (builtins.fromJSON (builtins.readFile "${pkgs.playwright-driver}/browsers.json")).browsers;
+
+        chromiumRev = (builtins.head (builtins.filter (x: x.name == "chromium") browsers)).revision;
+
         rustToolchain = fenixPkgs.combine [
           fenixPkgs.stable.rustc
           fenixPkgs.stable.cargo
@@ -32,6 +38,12 @@
         devShell = pkgs.mkShell {
           RUSTC_WRAPPER = "${pkgs.sccache}/bin/sccache";
 
+          PLAYWRIGHT_BROWSERS_PATH = "${pkgs.playwright-driver.browsers}";
+          PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS = "true";
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD = "1";
+          PLAYWRIGHT_NODEJS_PATH = "${pkgs.nodejs}/bin/node";
+          PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH = "${pkgs.playwright-driver.browsers}/chromium-${chromiumRev}/chrome-linux64/chrome";
+
           buildInputs = [
             rustToolchain
             fenixPkgs.stable.rust-analyzer
@@ -41,6 +53,7 @@
             pkgs.bun
             pkgs.nodejs
             pkgs.chromium
+            pkgs.playwright-driver.browsers # -chromium?
           ];
 
           shellHook = "lefthook install && cd extension && bun install --frozen-lockfile && just";
