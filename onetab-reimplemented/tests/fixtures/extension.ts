@@ -823,9 +823,17 @@ function readRenderSnapshot({
 
     return {
       ...elementDescriptor(element),
-      children: Array.from(element.children).map((child) => elementTree(child)),
+      children: Array.from(element.children)
+        .filter((child) => !isIgnoredRenderElement(child))
+        .map((child) => elementTree(child)),
       directText: compactText(directText),
     };
+  }
+
+  function isIgnoredRenderElement(element: Element) {
+    return ["script", "style", "template"].includes(
+      element.tagName.toLowerCase(),
+    );
   }
 
   function computedStyleSnapshot(element: Element) {
@@ -876,6 +884,7 @@ function normalizeSnapshot(
   extensionId: string,
   key = "",
 ): unknown {
+  if (key === "service_worker") return "<service-worker>";
   if (key && isVolatileKey(key)) return "<volatile>";
 
   if (Array.isArray(value)) {

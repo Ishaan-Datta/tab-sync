@@ -253,44 +253,7 @@ function bn(i, t) {
 function Wo(i, t, e) {
   return bn(i, t) && mn(i, e);
 }
-const Co = {
-  startupLaunch: "displayOneTab",
-  browserAction: "sendTabsInWindow",
-  pinnedTabs: "ignore",
-  duplicates: "allow",
-  lastManualPopupSectionSelection: "tabGroup",
-  popupIncludePinnedTabs: "false",
-  popupIncludeGroupedTabs: "true",
-  popupIncludeAlreadyStoredTabs: "true",
-  popupOpenOneTabAfterStoringTabs: "true",
-  popupDontClosePinnedTabs: "true",
-  popupDontCloseGroupedTabs: "false",
-  popupDontCloseTabsFromExcludedDomains: "true",
-  popupMergeCloseTabsAfter: "true",
-  navColWidth: "300",
-  navColExpanded: "false",
-  quickAccessColWidth: "220",
-  quickAccessColExpanded: "false",
-  quickAccessColSection: "quickList",
-  oneTabTabPinned: "true",
-  "popupCreateNewGroupInside-tab": "false",
-  "popupCreateNewGroupInside-tabGroup": "true",
-  "popupCreateNewGroupInside-window": "false",
-  urlDisplay: "none",
-  theme: "auto",
-  defaultWindowGroupOpenType: "newWindow",
-  autoActionOnOpen: "trash",
-  switchToOpenedTab: "false",
-  displayContextMenu: "true",
-  discardNonActiveTabOnOpen: "false",
-  navColTreeFilter: { namedOnly: !0, foldersOnly: !1, hideArchived: !1 },
-  copyToClipboardFormat: "richText",
-  moveOneTabToCurrentWindowOnOpen: "false",
-  shareExpiryPeriod: "30d",
-  shareIncludeNotes: "true",
-  shareIncludeRatings: "true",
-  v2HelpShown: "false",
-};
+const Co = globalThis.getOneTabDefaultSettings();
 function yn(i, t, e) {
   (i.parentNode && i.remove(),
     t.insertBefore(

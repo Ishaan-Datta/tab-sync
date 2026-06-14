@@ -20,6 +20,7 @@ export default defineConfig({
       const staticFiles = [
         "*.html",
         "*.css",
+        "shared/**/*.js",
         "ext-onetab-concatenated-sources-*.js",
         "_locales/**/*.json",
         "fonts/**/*.woff",
@@ -27,10 +28,12 @@ export default defineConfig({
       ];
 
       files.push(
-        ...globSync(staticFiles, { cwd: root, expandDirectories: false }).map((file) => ({
-          absoluteSrc: resolve(root, file),
-          relativeDest: file,
-        })),
+        ...globSync(staticFiles, { cwd: root, expandDirectories: false }).map(
+          (file) => ({
+            absoluteSrc: resolve(root, file),
+            relativeDest: file,
+          }),
+        ),
       );
     },
   },

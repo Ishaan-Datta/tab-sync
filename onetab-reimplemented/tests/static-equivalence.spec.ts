@@ -22,18 +22,33 @@ const concatenatedFiles = [
   "ext-onetab-concatenated-sources-shared-page-permission.js",
 ];
 
+const sharedDefaultSettingsConsumers = new Set([
+  "ext-onetab-concatenated-sources-background.js",
+  "ext-onetab-concatenated-sources-import.js",
+  "ext-onetab-concatenated-sources-localisation.js",
+  "ext-onetab-concatenated-sources-onetab.js",
+  "ext-onetab-concatenated-sources-options.js",
+  "ext-onetab-concatenated-sources-placeholder.js",
+  "ext-onetab-concatenated-sources-popup.js",
+  "ext-onetab-concatenated-sources-shared-page-permission.js",
+]);
+
 for (const file of concatenatedFiles) {
   test(`${file} preserves syntax and runtime literals`, async () => {
-    const [original, candidate] = await Promise.all([
+    const [original, candidate, sharedDefaultSettings] = await Promise.all([
       readFile(resolve(originalRoot, file), "utf8"),
       readFile(resolve(candidateRoot, file), "utf8"),
+      readFile(resolve(candidateRoot, "shared/default-settings.js"), "utf8"),
     ]);
+    const candidateRuntimeSource = sharedDefaultSettingsConsumers.has(file)
+      ? `${candidate}\n${sharedDefaultSettings}`
+      : candidate;
 
     expect(() => new Script(candidate, { filename: file })).not.toThrow();
-    expect(extractStringLiterals(candidate)).toEqual(
+    expect(extractStringLiterals(candidateRuntimeSource)).toEqual(
       extractStringLiterals(original),
     );
-    expect(extractChromeApiTouches(candidate)).toEqual(
+    expect(extractChromeApiTouches(candidateRuntimeSource)).toEqual(
       extractChromeApiTouches(original),
     );
   });
@@ -51,7 +66,9 @@ function extractStringLiterals(source: string) {
     if (node.type === "TemplateElement") return node.value.raw;
     return undefined;
   });
-  return literals.sort();
+  return literals
+    .filter((literal) => literal !== "shared/default-settings.js")
+    .sort();
 }
 
 function collectAstValues(
