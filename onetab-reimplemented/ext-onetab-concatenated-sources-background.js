@@ -1,5 +1,9 @@
 // Copyright 2026 OneTab Ltd.  All rights reserved.
-importScripts("shared/default-settings.js", "shared/storage-adapters.js");
+importScripts(
+  "shared/default-settings.js",
+  "shared/storage-adapters.js",
+  "shared/model-predicates.js",
+);
 const He = "2.14",
   Xi = !1,
   Yi = !1,
@@ -669,27 +673,29 @@ const Sn = globalThis.createOneTabLocalStorageAdapter();
 function K() {
   return Sn;
 }
-const Zr = (t) => t === void 0,
-  Mn = (t) => t !== void 0,
-  tt = (t) => (e) => t === e.id,
-  Qr = (t) => (e) => t !== e.id,
-  Xr = (t) => (e) => t.id === e.id,
-  V = (t) => t.id,
-  J = (t) => t.type === "tab",
-  Ae = (t) => t.id === "root",
-  me = (t) => t.id === "trash",
-  q = (t) => t.groupType === "folder",
-  ve = (t) => t.archived,
-  la = (t) => t.task,
-  da = (t) => q(t) && !me(t),
-  Ee = (t) => t.groupType === "quickList",
-  Yr = (t) => q(t) || le(t),
-  W = (t) => t.type === "group",
-  X = (t) => t.groupType === "tabGroup",
-  le = (t) => t.groupType === "window",
-  Pe = (t) => X(t) || le(t),
-  z = (t) => t !== "quickList",
-  ca = (t) => t.shared && t.shareExpiryDate > +new Date();
+const {
+  isUndefined: Zr,
+  isDefined: Mn,
+  hasId: tt,
+  doesNotHaveId: Qr,
+  sameIdAs: Xr,
+  getId: V,
+  isTab: J,
+  isRoot: Ae,
+  isTrash: me,
+  isFolder: q,
+  isArchived: ve,
+  isTask: la,
+  isUserFolder: da,
+  isQuickList: Ee,
+  isFolderOrWindowGroup: Yr,
+  isGroup: W,
+  isTabGroup: X,
+  isWindowGroup: le,
+  isBrowserGroup: Pe,
+  isNotQuickList: z,
+  isSharedAndNotExpired: ca,
+} = globalThis.createOneTabModelPredicates();
 function _r(t, e) {
   let a = t.split("PLACEHOLDER");
   return Se("span", {

@@ -1416,27 +1416,29 @@ const Ct = globalThis.createOneTabLocalStorageAdapter();
 function _r() {
   return Ct;
 }
-const Jr = (e) => e === void 0,
-  Qr = (e) => e !== void 0,
-  Zr = (e) => (t) => e === t.id,
-  Kr = (e) => (t) => e !== t.id,
-  Xr = (e) => (t) => e.id === t.id,
-  Ce = (e) => e.id,
-  L = (e) => e.type === "tab",
-  K = (e) => e.id === "root",
-  X = (e) => e.id === "trash",
-  O = (e) => e.groupType === "folder",
-  Yr = (e) => e.archived,
-  eo = (e) => e.task,
-  to = (e) => O(e) && !X(e),
-  no = (e) => e.groupType === "quickList",
-  ro = (e) => O(e) || P(e),
-  It = (e) => e.type === "group",
-  U = (e) => e.groupType === "tabGroup",
-  P = (e) => e.groupType === "window",
-  oo = (e) => U(e) || P(e),
-  xt = (e) => e !== "quickList",
-  io = (e) => e.shared && e.shareExpiryDate > +new Date();
+const {
+  isUndefined: Jr,
+  isDefined: Qr,
+  hasId: Zr,
+  doesNotHaveId: Kr,
+  sameIdAs: Xr,
+  getId: Ce,
+  isTab: L,
+  isRoot: K,
+  isTrash: X,
+  isFolder: O,
+  isArchived: Yr,
+  isTask: eo,
+  isUserFolder: to,
+  isQuickList: no,
+  isFolderOrWindowGroup: ro,
+  isGroup: It,
+  isTabGroup: U,
+  isWindowGroup: P,
+  isBrowserGroup: oo,
+  isNotQuickList: xt,
+  isSharedAndNotExpired: io,
+} = globalThis.createOneTabModelPredicates();
 function ao(e, t) {
   let n = e.split("PLACEHOLDER");
   return T("span", {

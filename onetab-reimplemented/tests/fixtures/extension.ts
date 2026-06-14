@@ -320,11 +320,9 @@ function createExtensionPair(
       ];
     },
     async compareRuntime() {
-      const [originalSnapshot, candidateSnapshot] = await Promise.all([
-        original.runtimeSnapshot(),
-        candidate.runtimeSnapshot(),
-      ]);
-      expect(candidateSnapshot).toEqual(originalSnapshot);
+      await expectSnapshotsToConverge(() =>
+        Promise.all([original.runtimeSnapshot(), candidate.runtimeSnapshot()]),
+      );
     },
     async compareData() {
       const [originalSnapshot, candidateSnapshot] = await Promise.all([
@@ -381,6 +379,25 @@ async function performPageInteractions(page: Page, actions: PageInteraction[]) {
         break;
     }
   }
+}
+
+async function expectSnapshotsToConverge<T>(
+  readSnapshots: () => Promise<[T, T]>,
+) {
+  const deadline = Date.now() + 5_000;
+  let lastSnapshots = await readSnapshots();
+
+  while (Date.now() < deadline) {
+    try {
+      expect(lastSnapshots[1]).toEqual(lastSnapshots[0]);
+      return;
+    } catch {
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      lastSnapshots = await readSnapshots();
+    }
+  }
+
+  expect(lastSnapshots[1]).toEqual(lastSnapshots[0]);
 }
 
 async function createBrowserState(

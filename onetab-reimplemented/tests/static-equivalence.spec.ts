@@ -44,15 +44,32 @@ const sharedStorageAdapterConsumers = new Set([
   "ext-onetab-concatenated-sources-shared-page-permission.js",
 ]);
 
+const sharedModelPredicateConsumers = new Set([
+  "ext-onetab-concatenated-sources-background.js",
+  "ext-onetab-concatenated-sources-import.js",
+  "ext-onetab-concatenated-sources-localisation.js",
+  "ext-onetab-concatenated-sources-onetab.js",
+  "ext-onetab-concatenated-sources-options.js",
+  "ext-onetab-concatenated-sources-placeholder.js",
+  "ext-onetab-concatenated-sources-popup.js",
+  "ext-onetab-concatenated-sources-shared-page-permission.js",
+]);
+
 for (const file of concatenatedFiles) {
   test(`${file} preserves syntax and runtime literals`, async () => {
-    const [original, candidate, sharedDefaultSettings, sharedStorageAdapters] =
-      await Promise.all([
-        readFile(resolve(originalRoot, file), "utf8"),
-        readFile(resolve(candidateRoot, file), "utf8"),
-        readFile(resolve(candidateRoot, "shared/default-settings.js"), "utf8"),
-        readFile(resolve(candidateRoot, "shared/storage-adapters.js"), "utf8"),
-      ]);
+    const [
+      original,
+      candidate,
+      sharedDefaultSettings,
+      sharedStorageAdapters,
+      sharedModelPredicates,
+    ] = await Promise.all([
+      readFile(resolve(originalRoot, file), "utf8"),
+      readFile(resolve(candidateRoot, file), "utf8"),
+      readFile(resolve(candidateRoot, "shared/default-settings.js"), "utf8"),
+      readFile(resolve(candidateRoot, "shared/storage-adapters.js"), "utf8"),
+      readFile(resolve(candidateRoot, "shared/model-predicates.js"), "utf8"),
+    ]);
     const candidateRuntimeSource = [
       candidate,
       ...(sharedDefaultSettingsConsumers.has(file)
@@ -60,6 +77,9 @@ for (const file of concatenatedFiles) {
         : []),
       ...(sharedStorageAdapterConsumers.has(file)
         ? [sharedStorageAdapters]
+        : []),
+      ...(sharedModelPredicateConsumers.has(file)
+        ? [sharedModelPredicates]
         : []),
     ].join("\n");
 
@@ -89,7 +109,8 @@ function extractStringLiterals(source: string) {
     .filter(
       (literal) =>
         literal !== "shared/default-settings.js" &&
-        literal !== "shared/storage-adapters.js",
+        literal !== "shared/storage-adapters.js" &&
+        literal !== "shared/model-predicates.js",
     )
     .sort();
 }
