@@ -1,5 +1,5 @@
 // Copyright 2026 OneTab Ltd.  All rights reserved.
-importScripts("shared/default-settings.js");
+importScripts("shared/default-settings.js", "shared/storage-adapters.js");
 const He = "2.14",
   Xi = !1,
   Yi = !1,
@@ -665,27 +665,7 @@ async function gn(t) {
     await coreProxy.Ve("uncommittedChangesStore", a),
     t && setTimeout(() => gn(), 1e3 * 3600 * 24 * 7));
 }
-class Tn {
-  async remove(e) {
-    await chrome.storage.local.remove(e);
-  }
-  async put(e, a) {
-    await chrome.storage.local.set({ [e]: a });
-  }
-  async Wo(e) {
-    await chrome.storage.local.set(e);
-  }
-  async get(e) {
-    return (await chrome.storage.local.get([e]))[e];
-  }
-  async getAll(e) {
-    return await chrome.storage.local.get(e);
-  }
-  async clearAll() {
-    await chrome.storage.local.clear();
-  }
-}
-const Sn = new Tn();
+const Sn = globalThis.createOneTabLocalStorageAdapter();
 function K() {
   return Sn;
 }
@@ -879,28 +859,7 @@ async function At(t) {
 const Pn = "c",
   Cn = "e",
   Dn = "t";
-class On {
-  async put(e, a) {
-    await chrome.storage.session.set({ [e]: a });
-  }
-  async get(e) {
-    return (await chrome.storage.session.get([e]))[e];
-  }
-  async Lp(e) {
-    let a = (await chrome.storage.session.get([e]))[e];
-    return (await this.remove(e), a);
-  }
-  async getAll() {
-    return await chrome.storage.session.get(null);
-  }
-  async remove(e) {
-    return await chrome.storage.session.remove(e);
-  }
-  async clearAll() {
-    await chrome.storage.session.clear();
-  }
-}
-const Ln = new On();
+const Ln = globalThis.createOneTabSessionStorageAdapter();
 function B() {
   return Ln;
 }

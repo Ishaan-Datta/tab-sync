@@ -664,27 +664,7 @@ async function Dn(i) {
     await A.Ve("uncommittedChangesStore", e),
     i && setTimeout(() => Dn(), 1e3 * 3600 * 24 * 7));
 }
-class Gn {
-  async remove(t) {
-    await chrome.storage.local.remove(t);
-  }
-  async put(t, e) {
-    await chrome.storage.local.set({ [t]: e });
-  }
-  async Wo(t) {
-    await chrome.storage.local.set(t);
-  }
-  async get(t) {
-    return (await chrome.storage.local.get([t]))[t];
-  }
-  async getAll(t) {
-    return await chrome.storage.local.get(t);
-  }
-  async clearAll() {
-    await chrome.storage.local.clear();
-  }
-}
-const Pn = new Gn();
+const Pn = globalThis.createOneTabLocalStorageAdapter();
 function fa() {
   return Pn;
 }
@@ -880,28 +860,7 @@ async function qt(i) {
 const La = "c",
   Da = "e",
   Ga = "t";
-class Un {
-  async put(t, e) {
-    await chrome.storage.session.set({ [t]: e });
-  }
-  async get(t) {
-    return (await chrome.storage.session.get([t]))[t];
-  }
-  async Lp(t) {
-    let e = (await chrome.storage.session.get([t]))[t];
-    return (await this.remove(t), e);
-  }
-  async getAll() {
-    return await chrome.storage.session.get(null);
-  }
-  async remove(t) {
-    return await chrome.storage.session.remove(t);
-  }
-  async clearAll() {
-    await chrome.storage.session.clear();
-  }
-}
-const Wn = new Un();
+const Wn = globalThis.createOneTabSessionStorageAdapter();
 function Pa() {
   return Wn;
 }
