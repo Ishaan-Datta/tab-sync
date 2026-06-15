@@ -127,6 +127,7 @@ const fixtureDir = dirname(fileURLToPath(import.meta.url));
 const candidateRoot = resolve(fixtureDir, "../..");
 const repoRoot = resolve(candidateRoot, "..");
 const defaultOriginalRoot = resolve(repoRoot, "onetab-chrome-src");
+const harnessUrl = "https://example.com/onetab-harness";
 
 const chromiumExecutablePath =
   process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH ??
@@ -210,8 +211,9 @@ async function launchExtension(
   const harnessPage = await openHarnessTab(context);
   await waitForHarnessTabState(serviceWorker);
   await closeNonHarnessPages(context, harnessPage);
+  await focusHarnessTab(serviceWorker);
   await harnessPage.bringToFront();
-  await waitForHarnessTabState(serviceWorker);
+  await waitForHarnessTabState(serviceWorker, { requireSingleTab: true });
 
   return {
     context,
@@ -545,7 +547,7 @@ async function closeInitialPages(context: BrowserContext) {
 }
 
 async function openHarnessTab(context: BrowserContext) {
-  await context.route("https://example.com/onetab-harness", async (route) => {
+  await context.route(harnessUrl, async (route) => {
     await route.fulfill({
       contentType: "text/html",
       body: "<!doctype html><title>OneTab Harness</title><h1>OneTab Harness</h1>",
@@ -553,7 +555,7 @@ async function openHarnessTab(context: BrowserContext) {
   });
 
   const page = await context.newPage();
-  await page.goto("https://example.com/onetab-harness", {
+  await page.goto(harnessUrl, {
     waitUntil: "domcontentloaded",
   });
   await page.bringToFront();
@@ -573,14 +575,59 @@ async function closeNonHarnessPages(
   );
 }
 
-async function waitForHarnessTabState(serviceWorker: Worker) {
+async function focusHarnessTab(serviceWorker: Worker) {
+  await serviceWorker.evaluate(async (url) => {
+    const tabs = await chrome.tabs.query({});
+    const tab = tabs.find((candidate) => candidate.url === url);
+    if (tab?.id !== undefined)
+      await chrome.tabs.update(tab.id, { active: true });
+    if (tab?.windowId !== undefined && chrome.windows?.update) {
+      await chrome.windows.update(tab.windowId, { focused: true });
+    }
+  }, harnessUrl);
+}
+
+async function waitForHarnessTabState(
+  serviceWorker: Worker,
+  { requireSingleTab = false }: { requireSingleTab?: boolean } = {},
+) {
   const deadline = Date.now() + 15_000;
 
   while (Date.now() < deadline) {
-    const snapshot = await serviceWorker.evaluate(readRuntimeSnapshot);
-    const title =
-      snapshot.storage.session.contextMenuState?.excludeWebSiteContextMenu?.t;
-    if (typeof title === "string" && title.includes("example.com")) return;
+    const snapshot = await serviceWorker.evaluate(async (url) => {
+      const [{ contextMenuState }, tabs] = await Promise.all([
+        chrome.storage.session.get("contextMenuState"),
+        chrome.tabs.query({}),
+      ]);
+      return {
+        contextMenuState,
+        tabs: tabs.map((tab) => ({
+          active: tab.active,
+          index: tab.index,
+          url: tab.url,
+        })),
+        url,
+      };
+    }, harnessUrl);
+
+    const title = snapshot.contextMenuState?.excludeWebSiteContextMenu?.t;
+    const hasHarnessTitle =
+      typeof title === "string" && title.includes("example.com");
+
+    if (!requireSingleTab && hasHarnessTitle) return;
+
+    const activeTab = snapshot.tabs.find((tab) => tab.active);
+    const hasSingleHarnessTab =
+      snapshot.tabs.length === 1 && activeTab?.url === snapshot.url;
+    const hasSettledSingleTabMenus =
+      snapshot.contextMenuState?.sendAllTabsExceptThisMenu?.e === 0 &&
+      snapshot.contextMenuState?.sendLeftTabsMenu?.e === 0 &&
+      snapshot.contextMenuState?.sendRightTabsMenu?.e === 0;
+
+    if (hasHarnessTitle && hasSingleHarnessTab && hasSettledSingleTabMenus) {
+      return;
+    }
+
     await new Promise((resolve) => setTimeout(resolve, 100));
   }
 }

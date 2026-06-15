@@ -14,6 +14,7 @@ node_modules
 stats.html
 stats-*.json
 .wxt
+**/test-results/*
 
 .vscode/*
 !.vscode/extensions.json

@@ -701,28 +701,20 @@ function vl(t, e) {
     },
   });
 }
-function se(...t) {
-  return (e, i) => t.reduce((s, n) => s || n(e, i), 0);
-}
-function Ii(t) {
-  return (e, i) => t(e) - t(i);
-}
-function ne(t) {
-  return (e, i) => t(i) - t(e);
-}
-function Ss(t) {
-  return (e, i) => t(e).localeCompare(t(i), void 0, { Cu: "base" });
-}
-function Al(t) {
-  return (e, i) => t(e).localeCompare(t(i), void 0, { ju: "true", Cu: "base" });
-}
-function $l(t, e, i, s) {
-  Object.hasOwn(t, i) &&
-    (Object.hasOwn(e, i) ? (e[i] = s(t[i], e[i])) : (e[i] = t[i]));
-}
-function Sl(t, e, i) {
-  return t !== void 0 && e !== void 0 ? i(t, e) : (t ?? e);
-}
+const {
+  combineComparators: se,
+  compareAscendingBy: Ii,
+  compareDescendingBy: ne,
+  compareLocaleBy: Ss,
+  compareLocaleNumericBy: Al,
+  mergeOwnProperty: $l,
+  mergeDefined: Sl,
+  mapBy: vo,
+  groupBy: Ml,
+  range: Ao,
+  nthIndexOf: Gl,
+  KeyedObjectMap: Dl,
+} = globalThis.createOneTabCollectionHelpers();
 let Ye;
 const vi = {},
   Ai = {},
@@ -766,49 +758,6 @@ const vi = {},
   });
 function $i(t, e) {
   return t;
-}
-function vo(t, e) {
-  let i = new Map();
-  return (t.forEach((s) => i.set(e(s), s)), i);
-}
-function Ml(t, e) {
-  let i = new Map();
-  return (
-    t.forEach((s) => {
-      let n = e(s);
-      (i.has(n) || i.set(n, []), i.get(n).push(s));
-    }),
-    i
-  );
-}
-function Ao(t) {
-  return Array(t)
-    .fill(0)
-    .map((e, i) => i);
-}
-function Gl(t, e, i) {
-  if (!t.includes(e)) throw new Error("No match in array");
-  let s = t.map((n, o) => [n, o]).filter(([n]) => n === e);
-  return s.length > i ? s[i][1] : s.pop()[1];
-}
-class Dl {
-  constructor(e, i = []) {
-    ((this.key = e), (this.map = {}), this.addAll(i));
-  }
-  add(e) {
-    if (!e[this.key])
-      throw new Error(`Object does not have the necessary '${this.key}' key`);
-    this.map(e[this.key]) || (this.map[e[this.key]] = e);
-  }
-  addAll(e) {
-    e.forEach((i) => this.add(i));
-  }
-  get list() {
-    return Object.values(this.map);
-  }
-  get keys() {
-    return Object.keys(this.map);
-  }
 }
 function Pl(t, e) {
   return t.length < 2

@@ -3,6 +3,7 @@ importScripts(
   "shared/default-settings.js",
   "shared/storage-adapters.js",
   "shared/model-predicates.js",
+  "shared/collection-helpers.js",
 );
 const He = "2.14",
   Xi = !1,
@@ -706,28 +707,20 @@ function _r(t, e) {
     },
   });
 }
-function Ie(...t) {
-  return (e, a) => t.reduce((n, i) => n || i(e, a), 0);
-}
-function $e(t) {
-  return (e, a) => t(e) - t(a);
-}
-function _(t) {
-  return (e, a) => t(a) - t(e);
-}
-function ua(t) {
-  return (e, a) => t(e).localeCompare(t(a), void 0, { Cu: "base" });
-}
-function es(t) {
-  return (e, a) => t(e).localeCompare(t(a), void 0, { ju: "true", Cu: "base" });
-}
-function be(t, e, a, n) {
-  Object.hasOwn(t, a) &&
-    (Object.hasOwn(e, a) ? (e[a] = n(t[a], e[a])) : (e[a] = t[a]));
-}
-function ts(t, e, a) {
-  return t !== void 0 && e !== void 0 ? a(t, e) : (t ?? e);
-}
+const {
+  combineComparators: Ie,
+  compareAscendingBy: $e,
+  compareDescendingBy: _,
+  compareLocaleBy: ua,
+  compareLocaleNumericBy: es,
+  mergeOwnProperty: be,
+  mergeDefined: ts,
+  mapBy: xt,
+  groupBy: wa,
+  range: ns,
+  nthIndexOf: pa,
+  KeyedObjectMap: is,
+} = globalThis.createOneTabCollectionHelpers();
 let at;
 const St = {},
   Mt = {},
@@ -771,49 +764,6 @@ const St = {},
   });
 function fa(t, e) {
   return t;
-}
-function xt(t, e) {
-  let a = new Map();
-  return (t.forEach((n) => a.set(e(n), n)), a);
-}
-function wa(t, e) {
-  let a = new Map();
-  return (
-    t.forEach((n) => {
-      let i = e(n);
-      (a.has(i) || a.set(i, []), a.get(i).push(n));
-    }),
-    a
-  );
-}
-function ns(t) {
-  return Array(t)
-    .fill(0)
-    .map((e, a) => a);
-}
-function pa(t, e, a) {
-  if (!t.includes(e)) throw new Error("No match in array");
-  let n = t.map((i, r) => [i, r]).filter(([i]) => i === e);
-  return n.length > a ? n[a][1] : n.pop()[1];
-}
-class is {
-  constructor(e, a = []) {
-    ((this.key = e), (this.map = {}), this.addAll(a));
-  }
-  add(e) {
-    if (!e[this.key])
-      throw new Error(`Object does not have the necessary '${this.key}' key`);
-    this.map(e[this.key]) || (this.map[e[this.key]] = e);
-  }
-  addAll(e) {
-    e.forEach((a) => this.add(a));
-  }
-  get list() {
-    return Object.values(this.map);
-  }
-  get keys() {
-    return Object.keys(this.map);
-  }
 }
 function rs(t, e) {
   return t.length < 2

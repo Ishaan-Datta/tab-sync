@@ -1473,28 +1473,20 @@ function mo(e, t) {
     },
   });
 }
-function Ie(...e) {
-  return (t, n) => e.reduce((r, o) => r || o(t, n), 0);
-}
-function vt(e) {
-  return (t, n) => e(t) - e(n);
-}
-function ee(e) {
-  return (t, n) => e(n) - e(t);
-}
-function po(e) {
-  return (t, n) => e(t).localeCompare(e(n), void 0, { Cu: "base" });
-}
-function ho(e) {
-  return (t, n) => e(t).localeCompare(e(n), void 0, { ju: "true", Cu: "base" });
-}
-function wo(e, t, n, r) {
-  Object.hasOwn(e, n) &&
-    (Object.hasOwn(t, n) ? (t[n] = r(e[n], t[n])) : (t[n] = e[n]));
-}
-function go(e, t, n) {
-  return e !== void 0 && t !== void 0 ? n(e, t) : (e ?? t);
-}
+const {
+  combineComparators: Ie,
+  compareAscendingBy: vt,
+  compareDescendingBy: ee,
+  compareLocaleBy: po,
+  compareLocaleNumericBy: ho,
+  mergeOwnProperty: wo,
+  mergeDefined: go,
+  mapBy: bo,
+  groupBy: To,
+  range: Mt,
+  nthIndexOf: Ao,
+  KeyedObjectMap: So,
+} = globalThis.createOneTabCollectionHelpers();
 let B;
 const te = {},
   ne = {},
@@ -1538,49 +1530,6 @@ const te = {},
   });
 function Oe(e, t) {
   return e;
-}
-function bo(e, t) {
-  let n = new Map();
-  return (e.forEach((r) => n.set(t(r), r)), n);
-}
-function To(e, t) {
-  let n = new Map();
-  return (
-    e.forEach((r) => {
-      let o = t(r);
-      (n.has(o) || n.set(o, []), n.get(o).push(r));
-    }),
-    n
-  );
-}
-function Mt(e) {
-  return Array(e)
-    .fill(0)
-    .map((t, n) => n);
-}
-function Ao(e, t, n) {
-  if (!e.includes(t)) throw new Error("No match in array");
-  let r = e.map((o, i) => [o, i]).filter(([o]) => o === t);
-  return r.length > n ? r[n][1] : r.pop()[1];
-}
-class So {
-  constructor(t, n = []) {
-    ((this.key = t), (this.map = {}), this.addAll(n));
-  }
-  add(t) {
-    if (!t[this.key])
-      throw new Error(`Object does not have the necessary '${this.key}' key`);
-    this.map(t[this.key]) || (this.map[t[this.key]] = t);
-  }
-  addAll(t) {
-    t.forEach((n) => this.add(n));
-  }
-  get list() {
-    return Object.values(this.map);
-  }
-  get keys() {
-    return Object.keys(this.map);
-  }
 }
 function Co(e, t) {
   return e.length < 2
