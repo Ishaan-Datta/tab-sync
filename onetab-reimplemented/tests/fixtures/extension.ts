@@ -322,6 +322,10 @@ function createExtensionPair(
       ];
     },
     async compareRuntime() {
+      await Promise.all([
+        settleHarnessRuntime(original.serviceWorker),
+        settleHarnessRuntime(candidate.serviceWorker),
+      ]);
       await expectSnapshotsToConverge(() =>
         Promise.all([original.runtimeSnapshot(), candidate.runtimeSnapshot()]),
       );
@@ -585,6 +589,11 @@ async function focusHarnessTab(serviceWorker: Worker) {
       await chrome.windows.update(tab.windowId, { focused: true });
     }
   }, harnessUrl);
+}
+
+async function settleHarnessRuntime(serviceWorker: Worker) {
+  await focusHarnessTab(serviceWorker);
+  await waitForHarnessTabState(serviceWorker, { requireSingleTab: true });
 }
 
 async function waitForHarnessTabState(

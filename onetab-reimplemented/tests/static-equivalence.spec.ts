@@ -66,6 +66,17 @@ const sharedCollectionHelperConsumers = new Set([
   "ext-onetab-concatenated-sources-shared-page-permission.js",
 ]);
 
+const sharedRuntimeHelperConsumers = new Set([
+  "ext-onetab-concatenated-sources-background.js",
+  "ext-onetab-concatenated-sources-import.js",
+  "ext-onetab-concatenated-sources-localisation.js",
+  "ext-onetab-concatenated-sources-onetab.js",
+  "ext-onetab-concatenated-sources-options.js",
+  "ext-onetab-concatenated-sources-placeholder.js",
+  "ext-onetab-concatenated-sources-popup.js",
+  "ext-onetab-concatenated-sources-shared-page-permission.js",
+]);
+
 for (const file of concatenatedFiles) {
   test(`${file} preserves syntax and runtime literals`, async () => {
     const [
@@ -75,6 +86,7 @@ for (const file of concatenatedFiles) {
       sharedStorageAdapters,
       sharedModelPredicates,
       sharedCollectionHelpers,
+      sharedRuntimeHelpers,
     ] = await Promise.all([
       readFile(resolve(originalRoot, file), "utf8"),
       readFile(resolve(candidateRoot, file), "utf8"),
@@ -82,6 +94,7 @@ for (const file of concatenatedFiles) {
       readFile(resolve(candidateRoot, "shared/storage-adapters.js"), "utf8"),
       readFile(resolve(candidateRoot, "shared/model-predicates.js"), "utf8"),
       readFile(resolve(candidateRoot, "shared/collection-helpers.js"), "utf8"),
+      readFile(resolve(candidateRoot, "shared/runtime-helpers.js"), "utf8"),
     ]);
     const candidateRuntimeSource = [
       candidate,
@@ -97,6 +110,7 @@ for (const file of concatenatedFiles) {
       ...(sharedCollectionHelperConsumers.has(file)
         ? [sharedCollectionHelpers]
         : []),
+      ...(sharedRuntimeHelperConsumers.has(file) ? [sharedRuntimeHelpers] : []),
     ].join("\n");
 
     expect(() => new Script(candidate, { filename: file })).not.toThrow();
@@ -127,7 +141,8 @@ function extractStringLiterals(source: string) {
         literal !== "shared/default-settings.js" &&
         literal !== "shared/storage-adapters.js" &&
         literal !== "shared/model-predicates.js" &&
-        literal !== "shared/collection-helpers.js",
+        literal !== "shared/collection-helpers.js" &&
+        literal !== "shared/runtime-helpers.js",
     )
     .sort();
 }

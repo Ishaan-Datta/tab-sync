@@ -1577,9 +1577,6 @@ function Ft(e, t, n) {
     `ug${n ? "" : "i"}`,
   );
 }
-async function H(e) {
-  return new Promise((t) => setTimeout(t, e));
-}
 const xo = "c",
   Io = "e",
   Oo = "t";
@@ -1588,70 +1585,19 @@ function Eo() {
   return kt;
 }
 const $t = "undefined-34LKmiHxP3Mu48u8qrDaHf";
-function re(e, t, n) {
-  return Array.isArray(e)
-    ? e.map((r) => re(r, t, n))
-    : typeof e == "object" && e !== null
-      ? Object.fromEntries(Object.entries(e).map(([r, o]) => [r, re(o, t, n)]))
-      : e === t
-        ? n
-        : e;
-}
-function Gt() {
-  return navigator.userAgentData?.brands.some(
-    ({ brand: e, version: t }) => e === "Opera",
-  );
-}
-function Lo() {
-  return navigator.userAgentData?.brands.some(
-    ({ brand: e, version: t }) => e === "Brave",
-  );
-}
-function jt() {
-  return navigator.userAgentData?.brands.some(
-    ({ brand: e }) => e === "Microsoft Edge",
-  );
-}
-async function Po(e) {
-  let [t] = await chrome.tabs.query({ windowId: e.windowId, active: !0 });
-  t
-    ? t.id !== e.id &&
-      (await chrome.tabs.update(e.id, { active: !0 }),
-      await chrome.tabs.update(t.id, { active: !0 }))
-    : console.log("unsleepTab: No active tab found");
-}
-function Bt(e, t) {
-  e = e.filter((r) => r);
-  let n = {};
-  for (let r = 0; r < e.length; r++)
-    n = {
-      ...n,
-      ...e[r],
-      ...(r !== e.length - 1 && { [`separator${r}`]: t() }),
-    };
-  return n;
-}
-function vo(e, t) {
-  let n = [];
-  for (let r = 0; r < e.length; r++)
-    (n.push(e[r]), r < e.length - 1 && n.push(t()));
-  return n;
-}
-function Mo(e, t, n) {
-  Object.hasOwn(e, t) && n(e[t]);
-}
-function Do(e, t) {
-  e !== void 0 && t(e);
-}
-function Uo(e, ...t) {
-  let n = [],
-    r = new Set();
-  return (
-    t.forEach((o) => r.add(o)),
-    r.forEach((o) => o && o.trim() && n.push(o.trim())),
-    n.join(e) || void 0
-  );
-}
+const {
+  delay: H,
+  replaceValueDeep: re,
+  isOpera: Gt,
+  isBrave: Lo,
+  isMicrosoftEdge: jt,
+  unsleepTab: Po,
+  mergeObjectsWithSeparators: Bt,
+  intersperse: vo,
+  callIfOwnProperty: Mo,
+  callIfDefined: Do,
+  joinUniqueTrimmed: Uo,
+} = globalThis.createOneTabRuntimeHelpers();
 async function Ro(e) {
   return new Promise((t) => {
     (e.addEventListener("transitionend", () => t()),
