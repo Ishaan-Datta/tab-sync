@@ -1512,47 +1512,11 @@ function wo(e, t) {
     ? e
     : e.flatMap((n, r) => [n, ...Q(r === e.length - 1 ? void 0 : t())]);
 }
-function Pt({ text: e, ti: t, ei: n, ii: r }) {
-  let o = [{ s: e, tt: 0 }];
-  return (
-    t.sort(Y((i) => i.length)).forEach((i) => {
-      o = o.flatMap(({ s: a, tt: u }) =>
-        u ? { s: a, tt: u } : vt(a, i, n, r),
-      );
-    }),
-    o
-  );
-}
-function vt(e, t, n, r) {
-  let o = e.split(Ut(t, r, n)),
-    i = 0,
-    a = o.map((u) => {
-      let c = e.slice(i, i + u.length);
-      return ((i += u.length + t.length), { s: c, tt: 0 });
-    });
-  return (
-    (i = 0),
-    a.length < 2
-      ? a
-      : a.flatMap(({ s: u, tt: c }, l) =>
-          l === a.length - 1
-            ? { s: u, tt: c }
-            : ((i += u.length),
-              [
-                { s: u, tt: c },
-                { s: e.slice(i, (i += t.length)), tt: 1 },
-              ]),
-        )
-  );
-}
-const Mt = /[.*+?^${}()|[\]\\]/g;
-function Ut(e, t, n) {
-  const r = e.replace(Mt, "\\$&");
-  return new RegExp(
-    t ? `(?<!\\p{L})${r}(?!\\p{L})` : `${r}`,
-    `ug${n ? "" : "i"}`,
-  );
-}
+const {
+  splitSearchText: Pt,
+  splitSearchTextWithTerm: vt,
+  createSearchTermRegExp: Ut,
+} = globalThis.createOneTabSearchHelpers();
 const go = "c",
   yo = "e",
   bo = "t";

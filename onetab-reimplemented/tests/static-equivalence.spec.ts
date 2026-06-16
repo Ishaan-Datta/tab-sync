@@ -77,6 +77,17 @@ const sharedRuntimeHelperConsumers = new Set([
   "ext-onetab-concatenated-sources-shared-page-permission.js",
 ]);
 
+const sharedSearchHelperConsumers = new Set([
+  "ext-onetab-concatenated-sources-background.js",
+  "ext-onetab-concatenated-sources-import.js",
+  "ext-onetab-concatenated-sources-localisation.js",
+  "ext-onetab-concatenated-sources-onetab.js",
+  "ext-onetab-concatenated-sources-options.js",
+  "ext-onetab-concatenated-sources-placeholder.js",
+  "ext-onetab-concatenated-sources-popup.js",
+  "ext-onetab-concatenated-sources-shared-page-permission.js",
+]);
+
 for (const file of concatenatedFiles) {
   test(`${file} preserves syntax and runtime literals`, async () => {
     const [
@@ -87,6 +98,7 @@ for (const file of concatenatedFiles) {
       sharedModelPredicates,
       sharedCollectionHelpers,
       sharedRuntimeHelpers,
+      sharedSearchHelpers,
     ] = await Promise.all([
       readFile(resolve(originalRoot, file), "utf8"),
       readFile(resolve(candidateRoot, file), "utf8"),
@@ -95,6 +107,7 @@ for (const file of concatenatedFiles) {
       readFile(resolve(candidateRoot, "shared/model-predicates.js"), "utf8"),
       readFile(resolve(candidateRoot, "shared/collection-helpers.js"), "utf8"),
       readFile(resolve(candidateRoot, "shared/runtime-helpers.js"), "utf8"),
+      readFile(resolve(candidateRoot, "shared/search-helpers.js"), "utf8"),
     ]);
     const candidateRuntimeSource = [
       candidate,
@@ -111,6 +124,7 @@ for (const file of concatenatedFiles) {
         ? [sharedCollectionHelpers]
         : []),
       ...(sharedRuntimeHelperConsumers.has(file) ? [sharedRuntimeHelpers] : []),
+      ...(sharedSearchHelperConsumers.has(file) ? [sharedSearchHelpers] : []),
     ].join("\n");
 
     expect(() => new Script(candidate, { filename: file })).not.toThrow();
@@ -142,7 +156,8 @@ function extractStringLiterals(source: string) {
         literal !== "shared/storage-adapters.js" &&
         literal !== "shared/model-predicates.js" &&
         literal !== "shared/collection-helpers.js" &&
-        literal !== "shared/runtime-helpers.js",
+        literal !== "shared/runtime-helpers.js" &&
+        literal !== "shared/search-helpers.js",
     )
     .sort();
 }

@@ -764,47 +764,11 @@ function Th(t, e) {
     ? t
     : t.flatMap((i, s) => [i, ...I(s === t.length - 1 ? void 0 : e())]);
 }
-function Xr({ text: t, ti: e, ei: i, ii: s }) {
-  let n = [{ s: t, tt: 0 }];
-  return (
-    e.sort(te((r) => r.length)).forEach((r) => {
-      n = n.flatMap(({ s: o, tt: a }) =>
-        a ? { s: o, tt: a } : _r(o, r, i, s),
-      );
-    }),
-    n
-  );
-}
-function _r(t, e, i, s) {
-  let n = t.split(Zs(e, s, i)),
-    r = 0,
-    o = n.map((a) => {
-      let l = t.slice(r, r + a.length);
-      return ((r += a.length + e.length), { s: l, tt: 0 });
-    });
-  return (
-    (r = 0),
-    o.length < 2
-      ? o
-      : o.flatMap(({ s: a, tt: l }, h) =>
-          h === o.length - 1
-            ? { s: a, tt: l }
-            : ((r += a.length),
-              [
-                { s: a, tt: l },
-                { s: t.slice(r, (r += e.length)), tt: 1 },
-              ]),
-        )
-  );
-}
-const Yr = /[.*+?^${}()|[\]\\]/g;
-function Zs(t, e, i) {
-  const s = t.replace(Yr, "\\$&");
-  return new RegExp(
-    e ? `(?<!\\p{L})${s}(?!\\p{L})` : `${s}`,
-    `ug${i ? "" : "i"}`,
-  );
-}
+const {
+  splitSearchText: Xr,
+  splitSearchTextWithTerm: _r,
+  createSearchTermRegExp: Zs,
+} = globalThis.createOneTabSearchHelpers();
 const vh = "c",
   Ah = "e",
   Ih = "t";

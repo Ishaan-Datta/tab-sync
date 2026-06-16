@@ -5,6 +5,7 @@ importScripts(
   "shared/model-predicates.js",
   "shared/collection-helpers.js",
   "shared/runtime-helpers.js",
+  "shared/search-helpers.js",
 );
 const He = "2.14",
   Xi = !1,
@@ -771,45 +772,11 @@ function rs(t, e) {
     ? t
     : t.flatMap((a, n) => [a, ...fe(n === t.length - 1 ? void 0 : e())]);
 }
-function nt({ text: t, ti: e, ei: a, ii: n }) {
-  let i = [{ s: t, tt: 0 }];
-  return (
-    e.sort(_((r) => r.length)).forEach((r) => {
-      i = i.flatMap(({ s, tt: o }) => (o ? { s, tt: o } : xn(s, r, a, n)));
-    }),
-    i
-  );
-}
-function xn(t, e, a, n) {
-  let i = t.split(ha(e, n, a)),
-    r = 0,
-    s = i.map((o) => {
-      let l = t.slice(r, r + o.length);
-      return ((r += o.length + e.length), { s: l, tt: 0 });
-    });
-  return (
-    (r = 0),
-    s.length < 2
-      ? s
-      : s.flatMap(({ s: o, tt: l }, w) =>
-          w === s.length - 1
-            ? { s: o, tt: l }
-            : ((r += o.length),
-              [
-                { s: o, tt: l },
-                { s: t.slice(r, (r += e.length)), tt: 1 },
-              ]),
-        )
-  );
-}
-const An = /[.*+?^${}()|[\]\\]/g;
-function ha(t, e, a) {
-  const n = t.replace(An, "\\$&");
-  return new RegExp(
-    e ? `(?<!\\p{L})${n}(?!\\p{L})` : `${n}`,
-    `ug${a ? "" : "i"}`,
-  );
-}
+const {
+  splitSearchText: nt,
+  splitSearchTextWithTerm: xn,
+  createSearchTermRegExp: ha,
+} = globalThis.createOneTabSearchHelpers();
 const Pn = "c",
   Cn = "e",
   Dn = "t";
