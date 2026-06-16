@@ -6,6 +6,7 @@ importScripts(
   "shared/collection-helpers.js",
   "shared/runtime-helpers.js",
   "shared/search-helpers.js",
+  "shared/dom-transition-helpers.js",
 );
 const He = "2.14",
   Xi = !1,
@@ -798,25 +799,7 @@ const {
   callIfDefined: cs,
   joinUniqueTrimmed: En,
 } = globalThis.createOneTabRuntimeHelpers();
-async function us(t) {
-  return new Promise((e) => {
-    (t.addEventListener("transitionend", () => e()),
-      t.style.removeProperty("opacity"),
-      t.classList.add("fadeOutTransition"),
-      requestAnimationFrame(() => t.classList.add("fadedOut")));
-  });
-}
-async function fs(t) {
-  return new Promise((e) => {
-    (t.addEventListener("transitionend", () => {
-      (t.classList.remove("fadedIn", "fadeInTransition"), e());
-    }),
-      t.style.removeProperty("opacity"),
-      t.classList.add("fadedOut"),
-      t.classList.add("fadeInTransition"),
-      requestAnimationFrame(() => t.classList.add("fadedIn")));
-  });
-}
+const { fadeOut: us, fadeIn: fs } = globalThis.createOneTabDomTransitionHelpers();
 function $n({ label: t, oe: e, ei: a, ii: n, No: i = 300 }) {
   if (e?.length) {
     let r = nt({ text: t, ti: e, ei: a, ii: n }),

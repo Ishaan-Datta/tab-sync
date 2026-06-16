@@ -790,25 +790,7 @@ const {
   callIfDefined: Qn,
   joinUniqueTrimmed: Ha,
 } = globalThis.createOneTabRuntimeHelpers();
-async function Zn(i) {
-  return new Promise((t) => {
-    (i.addEventListener("transitionend", () => t()),
-      i.style.removeProperty("opacity"),
-      i.classList.add("fadeOutTransition"),
-      requestAnimationFrame(() => i.classList.add("fadedOut")));
-  });
-}
-async function ja(i) {
-  return new Promise((t) => {
-    (i.addEventListener("transitionend", () => {
-      (i.classList.remove("fadedIn", "fadeInTransition"), t());
-    }),
-      i.style.removeProperty("opacity"),
-      i.classList.add("fadedOut"),
-      i.classList.add("fadeInTransition"),
-      requestAnimationFrame(() => i.classList.add("fadedIn")));
-  });
-}
+const { fadeOut: Zn, fadeIn: ja } = globalThis.createOneTabDomTransitionHelpers();
 function Ve({ label: i, oe: t, ei: e, ii: s, No: n = 300 }) {
   if (t?.length) {
     let r = jn({ text: i, ti: t, ei: e, ii: s }),
