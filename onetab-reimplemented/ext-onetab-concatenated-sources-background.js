@@ -7,6 +7,7 @@ importScripts(
   "shared/runtime-helpers.js",
   "shared/search-helpers.js",
   "shared/dom-transition-helpers.js",
+  "shared/text-helpers.js",
 );
 const He = "2.14",
   Xi = !1,
@@ -935,30 +936,7 @@ function st(t) {
   let e = Y(t);
   if (!["javascript:"].some((a) => e.toLowerCase().startsWith(a))) return e;
 }
-function Wn(t) {
-  if (t == null) return "";
-  let e = String(t);
-  typeof e.normalize == "function" && (e = e.normalize("NFKC"));
-  const a = /[\u00A0\u1680\u2000-\u200A\u202F\u205F\u3000]/g;
-  e = e.replace(a, " ");
-  const n = /[\u200B-\u200D\u2060\uFEFF]/g;
-  return (
-    (e = e.replace(n, "")),
-    (e = e.replace(
-      /\r\n?/g,
-      `
-`,
-    )),
-    (e = e
-      .split(
-        `
-`,
-      )
-      .map((i) => i.replace(/[ \t]+$/g, "")).join(`
-`)),
-    e
-  );
-}
+const { normalizeImportedText: Wn } = globalThis.createOneTabTextHelpers();
 async function hs(t) {
   const a = new DOMParser().parseFromString(t, "text/html");
   let n = new Map((await chrome.tabs.query({})).map((r) => [r.url, r.title])),

@@ -926,30 +926,7 @@ function se(i) {
   let t = At(i);
   if (!["javascript:"].some((e) => t.toLowerCase().startsWith(e))) return t;
 }
-function fr(i) {
-  if (i == null) return "";
-  let t = String(i);
-  typeof t.normalize == "function" && (t = t.normalize("NFKC"));
-  const e = /[\u00A0\u1680\u2000-\u200A\u202F\u205F\u3000]/g;
-  t = t.replace(e, " ");
-  const s = /[\u200B-\u200D\u2060\uFEFF]/g;
-  return (
-    (t = t.replace(s, "")),
-    (t = t.replace(
-      /\r\n?/g,
-      `
-`,
-    )),
-    (t = t
-      .split(
-        `
-`,
-      )
-      .map((n) => n.replace(/[ \t]+$/g, "")).join(`
-`)),
-    t
-  );
-}
+const { normalizeImportedText: fr } = globalThis.createOneTabTextHelpers();
 async function xi(i) {
   const e = new DOMParser().parseFromString(i, "text/html");
   let s = new Map((await chrome.tabs.query({})).map((r) => [r.url, r.title])),
