@@ -84,6 +84,14 @@
       value !== void 0 && callback(value);
     }
 
+    function applyValue(value, callback) {
+      return callback(value);
+    }
+
+    function applyIfTruthy(value, callback) {
+      if (value) return applyValue(value, callback);
+    }
+
     function joinUniqueTrimmed(separator, ...values) {
       const result = [];
       const uniqueValues = new Set();
@@ -97,6 +105,8 @@
     }
 
     return {
+      applyIfTruthy,
+      applyValue,
       callIfDefined,
       callIfOwnProperty,
       delay,

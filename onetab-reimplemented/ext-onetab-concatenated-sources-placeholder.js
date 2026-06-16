@@ -856,76 +856,19 @@ function _n(i) {
 function se({ label: i, Ro: t, oe: e, ei: s, ii: n, No: r }) {
   t.replaceChildren(...Ve({ label: i, oe: e, ei: s, ii: n, No: r }));
 }
-function Si(i, t) {
-  return t(i);
-}
-function gt(i, t) {
-  if (i) return Si(i, t);
-}
-function Kn(i) {
-  return (
-    [...".,"].some((t) => i.endsWith(t)) && (i = i.substring(0, i.length - 1)),
-    i
-  );
-}
-function Xn(i, t) {
-  if (!i) return i;
-  let e = i.indexOf(t);
-  return (e !== -1 && (i = i.substring(e + t.length)), i);
-}
-function Gt(i) {
-  return Xn(i, "://");
-}
-function Li(i, t) {
-  return ((i = Gt(i)), (t = Gt(t)), i === t);
-}
-function li(i) {
-  if (!i || typeof i != "string") return "";
-  try {
-    return jt(i);
-  } catch {
-    return "";
-  }
-}
-function Ye(i) {
-  let t = li(i);
-  if (!t) return "";
-  let e = t.includes("://") ? t : `https://${t}`,
-    s = yt(e);
-  return (s.endsWith("/") && (s = s.substring(0, s.length - 1)), Gt(s));
-}
-function ts(i, t) {
-  let e = li(i),
-    s = li(t);
-  return !e || !s ? !1 : Li(e, s) ? !0 : Ye(e) === Ye(s);
-}
-function Vn(i) {
-  try {
-    let t = new URL(yt(i)).hostname.toLowerCase();
-    return (
-      t === "youtube.com" ||
-      t.endsWith(".youtube.com") ||
-      t === "youtu.be" ||
-      t.endsWith(".youtu.be")
-    );
-  } catch {
-    return !1;
-  }
-}
-function Na(i, t, e) {
-  let s = li(e);
-  if (!s) return !1;
-  let n = li(i);
-  return !n || ts(n, t)
-    ? !0
-    : Vn(t) && n.toLowerCase() === "youtube"
-      ? s.toLowerCase() !== "youtube" && !ts(s, t)
-      : !1;
-}
-function _t(i) {
-  let t = yt(i);
-  if (!["javascript:"].some((e) => t.toLowerCase().startsWith(e))) return t;
-}
+const { applyValue: Si, applyIfTruthy: gt } = globalThis.createOneTabRuntimeHelpers();
+const {
+  trimTrailingDotOrComma: Kn,
+  substringAfter: Xn,
+  stripProtocol: Gt,
+  equalIgnoringProtocol: Li,
+  safeNormalizeText: li,
+  canonicalizeTextAsUrl: Ye,
+  areUrlLikeEqual: ts,
+  isYouTubeUrl: Vn,
+  shouldUseCandidateUrl: Na,
+  safeNonJavascriptUrl: _t,
+} = globalThis.createOneTabUrlHelpers({ normalizeText: jt, normalizeUrl: yt });
 const { normalizeImportedText: Yn } = globalThis.createOneTabTextHelpers();
 async function is(i) {
   const e = new DOMParser().parseFromString(i, "text/html");
