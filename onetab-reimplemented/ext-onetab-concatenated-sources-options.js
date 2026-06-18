@@ -149,328 +149,39 @@ const {
   pluralize: (key, count) => Ft(key, count),
   trimToLengthWithEllipsis: Ys,
 });
-const be = [
-    "task",
-    "done",
-    "notifyDate",
-    "notify",
-    "dueDate",
-    "doneDate",
-    "recurrenceHistory",
-    "recurrence",
-  ],
-  Ts = [
-    "shared",
-    "shareExpiryDate",
-    "shareIncludeNotes",
-    "shareIncludeRatings",
-  ],
-  pl = /^https:\/\/(?:[A-Za-z0-9-]+\.)*one-tab\.com\/page\/.*$/;
-function xl({ Ep: i = 1e3, Fp: t, jp: e, Bp: s }) {
-  return t.flatMap((n) => {
-    if (e(n).length <= i) return [n];
-    const r = [];
-    let o = e(n).length;
-    for (let a = 0; a < o; a += i)
-      r.push(s({ Cp: a, entry: n, Hp: e(n).slice(a, a + i) }));
-    return r;
-  });
-}
-function br(i) {
-  try {
-    return (JSON.parse(i), !0);
-  } catch {
-    return !1;
-  }
-}
-function bi() {
-  return chrome.i18n.getMessage("localeId").replace("_", "-");
-}
-function wl() {
-  return `${De}/${yr()}help`;
-}
-function yr() {
-  let i = bi();
-  return i === "en" ? "" : `${i}/`;
-}
-function As(i, t) {
-  return i === t || !i;
-}
-let vs = !1;
-vs && globalThis.document && (document.documentElement.dir = "rtl");
-function gr() {
-  return vs || ["ar", "he", "fa", "ps", "ur"].indexOf(bi()) >= 0
-    ? "rtl"
-    : "ltr";
-}
-let $s = gr();
-function K() {
-  return $s !== "rtl";
-}
-function kr() {
-  document.getElementsByTagName("html")[0].dir = $s;
-}
-const Is = {};
-function Ft(i, t) {
-  let e = bi(),
-    s = Is[e];
-  s || ((s = new Intl.PluralRules(e)), (Is[e] = s));
-  const n = s.select(t);
-  let r = chrome.i18n.getMessage(`${i}_${n}`);
-  r || (r = chrome.i18n.getMessage(`${i}_other`));
-  let o = t;
-  return (
-    typeof t == "number" && (o = Number(t).toLocaleString()),
-    r ? r.replace("{COUNT}", o) : ""
-  );
-}
-async function ml({ h: i, itemId: t, Qo: e }) {
-  return (await i.Hn(t, e))
-    .slice(1)
-    .map((n) => ye({ groupId: n.id, h: i, l: n }))
-    .join(`  ${K() ? "➝" : "⭠"}  `);
-}
-function Tr({ groupId: i, h: t, l: e }) {
-  i ??= e?.id;
-  let s = e || t.v(i);
-  return [gi({ h: t, l: s }), yi({ h: t, l: s })];
-}
-function ye({ groupId: i, h: t, l: e }) {
-  i ??= e?.id;
-  let s = e || t.v(i);
-  return gi({ h: t, l: s }) || yi({ h: t, l: s });
-}
-function yi({ groupId: i, h: t, l: e }) {
-  i ??= e?.id;
-  let s = e || t.v(i);
-  if (V(s)) return h("all");
-  if (yt(s)) return h("trash");
-  if (P(s)) return h("untitled");
-  {
-    let n = t.Xi(s.id);
-    return wi(n);
-  }
-}
-function gi({ groupId: i, h: t, l: e }) {
-  i ??= e?.id;
-  let s = e || t.v(i);
-  return V(s) ? h("all") : yt(s) ? h("trash") : s.label;
-}
-let ki = {};
-function Ar({ type: i, zu: t, Xa: e, Wu: s }) {
-  s
-    ? (delete ki[i], e())
-    : ki[i] ||
-      ((ki[i] = !0),
-      setTimeout(() => Ar({ type: i, zu: t, Xa: e, Wu: !0 }), t));
-}
-function vr() {
-  return $r();
-}
-function $r() {
-  if (rr()) return !1;
-  const i = navigator.userAgentData?.brands;
-  if (i) {
-    const e = i.find((s) => /Chrom(e|ium)/i.test(s.brand));
-    return e ? Number(e.version) === 145 : !1;
-  }
-  const t = navigator.userAgent.match(/Chrom(e|ium)\/(\d+)/i);
-  return t ? Number(t[2]) === 145 : !1;
-}
-async function bl(i) {
-  if (!vr()) return;
-  const t = await chrome.tabs.query({ groupId: i });
-  if (!t.length) return;
-  t.sort((o, a) => o.index - a.index);
-  const e = t[0].windowId,
-    s = t[0].index;
-  let n = (await chrome.tabs.query({ windowId: e, active: !0 }))[0],
-    r;
-  try {
-    (await chrome.tabGroups.update(i, { collapsed: !0 }),
-      (r = await chrome.tabs.create({
-        windowId: e,
-        url: "about:blank",
-        active: !0,
-        index: s,
-      })),
-      await chrome.tabs.group({ groupId: i, tabIds: r.id }),
-      n?.id && (await chrome.tabs.update(n.id, { active: !0 })),
-      await chrome.tabGroups.update(i, { collapsed: !1 }));
-  } catch (o) {
-    console.error(o);
-  } finally {
-    if (r?.id)
-      try {
-        await chrome.tabs.remove(r.id);
-      } catch {}
-  }
-}
-function Ir(i) {
-  if (i.startsWith("data:")) {
-    let f = i.indexOf("/");
-    return f ? i.substring(0, f + 1) : "data:";
-  }
-  const t = String(i);
-  let e = t,
-    s = "",
-    n = "";
-  const r = e.indexOf("#");
-  r !== -1 && ((n = e.slice(r)), (e = e.slice(0, r)));
-  const o = e.indexOf("?");
-  o !== -1 && ((s = e.slice(o + 1)), (e = e.slice(0, o)));
-  let a;
-  try {
-    a = new URL(t);
-  } catch {
-    a = null;
-  }
-  const l = g(a),
-    u = new Set([
-      "q",
-      "query",
-      "search",
-      "keyword",
-      "keywords",
-      "text",
-      "title",
-      "subject",
-      "s",
-      "url",
-      "u",
-      "source",
-      "lang",
-      "hl",
-      "tbm",
-      "start",
-      "first",
-      "as_sdt",
-    ]),
-    d = new Set([
-      "gclid",
-      "fbclid",
-      "msclkid",
-      "utm_id",
-      "utm_term",
-      "utm_content",
-      "ved",
-      "ei",
-      "sca_esv",
-      "clid",
-      "lst",
-      "show-uid",
-    ]),
-    p = new Set([
-      "gclid",
-      "fbclid",
-      "msclkid",
-      "utm_id",
-      "utm_term",
-      "utm_content",
-      "sca_esv",
-      "ved",
-      "ei",
-      "clid",
-      "lst",
-      "ali_refid",
-      "show-uid",
-    ]);
-  if (!s) return e + n;
-  const b = s.split("&").filter((f) => f.length > 0),
-    y = [];
-  for (const f of b) {
-    const k = f.indexOf("="),
-      A = k === -1 ? f : f.slice(0, k),
-      L = k === -1 ? "" : f.slice(k + 1),
-      S = m(A).toLowerCase(),
-      H = m(L);
-    if (l) {
-      l.has(S) && y.push(f);
-      continue;
-    }
-    if (w(a, S) || p.has(S)) continue;
-    (u.has(S) || !T(H, S, d)) && y.push(f);
-  }
-  return y.length ? e + "?" + y.join("&") + n : e + n;
-  function m(f) {
-    if (f == null) return "";
-    const k = String(f).replace(/\+/g, " ");
-    try {
-      return decodeURIComponent(k);
-    } catch {
-      return k;
-    }
-  }
-  function g(f) {
-    if (!f) return null;
-    const k = (f.hostname || "").toLowerCase(),
-      A = (f.pathname || "").toLowerCase();
-    return /(^|\.)google\./.test(k) &&
-      A.startsWith("/search") &&
-      k !== "scholar.google.com"
-      ? new Set(["q", "tbm", "start", "hl"])
-      : k === "scholar.google.com" && A.startsWith("/scholar")
-        ? new Set(["q", "hl", "as_sdt"])
-        : k === "www.bing.com" && A.startsWith("/search")
-          ? new Set(["q", "first"])
-          : /(^|\.)yandex\./.test(k) && A.includes("/search")
-            ? new Set(["text", "lr", "win"])
-            : k === "search.yahoo.com" && A.startsWith("/search")
-              ? new Set(["p"])
-              : null;
-  }
-  function w(f, k) {
-    if (!f) return !1;
-    const A = (f.hostname || "").toLowerCase();
-    return !!(k === "spm" && (A === "sohu.com" || A.endsWith(".sohu.com")));
-  }
-  function T(f, k, A) {
-    if (f.length <= 12 || /[^\x00-\x7F]/.test(f) || /^\d+$/.test(f)) return !1;
-    const L =
-        /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
-          f,
-        ),
-      S = /^[0-9a-f]{16,}$/i.test(f),
-      H = /^[A-Za-z0-9+/]{24,}={0,2}$/.test(f),
-      Q = /^[A-Za-z0-9\-_]{24,}={0,2}$/.test(f),
-      at =
-        /^[A-Za-z0-9\-_]{10,}\.[A-Za-z0-9\-_]{10,}(\.[A-Za-z0-9\-_]{10,})?$/.test(
-          f,
-        );
-    if (
-      L ||
-      S ||
-      H ||
-      Q ||
-      at ||
-      (/[A-Za-z0-9+/_\-]{24,}={0,2}/.test(f) && A.has(k))
-    )
-      return !0;
-    if (/^[A-Za-z0-9._\-]+$/.test(f) && !/\s/.test(f) && f.length >= 20) {
-      const Z = f.match(/[A-Za-z]/g) || [],
-        Tt = f.match(/[AEIOUYaeiouy]/g) || [],
-        U = Z.length ? Tt.length / Z.length : 0;
-      let et = 0;
-      for (let bt = 1; bt < f.length; bt++)
-        (/[A-Z]/.test(f[bt - 1]) && /[a-z]/.test(f[bt]) && et++,
-          /[a-z]/.test(f[bt - 1]) && /[A-Z]/.test(f[bt]) && et++);
-      const wt = f.split(/[-_.]/).filter((bt) => bt.length > 0),
-        Pt = wt.length >= 6 && wt.every((bt) => bt.length <= 12),
-        X = wt.some((bt) => /[A-Za-z]{3,}/.test(bt));
-      if (
-        (U < 0.25 && et >= 3 && !Pt && !X) ||
-        (A.has(k) && U < 0.35 && !Pt && !X)
-      )
-        return !0;
-    }
-    return (
-      /\s/.test(f) ||
-        (/[-_.]/.test(f) &&
-          f.split(/[-_.]/).some((Z) => /[A-Za-z]{3,}/.test(Z))),
-      !1
-    );
-  }
-}
+const {
+  taskFieldNames: be,
+  shareFieldNames: Ts,
+  sharedPageUrlPattern: pl,
+  splitOversized: xl,
+  isJson: br,
+  localeId: bi,
+  helpUrl: wl,
+  localizedPathPrefix: yr,
+  matchesOrUnset: As,
+  getDirection: gr,
+  isLtr: K,
+  applyDocumentDirection: kr,
+  pluralize: Ft,
+  groupPathLabel: ml,
+  groupLabelParts: Tr,
+  groupDisplayLabel: ye,
+  groupFallbackLabel: yi,
+  groupLabel: gi,
+  debounceByType: Ar,
+  shouldApplyChrome145Workaround: vr,
+  isChrome145: $r,
+  uncollapseChrome145TabGroup: bl,
+} = globalThis.createOneTabPageCommon({
+  websiteUrl: De,
+  translate: h,
+  tabCount: wi,
+  isRoot: V,
+  isTrash: yt,
+  isFolder: P,
+  isMicrosoftEdge: rr,
+});
+const { cleanUrlForSearch: Ir } = globalThis.createOneTabUrlQueryCleanup();
 class kt {
   constructor(t = []) {
     ((this.$t = new Map()), t.forEach((e) => this.$t.set(e.id, e)));

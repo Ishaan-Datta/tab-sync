@@ -11,6 +11,8 @@ importScripts(
   "shared/url-helpers.js",
   "shared/import-helpers.js",
   "shared/bundle-prelude.js",
+  "shared/page-common.js",
+  "shared/url-query-cleanup.js",
 );
 const {
   version: He,
@@ -175,328 +177,39 @@ const {
   isNewOrBlankTabPageUrl: url => Gt(url),
   pluralize: (key, count) => Da(key, count),
 });
-const Ms = [
-    "task",
-    "done",
-    "notifyDate",
-    "notify",
-    "dueDate",
-    "doneDate",
-    "recurrenceHistory",
-    "recurrence",
-  ],
-  xs = [
-    "shared",
-    "shareExpiryDate",
-    "shareIncludeNotes",
-    "shareIncludeRatings",
-  ],
-  Sa = /^https:\/\/(?:[A-Za-z0-9-]+\.)*one-tab\.com\/page\/.*$/;
-function Ma({ Ep: t = 1e3, Fp: e, jp: a, Bp: n }) {
-  return e.flatMap((i) => {
-    if (a(i).length <= t) return [i];
-    const r = [];
-    let s = a(i).length;
-    for (let o = 0; o < s; o += t)
-      r.push(n({ Cp: o, entry: i, Hp: a(i).slice(o, o + t) }));
-    return r;
-  });
-}
-function As(t) {
-  try {
-    return (JSON.parse(t), !0);
-  } catch {
-    return !1;
-  }
-}
-function Ct() {
-  return chrome.i18n.getMessage("localeId").replace("_", "-");
-}
-function xa() {
-  return `${ke}/${Hn()}help`;
-}
-function Hn() {
-  let t = Ct();
-  return t === "en" ? "" : `${t}/`;
-}
-function Ps(t, e) {
-  return t === e || !t;
-}
-let Aa = !1;
-Aa && globalThis.document && (document.documentElement.dir = "rtl");
-function Vn() {
-  return Aa || ["ar", "he", "fa", "ps", "ur"].indexOf(Ct()) >= 0
-    ? "rtl"
-    : "ltr";
-}
-let Pa = Vn();
-function Dt() {
-  return Pa !== "rtl";
-}
-function Cs() {
-  document.getElementsByTagName("html")[0].dir = Pa;
-}
-const Ca = {};
-function Da(t, e) {
-  let a = Ct(),
-    n = Ca[a];
-  n || ((n = new Intl.PluralRules(a)), (Ca[a] = n));
-  const i = n.select(e);
-  let r = chrome.i18n.getMessage(`${t}_${i}`);
-  r || (r = chrome.i18n.getMessage(`${t}_other`));
-  let s = e;
-  return (
-    typeof e == "number" && (s = Number(e).toLocaleString()),
-    r ? r.replace("{COUNT}", s) : ""
-  );
-}
-async function Jn({ h: t, itemId: e, Qo: a }) {
-  return (await t.Hn(e, a))
-    .slice(1)
-    .map((i) => Kn({ groupId: i.id, h: t, l: i }))
-    .join(`  ${Dt() ? "➝" : "⭠"}  `);
-}
-function Ds({ groupId: t, h: e, l: a }) {
-  t ??= a?.id;
-  let n = a || e.v(t);
-  return [La({ h: e, l: n }), Oa({ h: e, l: n })];
-}
-function Kn({ groupId: t, h: e, l: a }) {
-  t ??= a?.id;
-  let n = a || e.v(t);
-  return La({ h: e, l: n }) || Oa({ h: e, l: n });
-}
-function Oa({ groupId: t, h: e, l: a }) {
-  t ??= a?.id;
-  let n = a || e.v(t);
-  if (Ae(n)) return N("all");
-  if (me(n)) return N("trash");
-  if (q(n)) return N("untitled");
-  {
-    let i = e.Xi(n.id);
-    return ya(i);
-  }
-}
-function La({ groupId: t, h: e, l: a }) {
-  t ??= a?.id;
-  let n = a || e.v(t);
-  return Ae(n) ? N("all") : me(n) ? N("trash") : n.label;
-}
-let Ot = {};
-function ka({ type: t, zu: e, Xa: a, Wu: n }) {
-  n
-    ? (delete Ot[t], a())
-    : Ot[t] ||
-      ((Ot[t] = !0),
-      setTimeout(() => ka({ type: t, zu: e, Xa: a, Wu: !0 }), e));
-}
-function Lt() {
-  return Zn();
-}
-function Zn() {
-  if (vn()) return !1;
-  const t = navigator.userAgentData?.brands;
-  if (t) {
-    const a = t.find((n) => /Chrom(e|ium)/i.test(n.brand));
-    return a ? Number(a.version) === 145 : !1;
-  }
-  const e = navigator.userAgent.match(/Chrom(e|ium)\/(\d+)/i);
-  return e ? Number(e[2]) === 145 : !1;
-}
-async function Qn(t) {
-  if (!Lt()) return;
-  const e = await chrome.tabs.query({ groupId: t });
-  if (!e.length) return;
-  e.sort((s, o) => s.index - o.index);
-  const a = e[0].windowId,
-    n = e[0].index;
-  let i = (await chrome.tabs.query({ windowId: a, active: !0 }))[0],
-    r;
-  try {
-    (await chrome.tabGroups.update(t, { collapsed: !0 }),
-      (r = await chrome.tabs.create({
-        windowId: a,
-        url: "about:blank",
-        active: !0,
-        index: n,
-      })),
-      await chrome.tabs.group({ groupId: t, tabIds: r.id }),
-      i?.id && (await chrome.tabs.update(i.id, { active: !0 })),
-      await chrome.tabGroups.update(t, { collapsed: !1 }));
-  } catch (s) {
-    console.error(s);
-  } finally {
-    if (r?.id)
-      try {
-        await chrome.tabs.remove(r.id);
-      } catch {}
-  }
-}
-function Xn(t) {
-  if (t.startsWith("data:")) {
-    let M = t.indexOf("/");
-    return M ? t.substring(0, M + 1) : "data:";
-  }
-  const e = String(t);
-  let a = e,
-    n = "",
-    i = "";
-  const r = a.indexOf("#");
-  r !== -1 && ((i = a.slice(r)), (a = a.slice(0, r)));
-  const s = a.indexOf("?");
-  s !== -1 && ((n = a.slice(s + 1)), (a = a.slice(0, s)));
-  let o;
-  try {
-    o = new URL(e);
-  } catch {
-    o = null;
-  }
-  const l = S(o),
-    w = new Set([
-      "q",
-      "query",
-      "search",
-      "keyword",
-      "keywords",
-      "text",
-      "title",
-      "subject",
-      "s",
-      "url",
-      "u",
-      "source",
-      "lang",
-      "hl",
-      "tbm",
-      "start",
-      "first",
-      "as_sdt",
-    ]),
-    p = new Set([
-      "gclid",
-      "fbclid",
-      "msclkid",
-      "utm_id",
-      "utm_term",
-      "utm_content",
-      "ved",
-      "ei",
-      "sca_esv",
-      "clid",
-      "lst",
-      "show-uid",
-    ]),
-    f = new Set([
-      "gclid",
-      "fbclid",
-      "msclkid",
-      "utm_id",
-      "utm_term",
-      "utm_content",
-      "sca_esv",
-      "ved",
-      "ei",
-      "clid",
-      "lst",
-      "ali_refid",
-      "show-uid",
-    ]);
-  if (!n) return a + i;
-  const m = n.split("&").filter((M) => M.length > 0),
-    T = [];
-  for (const M of m) {
-    const d = M.indexOf("="),
-      y = d === -1 ? M : M.slice(0, d),
-      x = d === -1 ? "" : M.slice(d + 1),
-      C = b(y).toLowerCase(),
-      L = b(x);
-    if (l) {
-      l.has(C) && T.push(M);
-      continue;
-    }
-    if (I(o, C) || f.has(C)) continue;
-    (w.has(C) || !g(L, C, p)) && T.push(M);
-  }
-  return T.length ? a + "?" + T.join("&") + i : a + i;
-  function b(M) {
-    if (M == null) return "";
-    const d = String(M).replace(/\+/g, " ");
-    try {
-      return decodeURIComponent(d);
-    } catch {
-      return d;
-    }
-  }
-  function S(M) {
-    if (!M) return null;
-    const d = (M.hostname || "").toLowerCase(),
-      y = (M.pathname || "").toLowerCase();
-    return /(^|\.)google\./.test(d) &&
-      y.startsWith("/search") &&
-      d !== "scholar.google.com"
-      ? new Set(["q", "tbm", "start", "hl"])
-      : d === "scholar.google.com" && y.startsWith("/scholar")
-        ? new Set(["q", "hl", "as_sdt"])
-        : d === "www.bing.com" && y.startsWith("/search")
-          ? new Set(["q", "first"])
-          : /(^|\.)yandex\./.test(d) && y.includes("/search")
-            ? new Set(["text", "lr", "win"])
-            : d === "search.yahoo.com" && y.startsWith("/search")
-              ? new Set(["p"])
-              : null;
-  }
-  function I(M, d) {
-    if (!M) return !1;
-    const y = (M.hostname || "").toLowerCase();
-    return !!(d === "spm" && (y === "sohu.com" || y.endsWith(".sohu.com")));
-  }
-  function g(M, d, y) {
-    if (M.length <= 12 || /[^\x00-\x7F]/.test(M) || /^\d+$/.test(M)) return !1;
-    const x =
-        /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
-          M,
-        ),
-      C = /^[0-9a-f]{16,}$/i.test(M),
-      L = /^[A-Za-z0-9+/]{24,}={0,2}$/.test(M),
-      U = /^[A-Za-z0-9\-_]{24,}={0,2}$/.test(M),
-      R =
-        /^[A-Za-z0-9\-_]{10,}\.[A-Za-z0-9\-_]{10,}(\.[A-Za-z0-9\-_]{10,})?$/.test(
-          M,
-        );
-    if (
-      x ||
-      C ||
-      L ||
-      U ||
-      R ||
-      (/[A-Za-z0-9+/_\-]{24,}={0,2}/.test(M) && y.has(d))
-    )
-      return !0;
-    if (/^[A-Za-z0-9._\-]+$/.test(M) && !/\s/.test(M) && M.length >= 20) {
-      const F = M.match(/[A-Za-z]/g) || [],
-        G = M.match(/[AEIOUYaeiouy]/g) || [],
-        Z = F.length ? G.length / F.length : 0;
-      let pe = 0;
-      for (let O = 1; O < M.length; O++)
-        (/[A-Z]/.test(M[O - 1]) && /[a-z]/.test(M[O]) && pe++,
-          /[a-z]/.test(M[O - 1]) && /[A-Z]/.test(M[O]) && pe++);
-      const se = M.split(/[-_.]/).filter((O) => O.length > 0),
-        H = se.length >= 6 && se.every((O) => O.length <= 12),
-        ee = se.some((O) => /[A-Za-z]{3,}/.test(O));
-      if (
-        (Z < 0.25 && pe >= 3 && !H && !ee) ||
-        (y.has(d) && Z < 0.35 && !H && !ee)
-      )
-        return !0;
-    }
-    return (
-      /\s/.test(M) ||
-        (/[-_.]/.test(M) &&
-          M.split(/[-_.]/).some((F) => /[A-Za-z]{3,}/.test(F))),
-      !1
-    );
-  }
-}
+const {
+  taskFieldNames: Ms,
+  shareFieldNames: xs,
+  sharedPageUrlPattern: Sa,
+  splitOversized: Ma,
+  isJson: As,
+  localeId: Ct,
+  helpUrl: xa,
+  localizedPathPrefix: Hn,
+  matchesOrUnset: Ps,
+  getDirection: Vn,
+  isLtr: Dt,
+  applyDocumentDirection: Cs,
+  pluralize: Da,
+  groupPathLabel: Jn,
+  groupLabelParts: Ds,
+  groupDisplayLabel: Kn,
+  groupFallbackLabel: Oa,
+  groupLabel: La,
+  debounceByType: ka,
+  shouldApplyChrome145Workaround: Lt,
+  isChrome145: Zn,
+  uncollapseChrome145TabGroup: Qn,
+} = globalThis.createOneTabPageCommon({
+  websiteUrl: ke,
+  translate: N,
+  tabCount: ya,
+  isRoot: Ae,
+  isTrash: me,
+  isFolder: q,
+  isMicrosoftEdge: vn,
+});
+const { cleanUrlForSearch: Xn } = globalThis.createOneTabUrlQueryCleanup();
 function Yn() {
   return crypto.getRandomValues(new Uint8Array(256 / 8));
 }

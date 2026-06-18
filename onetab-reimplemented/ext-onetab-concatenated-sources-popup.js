@@ -163,328 +163,39 @@ const {
   pluralize: (key, count) => gt(key, count),
   trimToLengthWithEllipsis: Tn,
 });
-const Fe = [
-    "task",
-    "done",
-    "notifyDate",
-    "notify",
-    "dueDate",
-    "doneDate",
-    "recurrenceHistory",
-    "recurrence",
-  ],
-  js = [
-    "shared",
-    "shareExpiryDate",
-    "shareIncludeNotes",
-    "shareIncludeRatings",
-  ],
-  Ql = /^https:\/\/(?:[A-Za-z0-9-]+\.)*one-tab\.com\/page\/.*$/;
-function Jl({ Ep: t = 1e3, Fp: e, jp: i, Bp: s }) {
-  return e.flatMap((n) => {
-    if (i(n).length <= t) return [n];
-    const o = [];
-    let a = i(n).length;
-    for (let r = 0; r < a; r += t)
-      o.push(s({ Cp: r, entry: n, Hp: i(n).slice(r, r + t) }));
-    return o;
-  });
-}
-function Zo(t) {
-  try {
-    return (JSON.parse(t), !0);
-  } catch {
-    return !1;
-  }
-}
-function Ei() {
-  return chrome.i18n.getMessage("localeId").replace("_", "-");
-}
-function Qo() {
-  return `${Ge}/${Jo()}help`;
-}
-function Jo() {
-  let t = Ei();
-  return t === "en" ? "" : `${t}/`;
-}
-function Bs(t, e) {
-  return t === e || !t;
-}
-let Cs = !1;
-Cs && globalThis.document && (document.documentElement.dir = "rtl");
-function Ko() {
-  return Cs || ["ar", "he", "fa", "ps", "ur"].indexOf(Ei()) >= 0
-    ? "rtl"
-    : "ltr";
-}
-let Hs = Ko();
-function st() {
-  return Hs !== "rtl";
-}
-function qs() {
-  document.getElementsByTagName("html")[0].dir = Hs;
-}
-const Us = {};
-function gt(t, e) {
-  let i = Ei(),
-    s = Us[i];
-  s || ((s = new Intl.PluralRules(i)), (Us[i] = s));
-  const n = s.select(e);
-  let o = chrome.i18n.getMessage(`${t}_${n}`);
-  o || (o = chrome.i18n.getMessage(`${t}_other`));
-  let a = e;
-  return (
-    typeof e == "number" && (a = Number(e).toLocaleString()),
-    o ? o.replace("{COUNT}", a) : ""
-  );
-}
-async function Kl({ h: t, itemId: e, Qo: i }) {
-  return (await t.Hn(e, i))
-    .slice(1)
-    .map((n) => je({ groupId: n.id, h: t, l: n }))
-    .join(`  ${st() ? "➝" : "⭠"}  `);
-}
-function Xo({ groupId: t, h: e, l: i }) {
-  t ??= i?.id;
-  let s = i || e.v(t);
-  return [ji({ h: e, l: s }), Fi({ h: e, l: s })];
-}
-function je({ groupId: t, h: e, l: i }) {
-  t ??= i?.id;
-  let s = i || e.v(t);
-  return ji({ h: e, l: s }) || Fi({ h: e, l: s });
-}
-function Fi({ groupId: t, h: e, l: i }) {
-  t ??= i?.id;
-  let s = i || e.v(t);
-  if (ht(s)) return p("all");
-  if (jt(s)) return p("trash");
-  if (B(s)) return p("untitled");
-  {
-    let n = e.Xi(s.id);
-    return Di(n);
-  }
-}
-function ji({ groupId: t, h: e, l: i }) {
-  t ??= i?.id;
-  let s = i || e.v(t);
-  return ht(s) ? p("all") : jt(s) ? p("trash") : s.label;
-}
-let Bi = {};
-function Yo({ type: t, zu: e, Xa: i, Wu: s }) {
-  s
-    ? (delete Bi[t], i())
-    : Bi[t] ||
-      ((Bi[t] = !0),
-      setTimeout(() => Yo({ type: t, zu: e, Xa: i, Wu: !0 }), e));
-}
-function _o() {
-  return Vo();
-}
-function Vo() {
-  if (Lo()) return !1;
-  const t = navigator.userAgentData?.brands;
-  if (t) {
-    const i = t.find((s) => /Chrom(e|ium)/i.test(s.brand));
-    return i ? Number(i.version) === 145 : !1;
-  }
-  const e = navigator.userAgent.match(/Chrom(e|ium)\/(\d+)/i);
-  return e ? Number(e[2]) === 145 : !1;
-}
-async function Xl(t) {
-  if (!_o()) return;
-  const e = await chrome.tabs.query({ groupId: t });
-  if (!e.length) return;
-  e.sort((a, r) => a.index - r.index);
-  const i = e[0].windowId,
-    s = e[0].index;
-  let n = (await chrome.tabs.query({ windowId: i, active: !0 }))[0],
-    o;
-  try {
-    (await chrome.tabGroups.update(t, { collapsed: !0 }),
-      (o = await chrome.tabs.create({
-        windowId: i,
-        url: "about:blank",
-        active: !0,
-        index: s,
-      })),
-      await chrome.tabs.group({ groupId: t, tabIds: o.id }),
-      n?.id && (await chrome.tabs.update(n.id, { active: !0 })),
-      await chrome.tabGroups.update(t, { collapsed: !1 }));
-  } catch (a) {
-    console.error(a);
-  } finally {
-    if (o?.id)
-      try {
-        await chrome.tabs.remove(o.id);
-      } catch {}
-  }
-}
-function tr(t) {
-  if (t.startsWith("data:")) {
-    let u = t.indexOf("/");
-    return u ? t.substring(0, u + 1) : "data:";
-  }
-  const e = String(t);
-  let i = e,
-    s = "",
-    n = "";
-  const o = i.indexOf("#");
-  o !== -1 && ((n = i.slice(o)), (i = i.slice(0, o)));
-  const a = i.indexOf("?");
-  a !== -1 && ((s = i.slice(a + 1)), (i = i.slice(0, a)));
-  let r;
-  try {
-    r = new URL(e);
-  } catch {
-    r = null;
-  }
-  const l = g(r),
-    h = new Set([
-      "q",
-      "query",
-      "search",
-      "keyword",
-      "keywords",
-      "text",
-      "title",
-      "subject",
-      "s",
-      "url",
-      "u",
-      "source",
-      "lang",
-      "hl",
-      "tbm",
-      "start",
-      "first",
-      "as_sdt",
-    ]),
-    d = new Set([
-      "gclid",
-      "fbclid",
-      "msclkid",
-      "utm_id",
-      "utm_term",
-      "utm_content",
-      "ved",
-      "ei",
-      "sca_esv",
-      "clid",
-      "lst",
-      "show-uid",
-    ]),
-    f = new Set([
-      "gclid",
-      "fbclid",
-      "msclkid",
-      "utm_id",
-      "utm_term",
-      "utm_content",
-      "sca_esv",
-      "ved",
-      "ei",
-      "clid",
-      "lst",
-      "ali_refid",
-      "show-uid",
-    ]);
-  if (!s) return i + n;
-  const b = s.split("&").filter((u) => u.length > 0),
-    y = [];
-  for (const u of b) {
-    const T = u.indexOf("="),
-      I = T === -1 ? u : u.slice(0, T),
-      $ = T === -1 ? "" : u.slice(T + 1),
-      S = x(I).toLowerCase(),
-      j = x($);
-    if (l) {
-      l.has(S) && y.push(u);
-      continue;
-    }
-    if (w(r, S) || f.has(S)) continue;
-    (h.has(S) || !k(j, S, d)) && y.push(u);
-  }
-  return y.length ? i + "?" + y.join("&") + n : i + n;
-  function x(u) {
-    if (u == null) return "";
-    const T = String(u).replace(/\+/g, " ");
-    try {
-      return decodeURIComponent(T);
-    } catch {
-      return T;
-    }
-  }
-  function g(u) {
-    if (!u) return null;
-    const T = (u.hostname || "").toLowerCase(),
-      I = (u.pathname || "").toLowerCase();
-    return /(^|\.)google\./.test(T) &&
-      I.startsWith("/search") &&
-      T !== "scholar.google.com"
-      ? new Set(["q", "tbm", "start", "hl"])
-      : T === "scholar.google.com" && I.startsWith("/scholar")
-        ? new Set(["q", "hl", "as_sdt"])
-        : T === "www.bing.com" && I.startsWith("/search")
-          ? new Set(["q", "first"])
-          : /(^|\.)yandex\./.test(T) && I.includes("/search")
-            ? new Set(["text", "lr", "win"])
-            : T === "search.yahoo.com" && I.startsWith("/search")
-              ? new Set(["p"])
-              : null;
-  }
-  function w(u, T) {
-    if (!u) return !1;
-    const I = (u.hostname || "").toLowerCase();
-    return !!(T === "spm" && (I === "sohu.com" || I.endsWith(".sohu.com")));
-  }
-  function k(u, T, I) {
-    if (u.length <= 12 || /[^\x00-\x7F]/.test(u) || /^\d+$/.test(u)) return !1;
-    const $ =
-        /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
-          u,
-        ),
-      S = /^[0-9a-f]{16,}$/i.test(u),
-      j = /^[A-Za-z0-9+/]{24,}={0,2}$/.test(u),
-      K = /^[A-Za-z0-9\-_]{24,}={0,2}$/.test(u),
-      F =
-        /^[A-Za-z0-9\-_]{10,}\.[A-Za-z0-9\-_]{10,}(\.[A-Za-z0-9\-_]{10,})?$/.test(
-          u,
-        );
-    if (
-      $ ||
-      S ||
-      j ||
-      K ||
-      F ||
-      (/[A-Za-z0-9+/_\-]{24,}={0,2}/.test(u) && I.has(T))
-    )
-      return !0;
-    if (/^[A-Za-z0-9._\-]+$/.test(u) && !/\s/.test(u) && u.length >= 20) {
-      const D = u.match(/[A-Za-z]/g) || [],
-        W = u.match(/[AEIOUYaeiouy]/g) || [],
-        L = D.length ? W.length / D.length : 0;
-      let C = 0;
-      for (let J = 1; J < u.length; J++)
-        (/[A-Z]/.test(u[J - 1]) && /[a-z]/.test(u[J]) && C++,
-          /[a-z]/.test(u[J - 1]) && /[A-Z]/.test(u[J]) && C++);
-      const ot = u.split(/[-_.]/).filter((J) => J.length > 0),
-        lt = ot.length >= 6 && ot.every((J) => J.length <= 12),
-        X = ot.some((J) => /[A-Za-z]{3,}/.test(J));
-      if (
-        (L < 0.25 && C >= 3 && !lt && !X) ||
-        (I.has(T) && L < 0.35 && !lt && !X)
-      )
-        return !0;
-    }
-    return (
-      /\s/.test(u) ||
-        (/[-_.]/.test(u) &&
-          u.split(/[-_.]/).some((D) => /[A-Za-z]{3,}/.test(D))),
-      !1
-    );
-  }
-}
+const {
+  taskFieldNames: Fe,
+  shareFieldNames: js,
+  sharedPageUrlPattern: Ql,
+  splitOversized: Jl,
+  isJson: Zo,
+  localeId: Ei,
+  helpUrl: Qo,
+  localizedPathPrefix: Jo,
+  matchesOrUnset: Bs,
+  getDirection: Ko,
+  isLtr: st,
+  applyDocumentDirection: qs,
+  pluralize: gt,
+  groupPathLabel: Kl,
+  groupLabelParts: Xo,
+  groupDisplayLabel: je,
+  groupFallbackLabel: Fi,
+  groupLabel: ji,
+  debounceByType: Yo,
+  shouldApplyChrome145Workaround: _o,
+  isChrome145: Vo,
+  uncollapseChrome145TabGroup: Xl,
+} = globalThis.createOneTabPageCommon({
+  websiteUrl: Ge,
+  translate: p,
+  tabCount: Di,
+  isRoot: ht,
+  isTrash: jt,
+  isFolder: B,
+  isMicrosoftEdge: Lo,
+});
+const { cleanUrlForSearch: tr } = globalThis.createOneTabUrlQueryCleanup();
 function er() {
   return crypto.getRandomValues(new Uint8Array(256 / 8));
 }

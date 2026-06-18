@@ -163,163 +163,38 @@ const {
   pluralize: (key, count) => Mt(key, count),
   trimToLengthWithEllipsis: js,
 });
-const ui = [
-    "task",
-    "done",
-    "notifyDate",
-    "notify",
-    "dueDate",
-    "doneDate",
-    "recurrenceHistory",
-    "recurrence",
-  ],
-  os = [
-    "shared",
-    "shareExpiryDate",
-    "shareIncludeNotes",
-    "shareIncludeRatings",
-  ],
-  Ka = /^https:\/\/(?:[A-Za-z0-9-]+\.)*one-tab\.com\/page\/.*$/;
-function Xa({ Ep: i = 1e3, Fp: t, jp: e, Bp: s }) {
-  return t.flatMap((n) => {
-    if (e(n).length <= i) return [n];
-    const r = [];
-    let o = e(n).length;
-    for (let a = 0; a < o; a += i)
-      r.push(s({ Cp: a, entry: n, Hp: e(n).slice(a, a + i) }));
-    return r;
-  });
-}
-function er(i) {
-  try {
-    return (JSON.parse(i), !0);
-  } catch {
-    return !1;
-  }
-}
-function ne() {
-  return chrome.i18n.getMessage("localeId").replace("_", "-");
-}
-function Va() {
-  return `${Ai}/${sr()}help`;
-}
-function sr() {
-  let i = ne();
-  return i === "en" ? "" : `${i}/`;
-}
-function as(i, t) {
-  return i === t || !i;
-}
-let ls = !1;
-ls && globalThis.document && (document.documentElement.dir = "rtl");
-function nr() {
-  return ls || ["ar", "he", "fa", "ps", "ur"].indexOf(ne()) >= 0
-    ? "rtl"
-    : "ltr";
-}
-let hs = nr();
-function J() {
-  return hs !== "rtl";
-}
-function rr() {
-  document.getElementsByTagName("html")[0].dir = hs;
-}
-const us = {};
-function Mt(i, t) {
-  let e = ne(),
-    s = us[e];
-  s || ((s = new Intl.PluralRules(e)), (us[e] = s));
-  const n = s.select(t);
-  let r = chrome.i18n.getMessage(`${i}_${n}`);
-  r || (r = chrome.i18n.getMessage(`${i}_other`));
-  let o = t;
-  return (
-    typeof t == "number" && (o = Number(t).toLocaleString()),
-    r ? r.replace("{COUNT}", o) : ""
-  );
-}
-async function Ya({ h: i, itemId: t, Qo: e }) {
-  return (await i.Hn(t, e))
-    .slice(1)
-    .map((n) => ci({ groupId: n.id, h: i, l: n }))
-    .join(`  ${J() ? "➝" : "⭠"}  `);
-}
-function or({ groupId: i, h: t, l: e }) {
-  i ??= e?.id;
-  let s = e || t.v(i);
-  return [oe({ h: t, l: s }), re({ h: t, l: s })];
-}
-function ci({ groupId: i, h: t, l: e }) {
-  i ??= e?.id;
-  let s = e || t.v(i);
-  return oe({ h: t, l: s }) || re({ h: t, l: s });
-}
-function re({ groupId: i, h: t, l: e }) {
-  i ??= e?.id;
-  let s = e || t.v(i);
-  if (_(s)) return x("all");
-  if (wt(s)) return x("trash");
-  if (L(s)) return x("untitled");
-  {
-    let n = t.Xi(s.id);
-    return ee(n);
-  }
-}
-function oe({ groupId: i, h: t, l: e }) {
-  i ??= e?.id;
-  let s = e || t.v(i);
-  return _(s) ? x("all") : wt(s) ? x("trash") : s.label;
-}
-let ae = {};
-function ar({ type: i, zu: t, Xa: e, Wu: s }) {
-  s
-    ? (delete ae[i], e())
-    : ae[i] ||
-      ((ae[i] = !0),
-      setTimeout(() => ar({ type: i, zu: t, Xa: e, Wu: !0 }), t));
-}
-function lr() {
-  return hr();
-}
-function hr() {
-  if (Jn()) return !1;
-  const i = navigator.userAgentData?.brands;
-  if (i) {
-    const e = i.find((s) => /Chrom(e|ium)/i.test(s.brand));
-    return e ? Number(e.version) === 145 : !1;
-  }
-  const t = navigator.userAgent.match(/Chrom(e|ium)\/(\d+)/i);
-  return t ? Number(t[2]) === 145 : !1;
-}
-async function tl(i) {
-  if (!lr()) return;
-  const t = await chrome.tabs.query({ groupId: i });
-  if (!t.length) return;
-  t.sort((o, a) => o.index - a.index);
-  const e = t[0].windowId,
-    s = t[0].index;
-  let n = (await chrome.tabs.query({ windowId: e, active: !0 }))[0],
-    r;
-  try {
-    (await chrome.tabGroups.update(i, { collapsed: !0 }),
-      (r = await chrome.tabs.create({
-        windowId: e,
-        url: "about:blank",
-        active: !0,
-        index: s,
-      })),
-      await chrome.tabs.group({ groupId: i, tabIds: r.id }),
-      n?.id && (await chrome.tabs.update(n.id, { active: !0 })),
-      await chrome.tabGroups.update(i, { collapsed: !1 }));
-  } catch (o) {
-    console.error(o);
-  } finally {
-    if (r?.id)
-      try {
-        await chrome.tabs.remove(r.id);
-      } catch {}
-  }
-}
+const {
+  taskFieldNames: ui,
+  shareFieldNames: os,
+  sharedPageUrlPattern: Ka,
+  splitOversized: Xa,
+  isJson: er,
+  localeId: ne,
+  helpUrl: Va,
+  localizedPathPrefix: sr,
+  matchesOrUnset: as,
+  getDirection: nr,
+  isLtr: J,
+  applyDocumentDirection: rr,
+  pluralize: Mt,
+  groupPathLabel: Ya,
+  groupLabelParts: or,
+  groupDisplayLabel: ci,
+  groupFallbackLabel: re,
+  groupLabel: oe,
+  debounceByType: ar,
+  shouldApplyChrome145Workaround: lr,
+  isChrome145: hr,
+  uncollapseChrome145TabGroup: tl,
+} = globalThis.createOneTabPageCommon({
+  websiteUrl: Ai,
+  translate: x,
+  tabCount: ee,
+  isRoot: _,
+  isTrash: wt,
+  isFolder: L,
+  isMicrosoftEdge: Jn,
+});
 class il {
   constructor({
     parent: t,
