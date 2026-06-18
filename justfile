@@ -5,9 +5,9 @@ default:
 # Run the extension with hot-reload
 [group('dev')]
 [no-exit-message]
-[working-directory: "extension"]
+[working-directory: "onetab-reimplemented"]
 ext-dev:
-    bun run dev:firefox
+    bun run dev:chrome
 
 # Run the server in dev mode
 [group('dev')]
@@ -19,16 +19,16 @@ server-dev:
 # Format/lint all files in the extension directory 
 [group('lint')]
 [no-exit-message]
-[working-directory: "extension"]
+[working-directory: "onetab-reimplemented"]
 ext-lint:
     bun run fmt
 
-# Build and package the extension
-[group('build')]
-[no-exit-message]
-[working-directory: "extension"]
-ext-build:
-    bun run dev:firefox
+# # Build and package the extension
+# [group('build')]
+# [no-exit-message]
+# [working-directory: "onetab-reimplemented"]
+# ext-build:
+#     bun run dev:firefox
 
 # Build and package the server
 [group('build')]

@@ -158,6 +158,14 @@ const sharedUrlQueryCleanupConsumers = new Set([
   "ext-onetab-concatenated-sources-popup.js",
 ]);
 
+const sharedUiControlsConsumers = new Set([
+  "ext-onetab-concatenated-sources-import.js",
+  "ext-onetab-concatenated-sources-onetab.js",
+  "ext-onetab-concatenated-sources-options.js",
+  "ext-onetab-concatenated-sources-placeholder.js",
+  "ext-onetab-concatenated-sources-popup.js",
+]);
+
 for (const file of concatenatedFiles) {
   test(`${file} preserves syntax and runtime literals`, async () => {
     const [
@@ -176,6 +184,7 @@ for (const file of concatenatedFiles) {
       sharedBundlePrelude,
       sharedPageCommon,
       sharedUrlQueryCleanup,
+      sharedUiControls,
     ] = await Promise.all([
       readFile(resolve(originalRoot, file), "utf8"),
       readFile(resolve(candidateRoot, file), "utf8"),
@@ -195,6 +204,7 @@ for (const file of concatenatedFiles) {
       readFile(resolve(candidateRoot, "shared/bundle-prelude.js"), "utf8"),
       readFile(resolve(candidateRoot, "shared/page-common.js"), "utf8"),
       readFile(resolve(candidateRoot, "shared/url-query-cleanup.js"), "utf8"),
+      readFile(resolve(candidateRoot, "shared/ui-controls.js"), "utf8"),
     ]);
     const candidateRuntimeSource = [
       candidate,
@@ -223,6 +233,7 @@ for (const file of concatenatedFiles) {
       ...(sharedUrlQueryCleanupConsumers.has(file)
         ? [sharedUrlQueryCleanup]
         : []),
+      ...(sharedUiControlsConsumers.has(file) ? [sharedUiControls] : []),
     ].join("\n");
 
     expect(() => new Script(candidate, { filename: file })).not.toThrow();
@@ -262,7 +273,8 @@ function extractStringLiterals(source: string) {
         literal !== "shared/import-helpers.js" &&
         literal !== "shared/bundle-prelude.js" &&
         literal !== "shared/page-common.js" &&
-        literal !== "shared/url-query-cleanup.js",
+        literal !== "shared/url-query-cleanup.js" &&
+        literal !== "shared/ui-controls.js",
     )
     .sort();
 }
