@@ -1,1005 +1,168 @@
 // Copyright 2026 OneTab Ltd.  All rights reserved.
-const Un = "2.14",
-  ja = !1,
-  Ba = !1,
-  Ca = !1,
-  Ha = !1,
-  qa = !1,
-  Ua = !1,
-  za = !0,
-  Wa = "chrome://",
-  Na = "chrome://newtab/",
-  Ge = "https://www.one-tab.com",
-  Ra = !1,
-  Za = !1,
-  Qa = !0,
-  Ja = !1,
-  hs = chrome.runtime.getURL("onetab.html"),
-  De = chrome.runtime.getURL(""),
-  pi = !0;
-async function Ka() {
-  return pi
-    ? (await chrome.permissions.getAll()).permissions.includes("tabGroups") &&
-        chrome.tabGroups
-    : !1;
-}
-async function zn() {
-  if (!pi) return !1;
-  try {
-    return await chrome.permissions.request({ permissions: ["tabGroups"] });
-  } catch (t) {
-    return (
-      console.log(
-        'chrome.permissions.request for "tabGroups" permission failed with error:',
-      ),
-      console.log(t),
-      !1
-    );
-  }
-}
-async function ds(t) {
-  try {
-    return await chrome.permissions.request({ permissions: [t] });
-  } catch (e) {
-    return (
-      console.log(
-        `chrome.permissions.request for "${t}" permission failed with error:`,
-      ),
-      console.log(e),
-      !1
-    );
-  }
-}
-function Qe(t) {
-  return t && t.indexOf(hs) === 0;
-}
-function Xa(t) {
-  return t && t.indexOf(De) === 0;
-}
-function Wn(t) {
-  let e = t.toLowerCase();
-  return e.startsWith("http://")
-    ? t.substring("http://".length)
-    : e.startsWith("https://")
-      ? t.substring("https://".length)
-      : e;
-}
-function fs(t) {
-  if (t.toLowerCase().startsWith("file://")) return t;
-  let e = ge(t);
-  return e.toLowerCase().startsWith("www.") ? e.substring("www.".length) : e;
-}
-function ge(t) {
-  return t
-    ? (t.indexOf("//") === 0 && (t = "http:" + t),
-      t.indexOf("://") === -1 && (t = "http://" + t),
-      (t = t.substring(t.indexOf("://") + "://".length)),
-      t.indexOf("/") !== -1 && (t = t.substring(0, t.indexOf("/"))),
-      t.indexOf(":") !== -1 && (t = t.substring(0, t.indexOf(":"))),
-      t.indexOf("?") !== -1 && (t = t.substring(0, t.indexOf("?"))),
-      t.indexOf("#") !== -1 && (t = t.substring(0, t.indexOf("#"))),
-      t.toLowerCase())
-    : "undefined";
-}
-function Ya(t) {
-  return t.indexOf("://") === -1
-    ? "https://"
-    : ((t = t.substring(0, t.indexOf("://") + "://".length)), t.toLowerCase());
-}
-const ps = [
-  "com",
-  "co.uk",
-  "org.uk",
-  "net",
-  "org",
-  "de",
-  "ru",
-  "info",
-  "xyz",
-  "nl",
-];
-function Nn(t) {
-  let e = ge(t);
-  try {
-    for (let i in ps) {
-      let s = "." + ps[i];
-      if (eo(e, s)) {
-        for (e = e.substring(0, e.length - s.length); e.indexOf(".") !== -1; )
-          e = e.substring(e.indexOf(".") + 1);
-        e = e + s;
-        break;
-      }
-    }
-    return (e.indexOf("www.") === 0 && (e = e.substring("www.".length)), e);
-  } catch {
-    return e;
-  }
-}
-function Rn(t) {
-  t.noCacheRandom = Zn();
-}
-function Zn() {
-  return new Date().getTime() + Math.round(Math.random() * 1e4) + "";
-}
-async function _a(t, e) {
-  Rn(e);
-  let i = JSON.stringify(e);
-  return await (await Qn(t, i)).json();
-}
-async function Qn(t, e) {
-  let i = {};
-  (e ? ((i.method = "POST"), (i.body = e)) : (i.method = "GET"),
-    (i.headers = new Headers()),
-    i.headers.append("Content-Type", "text/json"));
-  let s = await fetch(t, i);
-  if (s.status === 200) return s;
-  throw new Error("http response code" + s.status);
-}
-const mi = [
-  ..."0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-_",
-];
-function Jn(t = 22) {
-  return Array.from(crypto.getRandomValues(new Uint8Array(t)).values())
-    .map((e) => mi[e & 63])
-    .join("");
-}
-function Va(t = 32) {
-  return Array.from(crypto.getRandomValues(new Uint8Array(t)).values())
-    .map((e) => mi[e & 15])
-    .join("");
-}
-function Xt() {
-  return Jn();
-}
-const Kn = new TextEncoder(),
-  tl = new TextDecoder();
-async function Xn(t) {
-  return new Uint8Array(await crypto.subtle.digest("SHA-256", t));
-}
-async function Yn(t) {
-  return await Xn(Kn.encode(t));
-}
-async function Pe(t) {
-  let i = [...(await Yn(t))]
-      .map((n) => n.toString(2).padStart(8, 0))
-      .join("")
-      .slice(0, 132),
-    s = "";
-  for (let n = 0; n < 22; n++)
-    s += mi[parseInt(i.slice(n * 6, (n + 1) * 6), 2)];
-  return s;
-}
-function wi(t) {
-  return t == null ? "" : t.replace(/^\s+/, "").replace(/\s+$/, "");
-}
-function _n(t) {
-  return [
-    `
-`,
-    "\v",
-    "\f",
-    "\r",
-    "",
-    "\u2028",
-    "\u2029",
-  ].some((e) => e === t);
-}
-const Vn = ["\v", "\f", "\r", "", "\u2028", "\u2029"];
-function to(t) {
-  return t
-    ? ((t = t.replaceAll(
-        `\r
-`,
-        `
-`,
-      )),
-      Vn.forEach(
-        (e) =>
-          (t = t.replaceAll(
-            e,
-            `
-`,
-          )),
-      ),
-      t)
-    : "";
-}
-function ms(t) {
-  return t ? t.replace(/[\x00-\x1F\x7F-\x9F\uFEFF]/g, "") : "";
-}
-function ws(t) {
-  return t ? to(t).replace(/[\x00-\x09\x0B-\x1F\x7F-\x9F\uFEFF]/g, "") : "";
-}
-function xi(t, e) {
-  return (t && ce(t)) || e;
-}
-function ce(t) {
-  return t ? wi(ms(t)) : "";
-}
-function eo(t, e) {
-  return t ? t.indexOf(e, t.length - e.length) !== -1 : !1;
-}
-function xs(t, e) {
-  function i(a) {
-    if (a == null) return null;
-    let r = String(a).split(".");
-    if (r.length === 0) return null;
-    let l = [];
-    for (let h = 0; h < r.length; h++) {
-      let d = r[h];
-      if (!/^\d+$/.test(d)) return null;
-      l.push(Number(d));
-    }
-    return l;
-  }
-  let s = i(t),
-    n = i(e);
-  if (!s || !n) return NaN;
-  let o = Math.max(s.length, n.length);
-  for (let a = 0; a < o; a++) {
-    let r = s[a] ?? 0,
-      l = n[a] ?? 0;
-    if (r < l) return -1;
-    if (r > l) return 1;
-  }
-  return 0;
-}
-function io(t, e) {
-  return xs(t, e) < 0;
-}
-function so(t, e) {
-  return xs(t, e) > 0;
-}
-function el(t, e, i) {
-  return so(t, e) && io(t, i);
-}
-const il = globalThis.getOneTabDefaultSettings();
-function no(t, e, i) {
-  (t.parentNode && t.remove(),
-    e.insertBefore(
-      t,
-      i === void 0 || i >= e.children.length || e.children.length === 0
-        ? null
-        : e.children[Math.max(0, i)],
-    ));
-}
-function oo(t, e) {
-  e.parentNode.insertBefore(t, e);
-}
-function c(t, e) {
-  return U("div", t, e);
-}
-function U(t, e, i) {
-  return Je(void 0, t, e, i);
-}
-const ro = ["style", "children", "child", "init", "destroy", "dataset"];
-function Je(t, e, i, s) {
-  let n = e === void 0 ? t : document.createElement(e),
-    o = {},
-    a = {};
-  if (i) {
-    (i.style && Object.assign(n.style, i.style),
-      i.dataset && Object.assign(n.dataset, i.dataset));
-    for (let l of Object.keys(i))
-      (ro.includes(l) || (n[l] = i[l]),
-        (l === "role" || l === "placeholder") && n.setAttribute(l, i[l]));
-    if ((i.p && ((i.children ??= []).p = i.p), i.children)) {
-      let l = Object.entries(i.children);
-      for (const [h, d] of l)
-        d instanceof HTMLElement
-          ? n.appendChild(d)
-          : (n.appendChild(d?.o?.i ?? d.i),
-            d.u && (Object.assign(a, d.u), (a[h] = d)));
-      for (const [h, d] of l) ((o[h] = d), (a[h] = d));
-    }
-  }
-  e !== void 0 && t && t.appendChild(n);
-  let r = { i: n, u: a };
-  return (
-    i.destroy && (r.destroy = i.destroy),
-    Object.assign(r, o),
-    s && Object.assign(r, s),
-    i?.init && i.init(r),
-    r
-  );
-}
-const bs = "about:reader?url=";
-function bt(t) {
-  if (!t) return "";
-  if (t.startsWith("data:text/html") && t.includes('<div id="placeholderUrl">'))
-    return t.match(/<div id="placeholderUrl">(.+)<\/div>/)?.[1];
-  if (t.indexOf(":") === -1) return bt("https://" + t);
-  if (t.indexOf(bs) === 0) return decodeURIComponent(t.substring(bs.length));
-  if (t.startsWith(`${De}placeholder.html?`)) {
-    const e = new URLSearchParams(t.substring(t.indexOf("?")));
-    return bt(e.get("url"));
-  }
-  try {
-    let e = new URL(t),
-      i = e.toString();
-    return !e.hash && !e.search && e.pathname === "/" && i.endsWith("/")
-      ? i.substring(0, i.length - 1)
-      : e.toString();
-  } catch {
-    return t;
-  }
-}
-function ao(t, e, i) {
-  return e && ((t || "").toLowerCase().startsWith("file:") || $s(t))
-    ? i
-      ? `data:text/html, <html><body><div id="placeholderUrl">${Lt(t)}</div></body></html>`
-      : `${De}placeholder.html?url=${encodeURIComponent(t)}`
-    : t;
-}
-async function lo() {
-  try {
-    return !(await chrome.extension.isAllowedFileSchemeAccess());
-  } catch (t) {
-    return (console.log(t), !0);
-  }
-}
-function sl(t) {
-  return parseInt(t.match(/\d+/)[0]);
-}
-function nl(t) {
-  if (!(!t || t.length === 0)) return t[t.length - 1];
-}
-const ys = [...new Array(30)].map((t, e) => parseInt(10 + Math.pow(1.6, e)));
-function* co(t) {
-  let e = 0;
-  for (; ys.slice(0, e).reduce((i, s) => i + s, 0) < t; ) yield ys[e++];
-}
-async function ol(t, e, i) {
-  let s = 0;
-  for (let n of co(t)) {
-    if (await i(s)) return;
-    (await de(n), (s += n));
-  }
-  throw new Error(`Timeout waiting for condition ${e}`);
-}
-function p(t) {
-  let e = chrome.i18n.getMessage(t);
-  return e || (console.log("No translation available for: " + t), t);
-}
-function uo(t) {
-  const e = () => {
-    (document.removeEventListener("DOMContentLoaded", e),
-      window.removeEventListener("load", e),
-      t());
-  };
-  document.readyState !== "loading"
-    ? setTimeout(t)
-    : (document.addEventListener("DOMContentLoaded", e),
-      window.addEventListener("load", e));
-}
-function ee({
-  id: t,
-  display: e,
-  marginTop: i = "16px",
-  marginBottom: s = "16px",
-  marginInlineStart: n = 0,
-  marginInlineEnd: o = 0,
-  color: a = "var(--border-color)",
-  $: r,
-  Fu: l,
-  Qa: h,
-} = {}) {
-  return c({
-    className: "horizDivider",
-    ...(t && { id: t }),
-    ...(l && { className: "hideIfInLastSection" }),
-    ...(h && { className: "hideIfInLastSubsection" }),
-    style: {
-      ...(e && { display: e }),
-      marginTop: i,
-      marginBottom: s,
-      marginInlineStart: n,
-      marginInlineEnd: o,
-      borderBottom: `1px solid ${a}`,
-      ...r,
-    },
-  });
-}
-const ho = new Intl.RelativeTimeFormat(void 0, { ju: "auto" }),
-  gs = [
-    { Ye: 60, name: "seconds" },
-    { Ye: 60, name: "minutes" },
-    { Ye: 24, name: "hours" },
-    { Ye: 7, name: "days" },
-    { Ye: 4.34524, name: "weeks" },
-    { Ye: 12, name: "months" },
-    { Ye: Number.POSITIVE_INFINITY, name: "years" },
-  ];
-function ks(t) {
-  let e = t;
-  for (let i = 0; i < gs.length; i++) {
-    const s = gs[i];
-    if (Math.abs(e) < s.Ye) return ho.format(Math.round(e), s.name);
-    e /= s.Ye;
-  }
-}
-function Ts(t) {
-  const e = (t - new Date()) / 1e3;
-  return e > -60 && e < 0 ? p("justNow") : ks(e);
-}
-function fo(t) {
-  const e = (t - new Date()) / 1e3;
-  return e < 60 && e > 0 ? p("soon") : ks(e);
-}
-function Ke(t, e) {
-  if (typeof t != typeof e) return !1;
-  if (Array.isArray(t)) {
-    if (!Array.isArray(e) || t.length !== e.length) return !1;
-    for (let i = 0; i < t.length; i++) if (!Ke(t[i], e[i])) return !1;
-    return !0;
-  } else if (typeof t == "object") {
-    let i = [...Object.keys(t)].sort(),
-      s = [...Object.keys(e)].sort();
-    if (i.length !== s.length) return !1;
-    for (let n = 0; n < i.length; n++) if (i[n] !== s[n]) return !1;
-    for (let n = 0; n < i.length; n++) if (!Ke(t[i[n]], e[i[n]])) return !1;
-    return !0;
-  } else return t === e;
-}
-function Is(t) {
-  if (Array.isArray(t)) return t.map((e) => Is(e));
-  if (typeof t == "object") {
-    let e = [...Object.keys(t)].sort();
-    return Object.fromEntries(e.map((i) => [i, Is(t[i])]));
-  } else return t;
-}
-function vs(t) {
-  t.splice(0, t.length);
-}
-function Vt(t, e) {
-  if (!e) return [...new Set(t).values()];
-  let i = new Set(),
-    s = [];
-  for (let n of t) {
-    let o = e(n);
-    i.has(o) || (i.add(o), s.push(n));
-  }
-  return s;
-}
-function po(t, e, i) {
-  let s = +e;
-  (Number.isNaN(s) && (s = 0),
-    s !== 1 / 0 && s !== -1 / 0 && (s = s < 0 ? Math.ceil(s) : Math.floor(s)));
-  let n = t.length,
-    o = s < 0 ? Math.max(n + s, 0) : Math.min(s, n);
-  if (!i.length) return;
-  let a = i.length;
-  t.length = n + a;
-  let r = Object.prototype.hasOwnProperty;
-  for (let l = n - 1; l >= o; l--)
-    r.call(t, l) ? (t[l + a] = t[l]) : delete t[l + a];
-  for (let l = 0; l < a; l++) t[o + l] = i[l];
-}
-function mo(t, e) {
-  return JSON.stringify([...t].sort()) === JSON.stringify([...e].sort());
-}
-function rl(t, e) {
-  return JSON.stringify(t) === JSON.stringify(e);
-}
-function ke(t, ...e) {
-  let i = new Set();
-  for (let s = t.length - 1; s >= 0; s--)
-    i.has(t[s]) ? t.splice(s, 1) : i.add(t[s]);
-  for (let s of e) i.has(s) || (i.add(s), t.push(s));
-  return t;
-}
-function ie(t, e) {
-  return e.includes(t);
-}
-function me(t, e) {
-  return e.some((i) => t.includes(i));
-}
-function bi(t, e) {
-  for (; t.includes(e); ) t.splice(t.indexOf(e), 1);
-  return t;
-}
-function al(t, e) {
-  for (let i = t.length - 1; i >= 0; i--) e(t[i]) || t.splice(i, 1);
-  return t;
-}
-function ll(t, e, i) {
-  return (i ? ke(t, e) : bi(t, e), t);
-}
-function cl(t, e) {
-  let i = t.findIndex(e);
-  if (i === -1) return;
-  let [s] = t.splice(i, 1);
-  return s;
-}
-function G(t, e) {
-  let i, s;
-  return (
-    arguments.length === 1 ? ((i = t), (s = i !== void 0)) : ((s = t), (i = e)),
-    s ? [i] : []
-  );
-}
-function ul(t, e, i) {
-  let s = t.findIndex((n) => n === e && !i--);
-  return (s !== -1 && t.splice(s, 1), s);
-}
-function hl(t, e, i) {
-  let s = new Map();
-  (e ?? []).forEach((o) => {
-    o && !s.has(o.id) && s.set(o.id, o);
-  });
-  let n = (t ?? []).map((o) => s.get(o));
-  return i ? n.filter(i) : n;
-}
-function dl(t, e) {
-  let i = new Set(e);
-  return t.filter((s) => i.has(s));
-}
-function yi(t, e) {
-  let i = t.map((s) => (Array.isArray(s) ? yi(s, e) : s));
-  return (
-    (i = i.filter((s) => !Array.isArray(s) || s.length > 0)),
-    i.filter((s) => Array.isArray(s) || e(s))
-  );
-}
-const Le = (t) => (e) => !t(e);
-function we(t, e) {
-  return t.reduce(
-    ([i, s], n, o) => ((e(n, o) ? i : s).push(n), [i, s]),
-    [[], []],
-  );
-}
-function fl(t, e) {
-  let i = e.map((n) => []),
-    s = [];
-  return (
-    t.forEach((n) => {
-      for (let o = 0; o < e.length; o++)
-        if (e[o](n)) {
-          i[o].push(n);
-          return;
-        }
-      s.push(n);
-    }),
-    [...i, s]
-  );
-}
-async function pl(t, e) {
-  let i = await Promise.all(t.map((s, n) => e(s, n)));
-  return t.reduce(([s, n], o, a) => ((i[a] ? s : n).push(o), [s, n]), [[], []]);
-}
-async function As(t) {
-  await chrome.tabs.update(t, { active: !0 });
-}
-async function ml(t) {
-  let e = await chrome.tabs.query({ id: t })[0];
-  if (!e) throw new Error("No tab with specified id found");
-  (await chrome.tabs.update(t, { active: !0 }),
-    chrome.windows &&
-      (await chrome.windows.update(e.windowId, { focused: !0 })));
-}
-function wl(t) {
-  return t[Math.floor(Math.random() * t.length)];
-}
-function xl() {
-  return "#" + Math.random().toString(16).slice(-6);
-}
-const wo = [
-  "javascript:",
-  "about:",
-  De,
-  "chrome-devtools:",
-  ...["chrome://", "edge://", "data:"].filter((t) => !1),
-  ...["edge://", "chrome://"]
-    .map((t) =>
-      [
-        "newtab",
-        "new-tab-page",
-        "print",
-        "network-error",
-        "badcastcrash",
-        "inducebrowsercrashforrealz",
-        "crash",
-        "crashdump",
-        "kill",
-        "hang",
-        "shorthang",
-        "gpuclean",
-        "gpucrash",
-        "gpuhang",
-        "memory-exhaust",
-        "memory-pressure-critical",
-        "memory-pressure-moderate",
-        "ppapiflashcrash",
-        "ppapiflashhang",
-        "quit",
-        "restart",
-      ].map((e) => `${t}${e}/`),
-    )
-    .flat(),
-];
-function $s(t) {
-  if (!t || t === "") return !0;
-  for (let e of wo) if (t.startsWith(e) && !Wo(t)) return !0;
-  return !!dr(t);
-}
-async function xe(t, e) {
-  let i = (await v._e("uncommittedChangesStore")) ?? {},
-    s = i[t] ?? {};
-  return (
-    (s.modifyDate = new Date().getTime()),
-    (s.uncommittedChanges = { ...(s.uncommittedChanges ?? {}), ...e }),
-    (s.uncommittedChanges = Object.fromEntries(
-      Object.entries(s.uncommittedChanges).filter(([n, o]) => o !== void 0),
-    )),
-    (i[t] = s),
-    await v.Ve("uncommittedChangesStore", i),
-    s.uncommittedChanges
-  );
-}
-async function xo(t) {
-  let e = (await v._e("uncommittedChangesStore")) ?? {},
-    i = !1;
-  (t.forEach((s) => {
-    e[s]
-      ? (delete e[s], (i = !0))
-      : console.log(`uncommittedChangesKey ${s} not found`);
-  }),
-    i && (await v.Ve("uncommittedChangesStore", e)));
-}
-async function gi(t) {
-  return (
-    ((await v._e("uncommittedChangesStore")) ?? {})?.[t]?.uncommittedChanges ??
-    {}
-  );
-}
-async function bl() {
-  await v.Bu("uncommittedChangesStore");
-}
-async function bo(t) {
-  let e = new Date().getTime() - 12096e5,
-    i = (await v._e("uncommittedChangesStore")) ?? {};
-  ((i = Object.fromEntries(
-    Object.entries(i).filter(([s, n]) => n.modifyDate > e),
-  )),
-    await v.Ve("uncommittedChangesStore", i),
-    t && setTimeout(() => bo(), 1e3 * 3600 * 24 * 7));
-}
-const go = globalThis.createOneTabLocalStorageAdapter();
-function yl() {
-  return go;
-}
 const {
-  isUndefined: gl,
-  isDefined: ko,
-  hasId: kl,
-  doesNotHaveId: To,
-  sameIdAs: Tl,
-  getId: Nt,
-  isTab: _,
-  isRoot: ht,
-  isTrash: jt,
-  isFolder: B,
-  isArchived: ue,
-  isTask: Xe,
-  isUserFolder: Il,
-  isQuickList: ki,
-  isFolderOrWindowGroup: Ti,
-  isGroup: at,
-  isTabGroup: dt,
-  isWindowGroup: yt,
-  isBrowserGroup: he,
-  isNotQuickList: pt,
-  isSharedAndNotExpired: Io,
-} = globalThis.createOneTabModelPredicates();
-function vl(t, e) {
-  let i = t.split("PLACEHOLDER");
-  return U("span", {
-    children: {
-      a: U("span", { textContent: i[0] }),
-      b: e,
-      c: U("span", { textContent: i[1] }),
-    },
-  });
-}
-const {
-  combineComparators: se,
-  compareAscendingBy: Ii,
-  compareDescendingBy: ne,
-  compareLocaleBy: Ss,
-  compareLocaleNumericBy: Al,
-  mergeOwnProperty: $l,
-  mergeDefined: Sl,
-  mapBy: vo,
-  groupBy: Ml,
-  range: Ao,
-  nthIndexOf: Gl,
-  KeyedObjectMap: Dl,
-} = globalThis.createOneTabCollectionHelpers();
-let Ye;
-const vi = {},
-  Ai = {},
-  Ol = (t) => ({
-    get(e, i, s) {
-      if (i === "then") return e.then?.bind(e);
-      let n = t ? `${t}:${i}` : i;
-      if (
-        ((vi[n] ??= 0),
-        vi[n]++,
-        new Error().stack
-          .split(
-            `
-`,
-          )
-          .slice(1)
-          .forEach((a) => {
-            ((Ai[a] ??= 0), Ai[a]++);
-          }),
-        Ye !== void 0 && (clearTimeout(Ye), (Ye = void 0)),
-        (Ye = setTimeout(() => {
-          (console.log(
-            JSON.stringify(
-              Object.fromEntries(
-                Object.entries(Ai)
-                  .sort((a, r) => r[1] - a[1])
-                  .slice(0, 30),
-              ),
-              null,
-              2,
-            ),
-          ),
-            console.log(JSON.stringify(vi, null, 2)));
-        }, 500)),
-        i === "index")
-      )
-        return (a) => $i(e.index(a), i);
-      let o = e[i];
-      return typeof o == "function" ? o.bind(e) : o;
-    },
-  });
-function $i(t, e) {
-  return t;
-}
-function Pl(t, e) {
-  return t.length < 2
-    ? t
-    : t.flatMap((i, s) => [i, ...G(s === t.length - 1 ? void 0 : e())]);
-}
-const {
-  splitSearchText: $o,
-  splitSearchTextWithTerm: So,
-  createSearchTermRegExp: Os,
-} = globalThis.createOneTabSearchHelpers();
-const Ll = "c",
-  El = "e",
-  Fl = "t";
-const Go = globalThis.createOneTabSessionStorageAdapter();
-function Si() {
-  return Go;
-}
-const Do = "undefined-34LKmiHxP3Mu48u8qrDaHf";
-const {
-  delay: de,
-  replaceValueDeep: Oi,
-  isOpera: Po,
-  isBrave: jl,
-  isMicrosoftEdge: Lo,
-  unsleepTab: Bl,
-  mergeObjectsWithSeparators: Mi,
-  intersperse: Cl,
-  callIfOwnProperty: Gi,
-  callIfDefined: Eo,
-  joinUniqueTrimmed: Hl,
-} = globalThis.createOneTabRuntimeHelpers();
-const { fadeOut: Fo, fadeIn: ql } = globalThis.createOneTabDomTransitionHelpers();
-function Ms({ label: t, oe: e, ei: i, ii: s, No: n = 300 }) {
-  if (e?.length) {
-    let o = $o({ text: t, ti: e, ei: i, ii: s }),
-      a = o.reduce((h, { s: d }) => h + d.length, 0),
-      r = Math.max(0, a - n),
-      l = o.filter(({ tt: h }) => !h).length;
-    for (
-      let h = 0;
-      h < l &&
-      !(r <= 0 || !o.filter(({ s: x, tt: g }) => !g && x.length > 5).length);
-      h++
-    ) {
-      let d = [...o]
-          .filter(({ tt: x }) => !x)
-          .sort(se(ne(({ s: x }) => x.length))),
-        f = d.filter(
-          ({ s: x }, g, w) => g === 0 || w[g - 1].s.length === x.length,
-        ),
-        b = d[f.length],
-        y = Math.ceil(r / f.length),
-        m = f[0].s.length;
-      (b && (y = Math.min(m - b.s.length, y)),
-        m - y < 5 && (y = Math.max(0, m - 5)),
-        (r -= y * f.length),
-        y > 0 &&
-          f.forEach((x, g) => {
-            x.Ki ??= Math.floor(x.s.length / 2);
-            let w = Math.floor(y / 2),
-              k = Math.ceil(y / 2);
-            ((x.s = x.s.substring(0, x.Ki - w) + x.s.substring(x.Ki + k)),
-              (x.Ki = x.Ki - w),
-              (x.Hu = !0));
-          }));
-    }
-    return o.flatMap((h) =>
-      h.tt
-        ? U("span", {
-            style: { backgroundColor: "var(--text-highlight-bg-color)" },
-            textContent: h.s,
-          }).i
-        : h.Hu
-          ? [
-              U("span", { textContent: h.s.substring(0, h.Ki) }).i,
-              U("span", {
-                style: { color: "var(--text-color-extra-weak)" },
-                textContent: "…",
-              }).i,
-              U("span", { textContent: h.s.substring(h.Ki) }).i,
-            ]
-          : U("span", { textContent: h.s }).i,
-    );
-  } else {
-    let o = document.createElement("span");
-    return ((o.textContent = Tn(t, n)), [o]);
-  }
-}
-function Di(t) {
-  return gt("tabCount", t);
-}
-function jo(t) {
-  return gt("bookmarkCount", t);
-}
-function Pi({ label: t, Ro: e, oe: i, ei: s, ii: n, No: o }) {
-  e.replaceChildren(...Ms({ label: t, oe: i, ei: s, ii: n, No: o }));
-}
-const { applyValue: Ee, applyIfTruthy: qt } = globalThis.createOneTabRuntimeHelpers();
-const {
-  trimTrailingDotOrComma: Bo,
-  substringAfter: Co,
-  stripProtocol: oe,
-  equalIgnoringProtocol: _e,
-  safeNormalizeText: be,
-  canonicalizeTextAsUrl: Gs,
-  areUrlLikeEqual: Ds,
-  isYouTubeUrl: Ho,
-  shouldUseCandidateUrl: qo,
-  safeNonJavascriptUrl: Te,
-} = globalThis.createOneTabUrlHelpers({ normalizeText: ce, normalizeUrl: bt });
-const { normalizeImportedText: Uo } = globalThis.createOneTabTextHelpers();
-const { parseImportedTabGroups: Ps } = globalThis.createOneTabImportHelpers({
-  combineComparators: se,
-  compareAscendingBy: Ii,
-  compareDescendingBy: ne,
-  equalIgnoringProtocol: _e,
-  normalizeImportedText: Uo,
+  version: Un,
+  false1: ja,
+  false2: Ba,
+  false3: Ca,
+  false4: Ha,
+  false5: qa,
+  false6: Ua,
+  true1: za,
+  chromeUrl: Wa,
+  chromeNewTabUrl: Na,
+  websiteUrl: Ge,
+  false7: Ra,
+  false8: Za,
+  true2: Qa,
+  false9: Ja,
+  oneTabPageUrl: hs,
+  extensionRootUrl: De,
+  tabGroupsEnabled: pi,
+  hasTabGroupsPermission: Ka,
+  requestTabGroupsPermission: zn,
+  requestPermission: ds,
+  isOneTabPageUrl: Qe,
+  isExtensionUrl: Xa,
+  stripHttpProtocol: Wn,
+  domainWithoutWww: fs,
+  extractDomain: ge,
+  protocolPrefix: Ya,
+  commonDomainSuffixes: ps,
+  registeredDomain: Nn,
+  addNoCacheRandom: Rn,
+  noCacheRandom: Zn,
+  postJson: _a,
+  fetchJson: Qn,
+  randomAlphabet: mi,
+  randomId: Jn,
+  randomHex: Va,
+  newId: Xt,
+  textEncoder: Kn,
+  textDecoder: tl,
+  digestBytes: Xn,
+  digestText: Yn,
+  stableIdFromText: Pe,
+  trimWhitespace: wi,
+  isLineBreak: _n,
+  nonStandardLineBreaks: Vn,
+  normalizeLineBreaks: to,
+  removeControlCharacters: ms,
+  removeControlCharactersExceptTabs: ws,
+  normalizedOrDefault: xi,
   normalizeText: ce,
-  safeNonJavascriptUrl: Te,
-  stripProtocol: oe,
-  trimTrailingDotOrComma: Bo,
+  endsWith: eo,
+  compareVersionParts: xs,
+  versionLessThan: io,
+  versionGreaterThan: so,
+  versionBetween: el,
+  defaultSettings: il,
+  moveElementToIndex: no,
+  insertBeforeElement: oo,
+  div: c,
+  createElement: U,
+  internalProps: ro,
+  createNode: Je,
+  readerUrlPrefix: bs,
+  normalizeUrl: bt,
+  placeholderUrlFor: ao,
+  isFileAccessBlocked: lo,
+  parseDigits: sl,
+  last: nl,
+  backoffSteps: ys,
+  backoffDurations: co,
+  waitForCondition: ol,
+  translate: p,
+  runWhenDomReady: uo,
+  horizontalDivider: ee,
+  relativeTimeFormatter: ho,
+  relativeTimeUnits: gs,
+  relativeTime: ks,
+  relativePastTime: Ts,
+  relativeFutureTime: fo,
+  deepEqual: Ke,
+  sortObjectDeep: Is,
+  clearArray: vs,
+  uniqueBy: Vt,
+  arrayInsert: po,
+  sameSet: mo,
+  sameJson: rl,
+  pushUnique: ke,
+  includes: ie,
+  includesAny: me,
+  removeAll: bi,
+  removeWhere: al,
+  toggleValue: ll,
+  removeFirstWhere: cl,
+  maybeArray: G,
+  removeOccurrence: ul,
+  mapIdsToItems: hl,
+  filterToSet: dl,
+  filterNested: yi,
+  not: Le,
+  partition: we,
+  partitionMany: fl,
+  asyncPartition: pl,
+  activateTab: As,
+  activateTabAndWindow: ml,
+  randomItem: wl,
+  randomColor: xl,
+  excludedUrlPrefixes: wo,
+  isExcludedUrl: $s,
+  saveUncommittedChanges: xe,
+  clearUncommittedChanges: xo,
+  getUncommittedChanges: gi,
+  clearAllUncommittedChanges: bl,
+  pruneUncommittedChanges: bo,
+  localStorageAdapter: go,
+  getLocalStorageAdapter: yl,
+  placeholderParts: vl,
+  makeProxyHandler: Ol,
+  identity: $i,
+  intersperseLocal: Pl,
+  childTypeCode: Ll,
+  editTypeCode: El,
+  tabTypeCode: Fl,
+  sessionStorageAdapter: Go,
+  getSessionStorageAdapter: Si,
+  runtimeMarker: Do,
+  renderLabelSegments: Ms,
+  tabCount: Di,
+  bookmarkCount: jo,
+  replaceLabelSegments: Pi,
+  htmlEscapeText: Lt,
+  htmlEscapeAttribute: Ls,
+  identityPair: Ve,
+  EventAttachment: Es,
+  itemOccurrenceRef: Bt,
+  AsyncMapCache: zo,
+  hasNotesText: Ul,
+  nonNegative: ti,
+  isTabExcluded: Li,
+  isPlaceholderUrl: Wo,
+  shouldSkipTab: No,
+  allSame: zl,
+  escapeXml: Wl,
+  isChromium120OrNewer: Ro,
+  colorNames: Fs,
+  defaultColor: Ie,
+  true3: Nl,
+  leadingNonAlphanumeric: Rl,
+  measureElement: Zl,
+  modelPredicates: { isUndefined: gl, isDefined: ko, hasId: kl, doesNotHaveId: To, sameIdAs: Tl, getId: Nt, isTab: _, isRoot: ht, isTrash: jt, isFolder: B, isArchived: ue, isTask: Xe, isUserFolder: Il, isQuickList: ki, isFolderOrWindowGroup: Ti, isGroup: at, isTabGroup: dt, isWindowGroup: yt, isBrowserGroup: he, isNotQuickList: pt, isSharedAndNotExpired: Io },
+  collectionHelpers: { combineComparators: se, compareAscendingBy: Ii, compareDescendingBy: ne, compareLocaleBy: Ss, compareLocaleNumericBy: Al, mergeOwnProperty: $l, mergeDefined: Sl, mapBy: vo, groupBy: Ml, range: Ao, nthIndexOf: Gl, KeyedObjectMap: Dl },
+  searchHelpers: { splitSearchText: $o, splitSearchTextWithTerm: So, createSearchTermRegExp: Os },
+  runtimeHelpers: { delay: de, replaceValueDeep: Oi, isOpera: Po, isBrave: jl, isMicrosoftEdge: Lo, unsleepTab: Bl, mergeObjectsWithSeparators: Mi, intersperse: Cl, callIfOwnProperty: Gi, callIfDefined: Eo, joinUniqueTrimmed: Hl },
+  domTransitionHelpers: { fadeOut: Fo, fadeIn: ql },
+  applyRuntimeHelpers: { applyValue: Ee, applyIfTruthy: qt },
+  urlHelpers: { trimTrailingDotOrComma: Bo, substringAfter: Co, stripProtocol: oe, equalIgnoringProtocol: _e, safeNormalizeText: be, canonicalizeTextAsUrl: Gs, areUrlLikeEqual: Ds, isYouTubeUrl: Ho, shouldUseCandidateUrl: qo, safeNonJavascriptUrl: Te },
+  textHelpers: { normalizeImportedText: Uo },
+  importHelpers: { parseImportedTabGroups: Ps }
+} = globalThis.createOneTabBundlePrelude({
+  getCoreProxy: () => v,
+  isNewOrBlankTabPageUrl: url => dr(url),
+  pluralize: (key, count) => gt(key, count),
+  trimToLengthWithEllipsis: Tn,
 });
-function Lt(t) {
-  let e = document.createElement("p");
-  return ((e.textContent = t), e.innerHTML);
-}
-function Ls(t) {
-  return (
-    (t = t.replaceAll('"', "&quot;")),
-    (t = t.replaceAll("&", "&amp;")),
-    t
-  );
-}
-function Ve(t) {
-  return [t, t];
-}
-class Es {
-  constructor({ listener: e, Ka: i, Bs: s }) {
-    ((this.listener = e), (this.Bs = s), i(e));
-  }
-  remove() {
-    if (!this.listener) {
-      console.log("eventattachment remove called twice");
-      return;
-    }
-    (this.Bs(this.listener), (this.Bs = null), (this.listener = null));
-  }
-}
-function Bt({ itemId: t, Fe: e, zt: i }) {
-  return {
-    itemId: t,
-    ...(e && { sourceParentId: e }),
-    ...(i !== void 0 && { occurrence: i }),
-  };
-}
-class zo {
-  constructor(e) {
-    ((this.qu = e), (this.map = new Map()));
-  }
-  v(e) {
-    return this.map.get(e);
-  }
-  async get(e) {
-    if (this.map.has(e)) return this.map.get(e);
-    {
-      let i = await this.qu(e);
-      return (this.map.set(e, i), i);
-    }
-  }
-}
-function Ul(t) {
-  return !!t.notes?.text;
-}
-function ti(t) {
-  return t === void 0 || t < 0 ? 0 : t;
-}
-function Li(t) {
-  let e = t.url ?? t.pendingUrl;
-  return $s(e);
-}
-function Wo(t) {
-  return t?.startsWith(`${De}placeholder.html?`);
-}
-function No({ tab: t, Uu: e, excludedDomains: i = [] }) {
-  let s = bt(t.url ?? t.pendingUrl);
-  return Qe(s) || (t.pinned && !e) || i.includes(ge(s));
-}
-function zl(t, e = (i) => i) {
-  let i = e(t[0]);
-  return t.every((s) => e(s) === i);
-}
-function Wl(t) {
-  if (!t) return "";
-  const e = {
-    "&": "&amp;",
-    "<": "&lt;",
-    ">": "&gt;",
-    '"': "&quot;",
-    "'": "&apos;",
-  };
-  return t.replace(/[&<>"']/g, (i) => e[i]);
-}
-async function Ro() {
-  return Po()
-    ? !1
-    : navigator.userAgentData?.brands.some(
-        ({ brand: t, version: e }) => t === "Chromium" && e >= 120,
-      ) &&
-        !navigator.userAgentData?.brands.some(
-          ({ brand: t, version: e }) => t === "Microsoft Edge",
-        );
-}
-const Fs = [
-    "grey",
-    "blue",
-    "red",
-    "yellow",
-    "green",
-    "pink",
-    "purple",
-    "cyan",
-    "orange",
-  ],
-  Ie = "grey",
-  Nl = !0,
-  Rl = /^[^\p{L}\p{Nd}]+/u;
-function Zl(t) {
-  let e = t.style.position,
-    i = t.style.left;
-  ((t.style.position = "absolute"),
-    (t.style.left = "-1000px"),
-    document.body.appendChild(t));
-  let s = t.offsetWidth + 1,
-    n = t.offsetHeight + 1;
-  return (
-    (t.style.position = e),
-    (t.style.left = i),
-    t.remove(),
-    { w: s, tt: n }
-  );
-}
 const Fe = [
     "task",
     "done",

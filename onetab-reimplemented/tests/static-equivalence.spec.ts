@@ -132,6 +132,15 @@ const sharedImportHelperConsumers = new Set([
   "ext-onetab-concatenated-sources-shared-page-permission.js",
 ]);
 
+const sharedBundlePreludeConsumers = new Set([
+  "ext-onetab-concatenated-sources-background.js",
+  "ext-onetab-concatenated-sources-import.js",
+  "ext-onetab-concatenated-sources-onetab.js",
+  "ext-onetab-concatenated-sources-options.js",
+  "ext-onetab-concatenated-sources-placeholder.js",
+  "ext-onetab-concatenated-sources-popup.js",
+]);
+
 for (const file of concatenatedFiles) {
   test(`${file} preserves syntax and runtime literals`, async () => {
     const [
@@ -147,6 +156,7 @@ for (const file of concatenatedFiles) {
       sharedTextHelpers,
       sharedUrlHelpers,
       sharedImportHelpers,
+      sharedBundlePrelude,
     ] = await Promise.all([
       readFile(resolve(originalRoot, file), "utf8"),
       readFile(resolve(candidateRoot, file), "utf8"),
@@ -163,6 +173,7 @@ for (const file of concatenatedFiles) {
       readFile(resolve(candidateRoot, "shared/text-helpers.js"), "utf8"),
       readFile(resolve(candidateRoot, "shared/url-helpers.js"), "utf8"),
       readFile(resolve(candidateRoot, "shared/import-helpers.js"), "utf8"),
+      readFile(resolve(candidateRoot, "shared/bundle-prelude.js"), "utf8"),
     ]);
     const candidateRuntimeSource = [
       candidate,
@@ -186,6 +197,7 @@ for (const file of concatenatedFiles) {
       ...(sharedTextHelperConsumers.has(file) ? [sharedTextHelpers] : []),
       ...(sharedUrlHelperConsumers.has(file) ? [sharedUrlHelpers] : []),
       ...(sharedImportHelperConsumers.has(file) ? [sharedImportHelpers] : []),
+      ...(sharedBundlePreludeConsumers.has(file) ? [sharedBundlePrelude] : []),
     ].join("\n");
 
     expect(() => new Script(candidate, { filename: file })).not.toThrow();
@@ -222,7 +234,8 @@ function extractStringLiterals(source: string) {
         literal !== "shared/dom-transition-helpers.js" &&
         literal !== "shared/text-helpers.js" &&
         literal !== "shared/url-helpers.js" &&
-        literal !== "shared/import-helpers.js",
+        literal !== "shared/import-helpers.js" &&
+        literal !== "shared/bundle-prelude.js",
     )
     .sort();
 }
