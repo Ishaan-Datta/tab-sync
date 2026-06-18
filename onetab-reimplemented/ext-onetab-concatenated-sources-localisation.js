@@ -1618,164 +1618,17 @@ const {
   safeNonJavascriptUrl: q,
 } = globalThis.createOneTabUrlHelpers({ normalizeText: M, normalizeUrl: x });
 const { normalizeImportedText: zt } = globalThis.createOneTabTextHelpers();
-async function Do(e) {
-  const n = new DOMParser().parseFromString(e, "text/html");
-  let r = new Map((await chrome.tabs.query({})).map((i) => [i.url, i.title])),
-    o;
-  {
-    let i = [];
-    [...n.querySelectorAll("a")].forEach((u) => {
-      let c = u.href,
-        l = q(u.href),
-        d = M(r.get(c) ?? u.textContent);
-      (H(d, l) && (d = E(d)), l && d && i.push({ url: c, kt: l, title: d }));
-    });
-    let a = i.reduce((u, c) => ((u[c.kt] ??= []).push(c), u), {});
-    o = Object.values(a).map(
-      (u) =>
-        u.sort(
-          Ie(
-            Ot((c) => H(c.title, c.url)),
-            Y((c) => c.title.length),
-          ),
-        )[0],
-    );
-  }
-  if (o.some((i) => !H(i.url, i.title))) return [o];
-  {
-    let i = [
-      "address",
-      "article",
-      "aside",
-      "blockquote",
-      "body",
-      "button",
-      "br",
-      "canvas",
-      "caption",
-      "col",
-      "colgroup",
-      "dd",
-      "div",
-      "dl",
-      "dt",
-      "embed",
-      "fieldset",
-      "figcaption",
-      "figure",
-      "footer",
-      "form",
-      "h1",
-      "h2",
-      "h3",
-      "h4",
-      "h5",
-      "h6",
-      "header",
-      "hgroup",
-      "hr",
-      "li",
-      "map",
-      "object",
-      "main",
-      "nav",
-      "noscript",
-      "ol",
-      "output",
-      "p",
-      "pre",
-      "progress",
-      "section",
-      "table",
-      "tbody",
-      "textarea",
-      "tfoot",
-      "th",
-      "thead",
-      "tr",
-      "ul",
-      "video",
-    ];
-    const a = (s) =>
-      [...s.childNodes].reduce(
-        (f, w) =>
-          w.nodeType === 3
-            ? `${f}${w.textContent}`
-            : `${f}${
-                i.some((h) => h.toUpperCase() === w.tagName?.toUpperCase())
-                  ? `
-${a(w)}`
-                  : a(w)
-              }`,
-        "",
-      );
-    let u = a(n.documentElement);
-    u = zt(u);
-    let c =
-        /^(?<url>[a-zA-Z][a-zA-Z0-9+.-]*:(?:\/\/)?\S+)(?: \| ?(?<title>.*))?$/,
-      l = u
-        .split(
-          `
-`,
-        )
-        .map((s) => M(s))
-        .filter((s) => s.trim());
-    if (l.every((s) => c.test(s))) {
-      let s = [[]];
-      if (
-        (u
-          .split(
-            `
-`,
-          )
-          .map((f) => M(f))
-          .forEach((f) => {
-            if (!f.trim()) s[s.length - 1].length && s.push([]);
-            else {
-              let w = f.match(c);
-              if (w) {
-                let h = q(w.groups.url);
-                if (h) {
-                  let b = w.groups.title || r.get(w.groups.url) || E(h),
-                    S = { kt: h, title: b };
-                  s[s.length - 1].push(S);
-                }
-              }
-            }
-          }),
-        s.flat().length)
-      )
-        return s.filter((f) => f.length);
-    }
-    let d = /^(?![A-Za-z]:[\\/])[a-zA-Z][a-zA-Z0-9+.-]*:(?:\/\/)?\S+$/,
-      g = [];
-    for (let s = 0; s < l.length; s++) {
-      let f = l[s],
-        w = g[g.length - 1];
-      if (d.test(f)) {
-        let h = { kt: q(f), Zo: [] };
-        g.push(h);
-        let b = l[s - 1] ?? "";
-        b && !d.test(b)
-          ? ((h.title = b), w?.Zo.pop())
-          : (h.title = r.get(f) || E(h.kt));
-      } else w?.Zo.push(f);
-    }
-    g.forEach((s) => {
-      ((s.Ja = s.Zo.filter((f) => f).join(`
-`)),
-        s.Ja || delete s.Ja);
-    });
-    let y = /(?<url>(?![A-Za-z]:[\\/])[a-zA-Z][a-zA-Z0-9+.-]*:(?:\/\/)?\S+)/g,
-      m = l
-        .flatMap((s) => [...s.matchAll(y)].map((f) => q(Wt(f.groups.url))))
-        .filter((s) => s);
-    return (
-      (m = [...new Set(m)]),
-      m.length > g.length ? [m.map((s) => ({ kt: s, title: E(s) }))] : [g]
-    );
-  }
-}
+const { parseImportedTabGroups: Do } = globalThis.createOneTabImportHelpers({
+  combineComparators: Ie,
+  compareAscendingBy: Ot,
+  compareDescendingBy: Y,
+  equalIgnoringProtocol: H,
+  normalizeImportedText: zt,
+  normalizeText: M,
+  safeNonJavascriptUrl: q,
+  stripProtocol: E,
+  trimTrailingDotOrComma: Wt,
+});
 function Vt(e) {
   let t = document.createElement("p");
   return ((t.textContent = e), t.innerHTML);

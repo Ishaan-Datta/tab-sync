@@ -9,6 +9,7 @@ importScripts(
   "shared/dom-transition-helpers.js",
   "shared/text-helpers.js",
   "shared/url-helpers.js",
+  "shared/import-helpers.js",
 );
 const He = "2.14",
   Xi = !1,
@@ -881,164 +882,17 @@ const {
   safeNonJavascriptUrl: st,
 } = globalThis.createOneTabUrlHelpers({ normalizeText: Je, normalizeUrl: Y });
 const { normalizeImportedText: Wn } = globalThis.createOneTabTextHelpers();
-async function hs(t) {
-  const a = new DOMParser().parseFromString(t, "text/html");
-  let n = new Map((await chrome.tabs.query({})).map((r) => [r.url, r.title])),
-    i;
-  {
-    let r = [];
-    [...a.querySelectorAll("a")].forEach((o) => {
-      let l = o.href,
-        w = st(o.href),
-        p = Je(n.get(l) ?? o.textContent);
-      (Ze(p, w) && (p = De(p)), w && p && r.push({ url: l, kt: w, title: p }));
-    });
-    let s = r.reduce((o, l) => ((o[l.kt] ??= []).push(l), o), {});
-    i = Object.values(s).map(
-      (o) =>
-        o.sort(
-          Ie(
-            $e((l) => Ze(l.title, l.url)),
-            _((l) => l.title.length),
-          ),
-        )[0],
-    );
-  }
-  if (i.some((r) => !Ze(r.url, r.title))) return [i];
-  {
-    let r = [
-      "address",
-      "article",
-      "aside",
-      "blockquote",
-      "body",
-      "button",
-      "br",
-      "canvas",
-      "caption",
-      "col",
-      "colgroup",
-      "dd",
-      "div",
-      "dl",
-      "dt",
-      "embed",
-      "fieldset",
-      "figcaption",
-      "figure",
-      "footer",
-      "form",
-      "h1",
-      "h2",
-      "h3",
-      "h4",
-      "h5",
-      "h6",
-      "header",
-      "hgroup",
-      "hr",
-      "li",
-      "map",
-      "object",
-      "main",
-      "nav",
-      "noscript",
-      "ol",
-      "output",
-      "p",
-      "pre",
-      "progress",
-      "section",
-      "table",
-      "tbody",
-      "textarea",
-      "tfoot",
-      "th",
-      "thead",
-      "tr",
-      "ul",
-      "video",
-    ];
-    const s = (c) =>
-      [...c.childNodes].reduce(
-        (b, S) =>
-          S.nodeType === 3
-            ? `${b}${S.textContent}`
-            : `${b}${
-                r.some((I) => I.toUpperCase() === S.tagName?.toUpperCase())
-                  ? `
-${s(S)}`
-                  : s(S)
-              }`,
-        "",
-      );
-    let o = s(a.documentElement);
-    o = Wn(o);
-    let l =
-        /^(?<url>[a-zA-Z][a-zA-Z0-9+.-]*:(?:\/\/)?\S+)(?: \| ?(?<title>.*))?$/,
-      w = o
-        .split(
-          `
-`,
-        )
-        .map((c) => Je(c))
-        .filter((c) => c.trim());
-    if (w.every((c) => l.test(c))) {
-      let c = [[]];
-      if (
-        (o
-          .split(
-            `
-`,
-          )
-          .map((b) => Je(b))
-          .forEach((b) => {
-            if (!b.trim()) c[c.length - 1].length && c.push([]);
-            else {
-              let S = b.match(l);
-              if (S) {
-                let I = st(S.groups.url);
-                if (I) {
-                  let g = S.groups.title || n.get(S.groups.url) || De(I),
-                    M = { kt: I, title: g };
-                  c[c.length - 1].push(M);
-                }
-              }
-            }
-          }),
-        c.flat().length)
-      )
-        return c.filter((b) => b.length);
-    }
-    let p = /^(?![A-Za-z]:[\\/])[a-zA-Z][a-zA-Z0-9+.-]*:(?:\/\/)?\S+$/,
-      f = [];
-    for (let c = 0; c < w.length; c++) {
-      let b = w[c],
-        S = f[f.length - 1];
-      if (p.test(b)) {
-        let I = { kt: st(b), Zo: [] };
-        f.push(I);
-        let g = w[c - 1] ?? "";
-        g && !p.test(g)
-          ? ((I.title = g), S?.Zo.pop())
-          : (I.title = n.get(b) || De(I.kt));
-      } else S?.Zo.push(b);
-    }
-    f.forEach((c) => {
-      ((c.Ja = c.Zo.filter((b) => b).join(`
-`)),
-        c.Ja || delete c.Ja);
-    });
-    let m = /(?<url>(?![A-Za-z]:[\\/])[a-zA-Z][a-zA-Z0-9+.-]*:(?:\/\/)?\S+)/g,
-      T = w
-        .flatMap((c) => [...c.matchAll(m)].map((b) => st(Un(b.groups.url))))
-        .filter((c) => c);
-    return (
-      (T = [...new Set(T)]),
-      T.length > f.length ? [T.map((c) => ({ kt: c, title: De(c) }))] : [f]
-    );
-  }
-}
+const { parseImportedTabGroups: hs } = globalThis.createOneTabImportHelpers({
+  combineComparators: Ie,
+  compareAscendingBy: $e,
+  compareDescendingBy: _,
+  equalIgnoringProtocol: Ze,
+  normalizeImportedText: Wn,
+  normalizeText: Je,
+  safeNonJavascriptUrl: st,
+  stripProtocol: De,
+  trimTrailingDotOrComma: Un,
+});
 function Nn(t) {
   let e = document.createElement("p");
   return ((e.textContent = t), e.innerHTML);
