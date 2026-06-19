@@ -161,7 +161,7 @@ const {
   getCoreProxy: () => T,
   isNewOrBlankTabPageUrl: url => Wo(url),
   pluralize: (key, count) => C(key, count),
-  trimToLengthWithEllipsis: Nn,
+  trimToLengthWithEllipsis: (...args) => Nn(...args),
 });
 const {
   taskFieldNames: Be,
@@ -5816,6 +5816,7 @@ class Qt {
     this.Dt[e].button.i.classList.toggle("on", i);
   }
 }
+let Ce, se;
 const { gr: ra, nl: oa, kr: aa, rl: la, Tr: ha, lt: X, Ar: ca, ol: ua, $r: da, fe: ts, vr: fa, Ir: pa, Or: kn, Mr: ma, Sr: xa, al: es } = createOneTabUiControls({ h: (...a) => c(...a), G: (...a) => L(...a), W: (...a) => z(...a), Xt: Oe, O: (...a) => I(...a), ws: Ne, co: (...a) => Ya(...a), xe: (...a) => ns(...a), z: (...a) => tt(...a), ti: (...a) => Me(...a), Kr: (...a) => Ba(...a), x: (...a) => f(...a), Gs: (...a) => Gn(...a), J: () => U(), Yr: (...a) => Wa(...a), Bs: (...a) => Qe(...a), Ve: (...a) => Js(...a), Qt: (...a) => ye(...a), Zi: (...a) => Li(...a), ze: (...a) => Us(...a), oi: (...a) => Ft(...a), getSettings: () => T, getModal: () => gt, getTheme: () => Ce, getTooltip: () => bt });
 const {
   X: at,
@@ -5842,7 +5843,7 @@ const {
   get Fe() { return $i; },
   get Ft() { return se; },
   get G() { return L; },
-  get Hs() { return Hn; },
+  get Hs() { return 300; },
   get Ht() { return Zt; },
   get Ii() { return ii; },
   get ItemCache() { return ht; },
@@ -5856,8 +5857,8 @@ const {
   get Oe() { return ys; },
   get Oi() { return ke; },
   get P() { return G; },
-  get Pr() { return ga; },
-  get Ps() { return os; },
+  get Pr() { return (...a) => ga(...a); },
+  get Ps() { return (...a) => os(...a); },
   get Qe() { return qs; },
   get Qi() { return Fi; },
   get Si() { return fe; },
@@ -5885,9 +5886,9 @@ const {
   get h() { return c; },
   get he() { return _i; },
   get hi() { return Ee; },
-  get js() { return Nn; },
+  get js() { return (...a) => Nn(...a); },
   get jt() { return oe; },
-  get ks() { return An; },
+  get ks() { return (...a) => An(...a); },
   get lt() { return X; },
   get mi() { return Ze; },
   get ms() { return xn; },
@@ -5913,1206 +5914,134 @@ const {
   get zi() { return Si; },
   get zt() { return Pt; },
 });
-async function Ue({ parentId: t, we: e, N: i, Ri: s }) {
-  let n = Zt();
-  return (
-    s && (s.L.$a = n),
-    await T.Sa({ id: n, parentId: t, we: e, N: i }),
-    n
-  );
-}
-function ga(t) {
-  let e = t.some((n) => n?.G.l.id === "quickList"),
-    i = t.some((n) => n.L.l.id === "trash"),
-    s = t.some((n) => Y(n.l) && !n.l.label);
-  return [
-    ...new Set([
-      ...t.map((n) => (Y(n.l) ? n.l.groupType : n.l.type)),
-      ...I(i, "trash"),
-      ...I(s, "untitled"),
-      ...I(e, "isTreeItemInQuickListRoot"),
-    ]),
-  ];
-}
-function An({ Vc: t, view: e, Ni: i }) {
-  return [
-    X.bi({
-      label: f("selectAll"),
-      name: "all",
-      icon: { I: "select-all", dimension: "14px", left: "0px", top: "1px" },
-      action: () => {
-        (t.yc(), i());
-      },
-    }),
-    ...I(
-      t.$c(e),
-      X.bi({
-        label: f("selectThisAndAbove"),
-        name: "thisAndAbove",
-        icon: { I: "up-arrow", dimension: "10px", left: "1px" },
-        action: () => {
-          (t.gc(e), i());
-        },
-      }),
-    ),
-    ...I(
-      t.Sc(e),
-      X.bi({
-        label: f("selectThisAndBelow"),
-        name: "thisAndBelow",
-        icon: { I: "down-arrow", dimension: "10px", left: "1px" },
-        action: () => {
-          (t.kc(e), i());
-        },
-      }),
-    ),
-    ...I(
-      t.ra() > 1,
-      X.bi({
-        label: f("selectAllExceptThis"),
-        name: "exceptThis",
-        icon: { I: "except-this", dimension: "12px", top: "1px" },
-        action: () => {
-          (t.Tc(e), i());
-        },
-      }),
-    ),
-    ...I(
-      t.ra() > 1,
-      X.bi({
-        label: f("invertSelection"),
-        name: "invert",
-        icon: { I: "invert", dimension: "12px", top: "1px" },
-        action: () => {
-          (t.Ic(e), i());
-        },
-      }),
-    ),
-    ...I(
-      t.Ac(),
-      X.bi({
-        label: f("deselectAll"),
-        name: "clear",
-        icon: { I: "clear", dimension: "12px", top: "1px" },
-        action: () => {
-          (t.vc(e), i());
-        },
-      }),
-    ),
-  ];
-}
-class ka {
-  constructor({ Et: e, h: i, Ar: s, Z: n, B: r, Ot: o, yt: a, xt: l }) {
-    ((this.q = "treeBrowser"),
-      (this.Et = e),
-      (this.h = i),
-      (this.yt = a),
-      (this.Ar = s),
-      (this.Z = n),
-      (this.B = r),
-      (this.Ot = o),
-      (this.xt = l),
-      (this.o = c({})),
-      (this.Oa = (h) => this.L?.Ge(h, this.L)),
-      Sn(this.Oa));
-  }
-  async st() {
-    (this.L?.De({}),
-      (this.L = new _e({
-        yt: this.yt,
-        q: this.q,
-        itemId: "root",
-        $s: async (e, i) => this.Ar(e, i),
-        Pt: !0,
-        Z: this.Z,
-        B: this.B,
-        Ot: this.Ot,
-        xt: this.xt,
-      })),
-      await this.L.st({ h: this.h }),
-      this.o.i.replaceChildren(this.L.o.i));
-  }
-  Vs(e) {
-    this.B = e;
-  }
-  Bh(e) {
-    this.Ot = e;
-  }
-  destroy() {
-    (Ia(this.Oa), (this.Oa = null), this.L?.De({}));
-  }
-}
-class In {
-  constructor({
-    label: e,
-    wf: i,
-    isOpen: s,
-    Ch: n,
-    body: r,
-    fontSize: o = "13px",
-    style: a = {},
-  }) {
-    ((this.isOpen = s),
-      (this.o = c({
-        style: { ...a },
-        children: {
-          header: c({
-            style: {
-              display: "flex",
-              alignItems: "stretch",
-              cursor: "pointer",
-              fontSize: o,
-            },
-            onclick: (l) => {
-              ((this.isOpen = !this.isOpen),
-                fe(this.o.header.Jt.p.style, (h) => {
-                  ((h.transform = `rotate(${this.isOpen ? 90 : U() ? 0 : 180}deg)`),
-                    (h.top = `${s ? 1 : 0}px`));
-                }),
-                (this.o.pu.i.style.display = this.isOpen ? "block" : "none"),
-                n?.(this.isOpen));
-            },
-            children: {
-              Jt: c({
-                className: "tree-item-text",
-                style: {
-                  userSelect: "none",
-                  flex: "0 0 auto",
-                  paddingInlineEnd: "6px",
-                  display: "inline-block",
-                },
-                p: z(
-                  {
-                    width: 20 / 2 + "px",
-                    height: 20 / 2 + "px",
-                    style: {
-                      display: "inline-block",
-                      transform: `rotate(${s ? 90 : U() ? 0 : 180}deg)`,
-                      top: `${s ? 1 : 0}px`,
-                    },
-                  },
-                  (l) =>
-                    `images/tree-twistie-closed-${l ? "light" : "dark"}.png`,
-                ),
-              }),
-              header: c({
-                style: {
-                  paddingInlineStart: "2px",
-                  userSelect: "none",
-                  flex: "0 0 auto",
-                },
-                ...(i && { children: [i] }),
-                ...(!i && { textContent: e }),
-              }),
-            },
-          }),
-          pu: c({ style: { display: this.isOpen ? "block" : "none" }, p: r }),
-        },
-      })));
-  }
-  Hl() {
-    return this.o.pu.p;
-  }
-}
-const fi = (t) => t.url && t.type !== "folder",
-  ss = (t) => !t.url && t.type !== "bookmark";
-function On(t, e = !1, i, s, n) {
-  let r = t.children.filter(fi),
-    o = t.children.some(ss);
-  return c({
-    style: { display: "flex", marginTop: "8px" },
-    children: {
-      bw: c({
-        style: {
-          flex: "0 0 auto",
-          display: e ? "none" : "block",
-          fontSize: "16px",
-          width: "20px",
-        },
-      }),
-      body: c({
-        style: { flex: "1 1 auto" },
-        children: {
-          yw: c({
-            style: { display: "flex", alignItems: "center" },
-            children: {
-              xf: z(
-                {
-                  width: "16px",
-                  height: "16px",
-                  style: {
-                    display: "inline-block",
-                    marginInlineStart: "0px",
-                    marginInlineEnd: "8px",
-                    position: "relative",
-                  },
-                },
-                (a) => `images/folder${a ? "" : "-dark"}.png`,
-              ),
-              title: c({
-                style: { flex: "0 1 auto", fontWeight: 600 },
-                textContent: e ? f("allBookmarks") : t.title,
-              }),
-              gw: c({
-                style: { flex: "0 0 auto" },
-                ...(o && {
-                  p: new mt({
-                    V: !0,
-                    label: f("importFolderAndSubfolders"),
-                    fontSize: "12px",
-                    $: { marginInlineStart: "6px" },
-                    Cs: { padding: "1px 5px" },
-                    onclick: async (a) => {
-                      let l = new Map(),
-                        h = (p) => {
-                          p.children.forEach((x) => {
-                            if (fi(x)) {
-                              let g = St(x.url);
-                              l.has(g) || l.set(g, x);
-                            } else h(x);
-                          });
-                        };
-                      h(t);
-                      let u = await T.Xo(
-                        await Promise.all(
-                          [...l.entries()].map(async ([p, x]) => ({
-                            id: await Si(p),
-                            kt: p,
-                            title: x.title,
-                            nh: x.dateAdded || void 0,
-                          })),
-                        ),
-                      );
-                      u.forEach((p) => (p.parentIds = []));
-                      let d = [],
-                        w = (p, x) => {
-                          let g = p.children.some(ss),
-                            y = p.children.some(fi),
-                            k = new Date().getTime(),
-                            m;
-                          g &&
-                            ((m = {
-                              id: Zt(),
-                              label: p.title || f("importedBookmarks"),
-                              type: "group",
-                              groupType: "folder",
-                              createDate: p.dateAdded ?? k,
-                              modifyDate: p.dateGroupModified ?? k,
-                              parentIds: [x.id],
-                              childIds: [],
-                              pinnedCount: 0,
-                            }),
-                            x.childIds.push(m.id),
-                            d.push(m));
-                          let v = 1e3,
-                            A,
-                            D = () => {
-                              let M = {
-                                id: Zt(),
-                                label: m ? void 0 : p.title,
-                                type: "group",
-                                groupType: "window",
-                                createDate: p.dateAdded ?? k,
-                                modifyDate: p.dateGroupModified ?? k,
-                                parentIds: [m?.id ?? x.id],
-                                childIds: [],
-                                pinnedCount: 0,
-                              };
-                              return (
-                                d.push(M),
-                                (m ?? x).childIds.push(M.id),
-                                M
-                              );
-                            };
-                          (y && (A = D()),
-                            p.children.forEach((M) => {
-                              if (fi(M)) {
-                                let N = St(M.url),
-                                  Z = u.find((dt) => dt.url === N);
-                                (A.childIds.length >= v && (A = D()),
-                                  A.childIds.push(Z.id),
-                                  Z.parentIds.push(A.id));
-                              } else w(M, m);
-                            }));
-                        },
-                        b = await ot(s);
-                      for (; !F(b); ) {
-                        let p = b.parentIds.find(rt);
-                        if (!p)
-                          throw new Error("non-quicklist parent id not found");
-                        b = await ot(p);
-                      }
-                      (w(t, b),
-                        await T.In({ Lo: d, vn: u, O: b.id, An: [d[0].id] }),
-                        n());
-                    },
-                  }),
-                }),
-              }),
-            },
-          }),
-          ...(r.length && {
-            kw: new In({
-              wf: c({
-                style: {
-                  display: "flex",
-                  alignItems: "center",
-                  marginTop: "-3px",
-                },
-                children: {
-                  label: c({ style: {}, textContent: ao(r.length) }),
-                  bf: c({
-                    style: { flex: "0 0 auto" },
-                    p: new mt({
-                      V: !0,
-                      label: f("import"),
-                      fontSize: "12px",
-                      $: { marginInlineStart: "6px" },
-                      Cs: { padding: "1px 5px" },
-                      onclick: async (a) => {
-                        let l = await T.Ma({
-                          Ga: [
-                            r.map(({ title: h, url: u }) => ({
-                              kt: St(u),
-                              title: h,
-                            })),
-                          ],
-                          Gs: i,
-                          O: s,
-                        });
-                        (((l && s !== l && st.an.uo.As) || st.an.uo.Tw) &&
-                          (await Vt({ itemId: s, Zi: l })),
-                          n());
-                      },
-                    }),
-                  }),
-                },
-              }),
-              style: {
-                marginTop: "8px",
-                marginBottom: "10px",
-                marginInlineStart: "25px",
-              },
-              isOpen: !1,
-              body: c({
-                style: { marginTop: "5px", marginBottom: "5px" },
-                children: r.map((a) => $n(a)),
-              }),
-            }),
-          }),
-          Me: c({
-            style: { marginTop: "12px", marginBottom: "12px" },
-            children: {
-              ...t.children.filter(ss).map((a) => On(a, !1, i, s, n)),
-              ...(!t.children.length && {
-                Iw: c({
-                  style: { paddingInlineStart: "26px", fontSize: "12px" },
-                  textContent: f("emptyInBrackets"),
-                }),
-              }),
-            },
-          }),
-        },
-      }),
-    },
-  });
-}
-function $n(t) {
-  let e = (i) => {
-    if (!Et(i))
-      return ((async () => await chrome.tabs.create({ url: t.url }))(), !1);
-  };
-  return c({
-    className: [...I(t.hasBeenRead, "archived")].join(" "),
-    style: {
-      marginInlineStart: "30px",
-      marginBottom: "8px",
-      cursor: "pointer",
-    },
-    children: {
-      Aw: c({
-        children: {
-          title: L("a", {
-            className: "tabLinkText tabLinkTextStripesPossible",
-            href: t.url,
-            onclick: e,
-            textContent: t.title,
-          }),
-        },
-      }),
-      url: L("span", {
-        onclick: e,
-        className: "tabUrlText tabLinkTextStripesPossible",
-        textContent: t.url,
-      }),
-    },
-  });
-}
-async function Ta() {
-  (await va(), await We(), vo());
-}
-async function va() {
-  try {
-    (await chrome.tabs.getCurrent()) &&
-      (await chrome.tabs.update((await chrome.tabs.getCurrent()).id, {
-        autoDiscardable: !1,
-      }));
-  } catch (t) {
-    console.log(t);
-  }
-}
-function lc(t) {
-  return c({ style: { fontSize: "1px", height: t + "px", width: "1px" } }).i;
-}
-let Mn = !1;
-async function Aa(t, e = {}) {
-  if (!Mn) {
-    const s = async () => {
-      if (
-        (
-          await chrome.runtime.sendMessage({
-            args: [],
-            type: "corePing",
-            yf: !0,
-          })
-        )?.result?.pong !== String(mr)
-      )
-        throw new Error("core version mismatch");
-    };
-    try {
-      await s();
-    } catch (n) {
-      if (n.message === "core version mismatch") throw n;
-      (console.log(n),
-        console.log("core not ready. retrying..."),
-        await le(1e3));
-      try {
-        await s();
-      } catch (r) {
-        (console.log(r),
-          console.log("core not ready. retrying..."),
-          await le(5e3));
-        try {
-          await s();
-        } catch (o) {
-          throw (console.log(o), new Error("Cannot connect to core"));
-        }
-      }
-    }
-    Mn = !0;
-  }
-  ((e.type = t), (e.yf = !0));
-  let i = await chrome.runtime.sendMessage(e);
-  if (i === null) throw new Error("null message response from core");
-  if (i?.gf) throw new Error(i.gf);
-  return i.result;
-}
-const hc = new Proxy(
-  {},
-  {
-    get(t, e) {
-      return e;
-    },
-  },
-);
-let pi = [];
-function Sn(t) {
-  pi.push(t);
-}
-function Ia(t) {
-  let e = pi.indexOf(t);
-  e >= 0 && pi.splice(e, 1);
-}
-chrome.runtime.onMessage.addListener((t, e, i) => {
-  t.type === "stateChange" && pi.forEach((s) => s(t.$w));
+const {
+  pi: Ue,
+  Pr: ga,
+  ks: An,
+  Fr: ka,
+  Ts: In,
+  Pi: fi,
+  pe: ss,
+  As: On,
+  $s: $n,
+  hl: Ta,
+  Er: va,
+  ul: lc,
+  vs: Mn,
+  Br: Aa,
+  cl: hc,
+  Fi: pi,
+  Hr: Sn,
+  jr: Ia,
+  A: T,
+  Vt: We,
+  Nr: Oa,
+  xi: Et,
+  Yt: Kt,
+  Ei: $e,
+  Bi: Bt,
+  fl: cc,
+  Is: Dn,
+  qr: $a,
+  Rr: Ma,
+  Hi: mi,
+  Os: Fn,
+  Ms: Ln,
+  Ur: Sa,
+  Ss: Pn,
+  Ls: qe,
+  Ds: jn,
+  Wr: Re,
+  xe: ns,
+  we: xi,
+  Gs: Gn,
+  Cr: rs,
+  dl: Da,
+  Ps: os,
+  pl: uc,
+  zr: Fa,
+  Jr: La,
+  xl: Pa,
+  me: as,
+  Qr: ja,
+  Fs: En,
+  wl: dc,
+  ml: fc,
+  Zr: Ga,
+  Es: Bn,
+  ti: Me,
+  z: tt,
+  mi: Ze,
+  _r: Ea,
+  bi: Je,
+  ji: ce,
+  Bs: Qe,
+  Kr: Ba,
+  Hs: Hn,
+  js: Nn,
+  bl: Ha,
+  yl: pc,
+  Xr: Na,
+  Vr: za,
+  gl: mc,
+  be: ls,
+  kl: Ua,
+  Yr: Wa,
+  to: zn,
+  Tl: xc,
+  Al: wc,
+  et: lt,
+} = globalThis.createOneTabTreeActions({
+  get $i() { return ei; },
+  get Ai() { return we; },
+  get B() { return B; },
+  get Cn() { return io; },
+  get Di() { return mt; },
+  get Fe() { return $i; },
+  get G() { return L; },
+  get Hn() { return Vr; },
+  get Ht() { return Zt; },
+  get ItemCache() { return ht; },
+  get J() { return U; },
+  get L() { return F; },
+  get Ns() { return cs; },
+  get O() { return I; },
+  get Se() { return _e; },
+  get Si() { return fe; },
+  get Sn() { return si; },
+  get Sr() { return xa; },
+  get W() { return z; },
+  get Xe() { return Hi; },
+  get Yi() { return Ni; },
+  get Ze() { return Nt; },
+  get _() { return it; },
+  get _i() { return be; },
+  get _n() { return ao; },
+  get ci() { return He; },
+  get cs() { return un; },
+  get dt() { return Y; },
+  get en() { return mr; },
+  get getItemById() { return ot; },
+  get getItems() { return Ut; },
+  get h() { return c; },
+  get hi() { return Ee; },
+  get lt() { return X; },
+  get mt() { return Dt; },
+  get navigateToItem() { return Vt; },
+  get oneTabPage() { return st; },
+  get ot() { return kt; },
+  get qt() { return le; },
+  get rr() { return vo; },
+  get ss() { return _s; },
+  get te() { return zi; },
+  get ut() { return rt; },
+  get x() { return f; },
+  get xt() { return wt; },
+  get yt() { return St; },
+  get zi() { return Si; },
+  get zt() { return Pt; },
+  setThemeState({ wi: i, Ft: t }) { Ce = i; se = t; },
 });
-const T = Hi(
-  new Proxy(
-    {},
-    {
-      get(t, e, i) {
-        return (...s) => ((s = Ni(s, void 0, io)), Aa(e, { args: s }));
-      },
-    },
-  ),
-  "core",
-);
-async function We() {
-  return new Promise((t, e) => {
-    document.readyState === "complete"
-      ? t()
-      : document.addEventListener("readystatechange", (i) => {
-          document.readyState === "complete" && t();
-        });
-  });
-}
-function Oa(t) {
-  if (!t || t.toLowerCase().startsWith("file://")) return "";
-  if (t.indexOf("://docs.google.com/spreadsheets/d/") !== -1)
-    return "docs.google.com-spreadsheets";
-  if (t.indexOf("://docs.google.com/document/d/") !== -1)
-    return "docs.google.com-document";
-  if (t.indexOf("://docs.google.com/presentation/d/") !== -1)
-    return "docs.google.com-presentation";
-  if (t.indexOf("://docs.google.com/forms/d/") !== -1)
-    return "docs.google.com-forms";
-  let e = $i(t);
-  return (e.endsWith(".wikipedia.org") && (e = "wikipedia.org"), e);
-}
-function Et(t) {
-  return Kt(t) || $e(t);
-}
-function Kt(t) {
-  return t.ctrlKey || t.metaKey;
-}
-function $e(t) {
-  return t.shiftKey;
-}
-function Bt(t) {
-  return t.altKey;
-}
-function cc(t) {
-  let e = document.createElement("span"),
-    i = t.indexOf("OneTab"),
-    s = i + "OneTab".length;
-  return (
-    i === 0
-      ? (e.appendChild(Dn()),
-        e.appendChild(document.createTextNode(t.substring(s))))
-      : (e.appendChild(document.createTextNode(t.substring(0, i))),
-        e.appendChild(Dn()),
-        s !== t.length &&
-          e.appendChild(document.createTextNode(t.substring(s)))),
-    e
-  );
-}
-function Dn() {
-  let t = document.createElement("span"),
-    e = document.createElement("span");
-  return (
-    (e.style.fontStyle = "italic"),
-    e.appendChild(document.createTextNode("One")),
-    t.appendChild(e),
-    t.appendChild(document.createTextNode("Tab")),
-    t
-  );
-}
-async function $a(t) {
-  return new Promise((e, i) => {
-    let s = {
-        alpha:
-          "UklGRkoAAABXRUJQVlA4WAoAAAAQAAAAAAAAAAAAQUxQSAwAAAARBxAR/Q9ERP8DAABWUDggGAAAABQBAJ0BKgEAAQAAAP4AAA3AAP7mtQAAAA==",
-      },
-      n = new Image();
-    ((n.onload = () => {
-      let r = n.width > 0 && n.height > 0;
-      e(r);
-    }),
-      (n.onerror = () => {
-        e(!1);
-      }),
-      (n.src = "data:image/webp;base64," + s[t]));
-  });
-}
-async function Ma(t) {
-  return new Promise((e, i) => {
-    let s = new Image();
-    ((s.onload = () => {
-      e(Pn(s));
-    }),
-      (s.onerror = (n) => {
-        i(n);
-      }),
-      (s.src = t));
-  });
-}
-let mi = document.createElement("canvas");
-((mi.width = 32), (mi.height = 32));
-let Fn = mi.getContext("2d"),
-  Ln = "data:image/png;base64,",
-  Sa = Ln.length;
-function Pn(t) {
-  (Fn.clearRect(0, 0, 32, 32), Fn.drawImage(t, 0, 0, 32, 32));
-  let e = mi.toDataURL("image/png");
-  return e.startsWith(Ln) ? e.substring(Sa) : e;
-}
-async function qe(t) {
-  let { Sw: e, Ow: i } = await T.Mw(t);
-  return e ? (await Re(), []) : i;
-}
-function jn() {
-  return f("chromeIncognitoInstructions");
-}
-async function Re() {
-  let t = f("incogitoPermissionRequired") + " " + jn(),
-    e = f("privateBrowsingPermissionRequired") + " " + jn();
-  await Pt(t);
-}
-function ns({ style: t = {}, uh: e = 7 }) {
-  let i = c({
-    className: "spinner",
-    style: { opacity: "1", ...t },
-    children: Object.fromEntries(
-      Vr(e).map((s) => [s, document.createElement("div")]),
-    ),
-  }).i;
-  return (i.animate([{ opacity: "0" }, { opacity: "1" }], 100), i);
-}
-async function xi({
-  h: t,
-  itemId: e,
-  fontSize: i,
-  Qo: s,
-  jl: n = !0,
-  prefix: r,
-}) {
-  (r || (r = f("locationColon")), await t.ke());
-  let o = await t.Hn(e, s);
-  return L("span", {
-    style: { fontSize: i ?? "12px" },
-    children: {
-      ...(n && { Gw: L("span", { textContent: `${r}  ` }) }),
-      ...zi(
-        o.map((a, l) => ({
-          [`loc${l}`]: L("span", {
-            dir: "auto",
-            style: { cursor: "pointer" },
-            textContent: He({ groupId: a.id, h: t, l: a }),
-            onclick: async (h) => {
-              await T.ec({ itemId: a.id, Zi: l === 0 ? a.id : o[l - 1].id });
-            },
-          }),
-        })),
-        () => L("span", { textContent: `  ${U() ? "➝" : "⭠"}  ` }),
-      ),
-    },
-  });
-}
-async function Gn({ Et: t, groups: e, h: i, he: s, oe: n }) {
-  return (
-    await Promise.all(e.map(async (o) => [...(await i.Hn(o.id)), o]))
-  ).map((o) =>
-    c({
-      className: "groupPath",
-      children: o.map((a, l) =>
-        c({
-          style: {
-            display: "inline-block",
-            textIndent: 0,
-            whiteSpace: "nowrap",
-          },
-          p: c({
-            style: { display: "flex", alignItems: "flex-start" },
-            children: [
-              c({
-                style: {
-                  display: "inline-block",
-                  position: "relative",
-                  top: "4px",
-                  visibility: l === 0 ? "hidden" : "visible",
-                },
-                textContent:
-                  l === 0 ? `${U() ? "➝" : "⭠"}` : `  ${U() ? "➝" : "⭠"}  `,
-              }),
-              ...I(
-                F(a),
-                c({
-                  className: "tree-item-text",
-                  p: z(
-                    {
-                      width: "13px",
-                      height: "13px",
-                      style: {
-                        display: "inline-block",
-                        marginInlineStart: `${l === 0 ? 0 : 16}px`,
-                        marginInlineEnd: "4px",
-                        position: "relative",
-                        top: "6px",
-                      },
-                    },
-                    (h) => `images/folder${h ? "" : "-dark"}.png`,
-                  ),
-                }),
-              ),
-              ...I(
-                kt(a),
-                c({
-                  style: { display: "inline-block", paddingTop: "4px" },
-                  p: un({
-                    color: a.color,
-                    dimension: "11px",
-                    $: {
-                      position: "relative",
-                      top: "1px",
-                      marginInlineStart: `${l === 0 ? 0 : 7}px`,
-                      marginInlineEnd: "4px",
-                    },
-                  }),
-                }),
-              ),
-              new xa({
-                padding: "2px",
-                marginInline: "0px -4px",
-                marginBlock: "0px 0px",
-                label: a.label || (it(a) ? f("all") : f("untitled")),
-                oe: n,
-                qd: () => s(a),
-              }),
-            ],
-          }),
-        }),
-      ),
-    }),
-  );
-}
-async function rs({ kf: t, Tf: e }) {
-  return navigator.clipboard.write([
-    new ClipboardItem({
-      ...(t && { "text/plain": t() }),
-      ...(e && { "text/html": e() }),
-    }),
-  ]);
-}
-async function Da(t) {
-  try {
-    return (await T.corePing(), !0);
-  } catch {
-    let i = c({
-      style: { padding: "40px" },
-      children: {
-        Dw: L("div", {
-          children: {
-            a: L("span", { textContent: f("oneTabRestartRequired") + " " }),
-            b: L("a", {
-              style: { cursor: "pointer", textDecoration: "underline" },
-              onclick: () => chrome.runtime.reload(),
-              textContent: f("clickHereToContinue"),
-            }),
-          },
-        }),
-        Pw: L("div", {
-          p: L("div", {
-            style: { paddingTop: "20px" },
-            textContent: f("mayNeedToRestartBrowser"),
-          }).i,
-        }),
-      },
-    });
-    return (t.replaceChildren(i.i), !1);
-  }
-}
-async function os({
-  Hi: t = !1,
-  Me: e,
-  views: i,
-  ia: s,
-  pn: n,
-  sa: r,
-  ea: o,
-  Lw: a,
-  Ew: l,
-  bc: h,
-  pf: u = 10,
-}) {
-  let d = !1,
-    w = 0;
-  for (let p = 0; p < o.length; p++) {
-    let x = o[p],
-      g = i.findIndex((m, v) => v >= p && s(m) === x.id),
-      y = i[g],
-      k = y && n(y);
-    if (!t && k && !y?.tu)
-      (g > p && (i.splice(g, 1), i.splice(p, 0, y)),
-        e.children.item(p) !== k && e.insertBefore(k, e.children.item(p)),
-        k.classList.remove("fadeOutTransition", "fadedOut"));
-    else {
-      if ((w++, a?.())) {
-        d = !0;
-        break;
-      }
-      let m = g >= p ? i[g] : void 0;
-      if ((w % u === 0 && (await le(0)), (y = await r(x.id, x.index)), y)) {
-        let v = n(y);
-        if (!v) (y.De?.({ pi: !0 }), (y = m));
-        else {
-          let A = p;
-          if (m) {
-            let D = i.indexOf(m);
-            D >= 0 && (m.De?.({ pi: !0 }), i.splice(D, 1), D < A && A--);
-          }
-          (e.insertBefore(v, e.children.item(A)), i.splice(A, 0, y));
-        }
-      } else m && (y = m);
-    }
-    y && ((y.index = x.index), h?.(y));
-  }
-  if ((a?.() && (d = !0), d)) {
-    l();
-    return;
-  }
-  for (; i.length > o.length; ) {
-    let p = i[i.length - 1];
-    if (!p) {
-      i.splice(i.length - 1, 1);
-      continue;
-    }
-    let x = p && n(p),
-      g = !x || x.parentElement !== e;
-    (p.De({ pi: g }), i.splice(i.length - 1, 1));
-  }
-  let b = new Set(i.map((p) => n(p)).filter(Boolean));
-  [...e.children].forEach((p) => {
-    b.has(p) || p.remove();
-  });
-}
-async function uc(t) {
-  return Object.fromEntries(
-    await Promise.all(
-      t.map(
-        (e) =>
-          new Promise((i) => {
-            let s = new Image();
-            ((s.onload = () => i([e, s])), (s.src = e));
-          }),
-      ),
-    ),
-  );
-}
-let Ce;
-async function Fa() {
-  ((Ce = await T.ks("theme")), as());
-}
-function La() {
-  return !window.matchMedia?.("(prefers-color-scheme: dark)").matches;
-}
-async function Pa(t) {
-  (await T.bt("theme", t), (Ce = t), as());
-}
-let se;
-function as() {
-  ((se = { auto: La(), light: !0, dark: !1 }[Ce]),
-    ja(),
-    [...document.querySelectorAll(".lightDarkInnerImg")].forEach((t) => {
-      t.src = t.dataset[se ? "lightSrc" : "darkSrc"];
-    }),
-    En.forEach((t) => t()));
-}
-function ja() {
-  let [t, e] = {
-    auto: ["(prefers-color-scheme: light)", "(prefers-color-scheme: dark)"],
-    light: ["all", "not(all)"],
-    dark: ["not(all)", "all"],
-  }[Ce];
-  [...document.styleSheets]
-    .flatMap((i) => [...i.cssRules])
-    .filter(
-      (i) =>
-        i instanceof CSSMediaRule &&
-        [...i.cssRules].some((s) => s.selectorText === ":root"),
-    )
-    .forEach((i, s) => (i.media = s % 2 === 0 ? t : e));
-}
-let En = [];
-function dc(t) {
-  En.push(t);
-}
-window
-  .matchMedia("(prefers-color-scheme: dark)")
-  .addEventListener("change", (t) => {
-    as();
-  });
-function fc() {
-  return c({
-    style: {
-      flex: "0 1 auto",
-      cursor: "pointer",
-      display: "flex",
-      alignItems: "center",
-      marginInlineStart: "auto",
-      gap: "8px",
-    },
-    onclick: async (t) => {
-      (await T.dl({}), window.close());
-    },
-    children: [
-      z(
-        {
-          dimension: "10px",
-          style: { transform: `rotate(${U() ? 90 : 270}deg)` },
-        },
-        (t) => `images/down-arrow${t ? "" : "-dark"}.png`,
-      ),
-      c({ textContent: f("returnToOneTab") }),
-    ],
-  });
-}
-function Ga(t, e) {
-  const { top: i, bottom: s, height: n } = t.getBoundingClientRect(),
-    r = e.getBoundingClientRect();
-  return i <= r.top ? r.top - i <= n : s - r.bottom <= n;
-}
-async function Bn(t) {
-  let e = new ht(),
-    i = await e.ht(t);
-  return (F(i) || (await e.Te({ groupId: t })), e);
-}
-function Me(t) {
-  return !t.isComposing && (t.key === "Escape" || t.key === "Esc");
-}
-function tt(t, e, i, s = !1) {
-  return new _s({
-    listener: i,
-    Ka: () => t.addEventListener(e, i, s),
-    Bs: () => t.removeEventListener(e, i, s),
-  });
-}
-function Ze(t, e) {
-  return tt(t, "pointerover", e);
-}
-function Ea(t, e) {
-  return tt(t, "pointermove", e);
-}
-function Je(t, e) {
-  return tt(t, "pointerleave", e);
-}
-async function ce({ rt: t, O: e, N: i }) {
-  let s = await Ut(t.map((o) => o.itemId)),
-    n = await ot(e);
-  if (s.some(F) && !F(n))
-    throw new Error(
-      "folder should not have been allowed to have been moved here",
-    );
-  if (s.some(B) && s.some(si(B)))
-    throw new Error("Can't mix tabs with groups during smart move");
-  let r = new Set(s.map(ls));
-  if (r.size > 1)
-    throw new Error(
-      `Can't mix the following types during smart move: ${[...r].join()}`,
-    );
-  {
-    let o = new ht();
-    await o.ke();
-    let [a, l] = be(t, (b) => b.sourceParentId),
-      h = new Set(
-        (await o.getItems([...new Set(l.map((b) => b.itemId))]))
-          .filter(B)
-          .map(Nt),
-      );
-    a = a.filter((b) => !h.has(b.itemId));
-    let [u, d] = be(l, (b) => h.has(b.itemId)),
-      w = [];
-    for (let b of u) {
-      let p = b.itemId,
-        x = o.v(p),
-        g = x.parentIds.map((k) => o.v(k)),
-        y = [];
-      if (
-        (g.forEach((k) =>
-          k.childIds
-            .filter((m) => m === x.id)
-            .forEach((m, v) => y.push(wt({ itemId: x.id, Fe: k.id, zt: v }))),
-        ),
-        e === "trash")
-      )
-        y.forEach((k) => a.push(k));
-      else {
-        let k = y[0];
-        (a.push(k), y.slice(1).forEach((v) => w.push(v)));
-      }
-    }
-    if (w.length) {
-      let b = await T.gs(w);
-      (await T.move({ rt: w, O: "delete" }), await T.Oe(b));
-    }
-    t = [...a, ...d];
-  }
-  if (e === "trash") {
-    let o = await T.gs(t);
-    (await T.move({ rt: t, O: e, N: i }), await T.Oe(o));
-  } else if (s.some(B) && F(n)) {
-    let o = await cs({ O: e, N: i }),
-      a = await T.gs(t);
-    (await T.move({ rt: t, O: o }), await T.Oe(a));
-  } else if (s.some(Dt) && Dt(n)) {
-    let o = 0;
-    for (let a of t) {
-      let l = a.itemId,
-        h = await ot(l);
-      if (Dt(h)) {
-        let u = await Ut(h.childIds);
-        if (!0) {
-          let w = [];
-          (u.forEach((b, p) => {
-            B(b)
-              ? w.push(
-                  wt({
-                    itemId: b.id,
-                    zt: h.childIds.slice(0, p).filter((x) => x === b.id).length,
-                    Fe: h.id,
-                  }),
-                )
-              : w.push(wt({ itemId: b.id }));
-          }),
-            await T.move({ rt: w, O: e, N: i === void 0 ? void 0 : i + o }),
-            (o += u.length),
-            await T.Oe([a.itemId], !0));
-        } else {
-          let [w, b] = be(u, B);
-          (b.length &&
-            (await T.move({
-              rt: b.map((p) => wt({ itemId: p.id })),
-              O: e,
-              N: i === void 0 ? void 0 : i + o,
-            }),
-            (o += b.length)),
-            w.length
-              ? (await T.Fi(h.id, { groupType: "tabGroup", color: Ee }),
-                await T.move({
-                  rt: [a],
-                  O: e,
-                  N: i === void 0 ? void 0 : i + (o - b.length),
-                }),
-                o++)
-              : await T.Oe([a.itemId], !0));
-        }
-      } else if (kt(h)) {
-        let u = await T.gs([a]);
-        (await T.move({ rt: [a], O: e, N: i === void 0 ? void 0 : i + o++ }),
-          await T.Oe(u));
-      }
-    }
-  } else if ((s.some(kt) || s.some(Dt)) && kt(n)) {
-    let o = new ht(),
-      a = [],
-      l = [];
-    const h = (u, d, w) => {
-      if (Y(u)) {
-        let b = u;
-        (o.ul(b.childIds).forEach((x, g) => h(x, u, g)), l.push(b));
-      } else
-        a.push(
-          wt({
-            itemId: u.id,
-            zt: d.childIds.slice(0, w).filter((b) => b === u.id).length,
-            Fe: d.id,
-          }),
-        );
-    };
-    for (let u of t) {
-      let d = u.itemId;
-      await o.Te({ groupId: d });
-      let w = o.v(d),
-        b = await o.ht(w.parentIds.find(rt));
-      h(w, b);
-    }
-    (a.length && (await T.move({ rt: a, O: e, N: i })),
-      await T.Oe(l.map(Nt), !0));
-  } else {
-    let o = await T.gs(t);
-    (await T.move({ rt: t, O: e, N: i }), await T.Oe(o));
-  }
-}
-function Qe({
-  i: t,
-  zc: e,
-  duration: i,
-  Uc: s,
-  Fw: n = (r) => (r ? "ease-in" : "ease-out"),
-}) {
-  let r = [
-    Object.fromEntries(e.map(({ name: o, before: a }) => [o, a])),
-    Object.fromEntries(e.map(({ name: o, after: a }) => [o, a])),
-  ];
-  (s || r.reverse(),
-    t.animate(r, { duration: i, jw: 1, Bw: n(s) }),
-    e.forEach((o) => (t.style[o.name] = s ? o.after : o.before)));
-}
-function Ba(t) {
-  let e = t.parentElement;
-  for (; e; ) {
-    const i = window.getComputedStyle(e);
-    if (i.overflow === "auto" || i.overflowY === "auto") return e;
-    e = e.parentElement;
-  }
-  return document.body;
-}
-const Hn = 300;
-function Nn(t, e) {
-  return t?.length > e ? `${t.substring(0, e)}…` : t;
-}
-function Ha(t) {
-  const e = new Date(t + "T00:00:00Z");
-  return (e.setUTCDate(e.getUTCDate() + 1), e.toISOString().split("T")[0]);
-}
-async function pc(t) {
-  let e = await chrome.tabs.query({ groupId: t });
-  return await Na(e);
-}
-async function Na(t) {
-  return await Promise.all(
-    t.map(async (e) => {
-      let i = St(e.url || e.pendingUrl);
-      return { fl: e, Eo: await Si(i), kt: i, At: e.id, di: e.groupId };
-    }),
-  );
-}
-function za(t) {
-  return St(t.url || t.pendingUrl);
-}
-function mc(t) {
-  return ei(za(t));
-}
-function ls(t) {
-  let e = "undef";
-  return (
-    t.type === "tab"
-      ? (e = "tab")
-      : t.type === "group" &&
-        (t.groupType === "folder" ? (e = "folder") : (e = "group")),
-    e
-  );
-}
-async function Ua() {
-  try {
-    let t = await chrome.permissions.request({ origins: [`${we}/*`] });
-    return (t && (await T.Cw()), t);
-  } catch (t) {
-    return (
-      console.log(
-        "chrome.permissions.request for one-tab.com host failed with error:",
-      ),
-      console.log(t),
-      !1
-    );
-  }
-}
-function Wa(t) {
-  if (!t || t.nodeType !== 1) return !1;
-  if (t.isContentEditable) return !0;
-  const e = t.tagName;
-  if (e === "TEXTAREA") return !0;
-  if (e === "INPUT") {
-    const s = (t.getAttribute("type") || "text").toLowerCase();
-    return !/^(button|checkbox|color|file|hidden|image|radio|range|reset|submit)$/.test(
-      s,
-    );
-  }
-  const i = t.getAttribute("role");
-  return i === "textbox" || i === "searchbox" || i === "combobox";
-}
-function zn(t) {
-  return `${we}/page/${t}`;
-}
-const xc = Symbol("dropHandled"),
-  wc = Symbol("dragOverHandled"),
-  lt = c({
-    id: "landingDiv",
-    style: {
-      background: "var(--drop-area-gradient)",
-      border: "var(--drop-area-border)",
-      marginInline: "14px",
-    },
-  }).i;
 let G = {};
 function Ht() {
   (lt.remove(),
