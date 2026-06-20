@@ -5817,7 +5817,7 @@ class Qt {
   }
 }
 let Ce, se;
-const { gr: ra, nl: oa, kr: aa, rl: la, Tr: ha, lt: X, Ar: ca, ol: ua, $r: da, fe: ts, vr: fa, Ir: pa, Or: kn, Mr: ma, Sr: xa, al: es } = createOneTabUiControls({ h: (...a) => c(...a), G: (...a) => L(...a), W: (...a) => z(...a), Xt: Oe, O: (...a) => I(...a), ws: Ne, co: (...a) => Ya(...a), xe: (...a) => ns(...a), z: (...a) => tt(...a), ti: (...a) => Me(...a), Kr: (...a) => Ba(...a), x: (...a) => f(...a), Gs: (...a) => Gn(...a), J: () => U(), Yr: (...a) => Wa(...a), Bs: (...a) => Qe(...a), Ve: (...a) => Js(...a), Qt: (...a) => ye(...a), Zi: (...a) => Li(...a), ze: (...a) => Us(...a), oi: (...a) => Ft(...a), getSettings: () => T, getModal: () => gt, getTheme: () => Ce, getTooltip: () => bt });
+const { gr: ra, nl: oa, kr: aa, rl: la, Tr: ha, lt: X, Ar: ca, ol: ua, $r: da, fe: ts, vr: fa, Ir: pa, Or: kn, Mr: ma, Sr: xa, al: es } = createOneTabUiControls({ h: (...a) => c(...a), G: (...a) => L(...a), W: (...a) => z(...a), Xt: Oe, O: (...a) => I(...a), ws: Ne, co: (...a) => Ya(...a), xe: (...a) => ns(...a), z: (...a) => tt(...a), ti: (...a) => Me(...a), Kr: (...a) => Ba(...a), x: (...a) => f(...a), Gs: (...a) => Gn(...a), J: () => U(), Yr: (...a) => Wa(...a), Bs: (...a) => Qe(...a), Ve: (...a) => Js(...a), Qt: (...a) => ye(...a), Zi: (...a) => Li(...a), ze: (...a) => Us(...a), oi: (...a) => Ft(...a), St: (...a) => Wt(...a), getSettings: () => T, getModal: () => gt, getTheme: () => Ce, getTooltip: () => bt });
 const {
   X: at,
   st: yt,

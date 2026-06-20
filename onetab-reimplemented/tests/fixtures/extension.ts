@@ -29,6 +29,24 @@ export interface BrowserWindowSeed {
   tabs: BrowserTabSeed[];
 }
 
+export interface StoredOneTabSeed {
+  groups?: StoredOneTabGroupSeed[];
+}
+
+export interface StoredOneTabGroupSeed {
+  groupType?: "folder" | "tabGroup" | "window";
+  id?: string;
+  label?: string;
+  tabs: StoredOneTabTabSeed[];
+}
+
+export interface StoredOneTabTabSeed {
+  id?: string;
+  notes?: string;
+  title: string;
+  url: string;
+}
+
 export interface OpenPageOptions {
   colorScheme?: "dark" | "light" | "no-preference";
   viewport?: { height: number; width: number };
@@ -80,6 +98,7 @@ export interface ExtensionHarness {
   ): Promise<unknown>;
   pageTextSnapshot(pathname: string): Promise<unknown>;
   runtimeSnapshot(): Promise<unknown>;
+  seedStoredOneTabData(seed: StoredOneTabSeed): Promise<void>;
 }
 
 interface ExtensionPair {
@@ -305,6 +324,9 @@ async function launchExtension(
         extensionId,
       );
     },
+    async seedStoredOneTabData(seed: StoredOneTabSeed) {
+      await serviceWorker.evaluate(seedStoredOneTabData, seed);
+    },
   };
 }
 
@@ -468,6 +490,107 @@ async function createBrowserState(
   );
 }
 
+async function seedStoredOneTabData(seed: StoredOneTabSeed) {
+  const now = 1_704_067_200_000;
+
+  function requestResult<T>(request: IDBRequest<T>): Promise<T> {
+    return new Promise((resolve, reject) => {
+      request.onerror = () => reject(request.error);
+      request.onsuccess = () => resolve(request.result);
+    });
+  }
+
+  function transactionDone(transaction: IDBTransaction): Promise<void> {
+    return new Promise((resolve, reject) => {
+      transaction.onabort = () => reject(transaction.error);
+      transaction.onerror = () => reject(transaction.error);
+      transaction.oncomplete = () => resolve();
+    });
+  }
+
+  const database = await requestResult(indexedDB.open("onetab", 2));
+  try {
+    const transaction = database.transaction("item", "readwrite");
+    const store = transaction.objectStore("item");
+    await requestResult(store.clear());
+
+    const groups = seed.groups ?? [];
+    const rootChildIds = groups.map((group, groupIndex) =>
+      group.id ?? `test-group-${groupIndex + 1}`,
+    );
+    const systemItems = [
+      {
+        childIds: rootChildIds,
+        createDate: now,
+        groupType: "folder",
+        id: "root",
+        modifyDate: now,
+        parentIds: [],
+        pinnedCount: 0,
+        type: "group",
+      },
+      {
+        childIds: [],
+        createDate: now,
+        groupType: "quickList",
+        id: "quickList",
+        modifyDate: now,
+        parentIds: [],
+        pinnedCount: 0,
+        type: "group",
+      },
+      {
+        childIds: [],
+        createDate: now,
+        groupType: "folder",
+        id: "trash",
+        modifyDate: now,
+        parentIds: [],
+        pinnedCount: 0,
+        type: "group",
+      },
+    ];
+
+    for (const item of systemItems) store.put(item);
+
+    groups.forEach((group, groupIndex) => {
+      const groupId = group.id ?? `test-group-${groupIndex + 1}`;
+      const childIds = group.tabs.map(
+        (tab, tabIndex) => tab.id ?? `${groupId}-tab-${tabIndex + 1}`,
+      );
+
+      store.put({
+        childIds,
+        createDate: now + groupIndex + 1,
+        groupType: group.groupType ?? "window",
+        id: groupId,
+        label: group.label,
+        modifyDate: now + groupIndex + 1,
+        parentIds: ["root"],
+        pinnedCount: 0,
+        type: "group",
+      });
+
+      group.tabs.forEach((tab, tabIndex) => {
+        store.put({
+          createDate: now + groupIndex * 100 + tabIndex + 10,
+          id: childIds[tabIndex],
+          modifyDate: now + groupIndex * 100 + tabIndex + 10,
+          notes: tab.notes ? { text: tab.notes } : undefined,
+          parentIds: [groupId],
+          title: tab.title,
+          type: "tab",
+          url: tab.url,
+        });
+      });
+    });
+
+    await transactionDone(transaction);
+  } finally {
+    database.close();
+  }
+}
+
 function escapeHtml(value: string) {
   return value
     .replaceAll("&", "&amp;")
@@ -513,6 +636,15 @@ function collectPageErrors(
   page: Page,
   errors: string[],
 ) {
+  page
+    .addInitScript(() => {
+      window.addEventListener("unhandledrejection", (event) => {
+        console.error(
+          `unhandledrejection: ${event.reason?.stack ?? event.reason}`,
+        );
+      });
+    })
+    .catch(() => {});
   page.on("pageerror", (error) =>
     errors.push(`${label} ${page.url()} pageerror: ${error.message}`),
   );

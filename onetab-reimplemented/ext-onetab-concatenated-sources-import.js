@@ -148,8 +148,8 @@ const {
   true3: cl,
   leadingNonAlphanumeric: fl,
   measureElement: dl,
-  modelPredicates: { isUndefined: ja, isDefined: Zn, hasId: Ua, doesNotHaveId: Jn, sameIdAs: qa, getId: Vt, isTab: j, isRoot: V, isTrash: yt, isFolder: G, isUserFolder: Na, isFolderOrWindowGroup: Ca, isGroup: _, isTabGroup: ct, isSharedAndNotExpired: Qn },
-  collectionHelpers: { compareDescendingBy: _t, compareLocaleBy: Kn, compareLocaleNumericBy: Wa, mergeOwnProperty: za, groupBy: Qa, range: Xn, nthIndexOf: Ka },
+  modelPredicates: { isUndefined: ja, isDefined: Zn, hasId: Ua, doesNotHaveId: Jn, sameIdAs: qa, getId: Vt, isTab: j, isRoot: V, isTrash: yt, isFolder: G, isUserFolder: Na, isFolderOrWindowGroup: Ca, isGroup: _, isTabGroup: ct, isWindowGroup: $t, isBrowserGroup: zt, isSharedAndNotExpired: Qn },
+  collectionHelpers: { compareDescendingBy: _t, mapBy: Kn, compareLocaleNumericBy: Wa, mergeOwnProperty: za, groupBy: Qa, range: Xn, nthIndexOf: Ka },
   searchHelpers: { splitSearchText: _n, splitSearchTextWithTerm: Yn },
   runtimeHelpers: { delay: Zt, replaceValueDeep: ui, isOpera: sr, isBrave: el, isMicrosoftEdge: nr, unsleepTab: il, mergeObjectsWithSeparators: ci, intersperse: sl, callIfOwnProperty: fi, callIfDefined: rr, joinUniqueTrimmed: nl },
   domTransitionHelpers: { fadeOut: or, fadeIn: rl },
@@ -4462,7 +4462,7 @@ class qr {
   }
 }
 let ve, Ut;
-const { gr: Ur, nl: $l, kr: Rr, rl: Il, Tr: Nr, lt: dt, Ar: Wr, ol: vl, $r: Cr, fe: Ii, vr: Ls, Ir: Gs, Or: zr, Mr: Zr, Sr: Jr, al: Ol } = createOneTabUiControls({ h: (...a) => f(...a), G: (...a) => F(...a), W: (...a) => C(...a), Xt: oe, O: (...a) => O(...a), ws: Is, co: (...a) => Do(...a), xe: (...a) => Mi(...a), z: (...a) => J(...a), ti: (...a) => le(...a), Kr: (...a) => yo(...a), x: (...a) => w(...a), Gs: (...a) => Ws(...a), J: () => K(), Yr: (...a) => ko(...a), Bs: (...a) => Js(...a), Ve: (...a) => ls(...a), Qt: (...a) => ee(...a), Zi: (...a) => ni(...a), ze: (...a) => ss(...a), oi: (...a) => xe(...a), getSettings: () => A, getModal: () => It, getTheme: () => ve, getTooltip: () => ut });
+const { gr: Ur, nl: $l, kr: Rr, rl: Il, Tr: Nr, lt: dt, Ar: Wr, ol: vl, $r: Cr, fe: Ii, vr: Ls, Ir: Gs, Or: zr, Mr: Zr, Sr: Jr, al: Ol } = createOneTabUiControls({ h: (...a) => f(...a), G: (...a) => F(...a), W: (...a) => C(...a), Xt: oe, O: (...a) => O(...a), ws: Is, co: (...a) => Do(...a), xe: (...a) => Mi(...a), z: (...a) => J(...a), ti: (...a) => le(...a), Kr: (...a) => yo(...a), x: (...a) => w(...a), Gs: (...a) => Ws(...a), J: () => K(), Yr: (...a) => ko(...a), Bs: (...a) => Js(...a), Ve: (...a) => ls(...a), Qt: (...a) => ee(...a), Zi: (...a) => ni(...a), ze: (...a) => ss(...a), oi: (...a) => xe(...a), St: (...a) => Dt(...a), getSettings: () => A, getModal: () => It, getTheme: () => ve, getTooltip: () => ut });
 const {
   X: Y,
   st: ht,
