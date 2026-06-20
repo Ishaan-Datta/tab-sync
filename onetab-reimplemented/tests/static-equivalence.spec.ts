@@ -166,6 +166,14 @@ const sharedUiControlsConsumers = new Set([
   "ext-onetab-concatenated-sources-popup.js",
 ]);
 
+const sharedBaseControlsConsumers = new Set([
+  "ext-onetab-concatenated-sources-import.js",
+  "ext-onetab-concatenated-sources-onetab.js",
+  "ext-onetab-concatenated-sources-options.js",
+  "ext-onetab-concatenated-sources-placeholder.js",
+  "ext-onetab-concatenated-sources-popup.js",
+]);
+
 const sharedTreeActionsConsumers = new Set([
   "ext-onetab-concatenated-sources-import.js",
   "ext-onetab-concatenated-sources-onetab.js",
@@ -200,6 +208,7 @@ for (const file of concatenatedFiles) {
       sharedBundlePrelude,
       sharedPageCommon,
       sharedUrlQueryCleanup,
+      sharedBaseControls,
       sharedUiControls,
       sharedTreeRenderer,
       sharedTreeActions,
@@ -222,6 +231,7 @@ for (const file of concatenatedFiles) {
       readFile(resolve(candidateRoot, "shared/bundle-prelude.js"), "utf8"),
       readFile(resolve(candidateRoot, "shared/page-common.js"), "utf8"),
       readFile(resolve(candidateRoot, "shared/url-query-cleanup.js"), "utf8"),
+      readFile(resolve(candidateRoot, "shared/base-controls.js"), "utf8"),
       readFile(resolve(candidateRoot, "shared/ui-controls.js"), "utf8"),
       readFile(resolve(candidateRoot, "shared/tree-renderer.js"), "utf8"),
       readFile(resolve(candidateRoot, "shared/tree-actions.js"), "utf8"),
@@ -253,6 +263,7 @@ for (const file of concatenatedFiles) {
       ...(sharedUrlQueryCleanupConsumers.has(file)
         ? [sharedUrlQueryCleanup]
         : []),
+      ...(sharedBaseControlsConsumers.has(file) ? [sharedBaseControls] : []),
       ...(sharedUiControlsConsumers.has(file) ? [sharedUiControls] : []),
       ...(sharedTreeRendererConsumers.has(file) ? [sharedTreeRenderer] : []),
       ...(sharedTreeActionsConsumers.has(file) ? [sharedTreeActions] : []),
@@ -296,6 +307,7 @@ function extractStringLiterals(source: string) {
         literal !== "shared/bundle-prelude.js" &&
         literal !== "shared/page-common.js" &&
         literal !== "shared/url-query-cleanup.js" &&
+        literal !== "shared/base-controls.js" &&
         literal !== "shared/ui-controls.js" &&
         literal !== "shared/tree-renderer.js" &&
         literal !== "shared/tree-actions.js",
