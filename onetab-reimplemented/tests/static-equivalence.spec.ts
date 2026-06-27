@@ -198,6 +198,14 @@ const sharedTreeInteractionsConsumers = new Set([
   "ext-onetab-concatenated-sources-popup.js",
 ]);
 
+const sharedImportExportControlsConsumers = new Set([
+  "ext-onetab-concatenated-sources-import.js",
+  "ext-onetab-concatenated-sources-onetab.js",
+  "ext-onetab-concatenated-sources-options.js",
+  "ext-onetab-concatenated-sources-placeholder.js",
+  "ext-onetab-concatenated-sources-popup.js",
+]);
+
 const sharedTreeRendererConsumers = new Set([
   "ext-onetab-concatenated-sources-import.js",
   "ext-onetab-concatenated-sources-onetab.js",
@@ -230,6 +238,7 @@ for (const file of concatenatedFiles) {
       sharedTreeRenderer,
       sharedTreeActions,
       sharedTreeInteractions,
+      sharedImportExportControls,
     ] = await Promise.all([
       readFile(resolve(originalRoot, file), "utf8"),
       readFile(resolve(candidateRoot, file), "utf8"),
@@ -255,6 +264,10 @@ for (const file of concatenatedFiles) {
       readFile(resolve(candidateRoot, "shared/tree-renderer.js"), "utf8"),
       readFile(resolve(candidateRoot, "shared/tree-actions.js"), "utf8"),
       readFile(resolve(candidateRoot, "shared/tree-interactions.js"), "utf8"),
+      readFile(
+        resolve(candidateRoot, "shared/import-export-controls.js"),
+        "utf8",
+      ),
     ]);
     const candidateRuntimeSource = [
       candidate,
@@ -290,6 +303,9 @@ for (const file of concatenatedFiles) {
       ...(sharedTreeActionsConsumers.has(file) ? [sharedTreeActions] : []),
       ...(sharedTreeInteractionsConsumers.has(file)
         ? [sharedTreeInteractions]
+        : []),
+      ...(sharedImportExportControlsConsumers.has(file)
+        ? [sharedImportExportControls]
         : []),
     ].join("\n");
 
@@ -336,7 +352,8 @@ function extractStringLiterals(source: string) {
         literal !== "shared/ui-controls.js" &&
         literal !== "shared/tree-renderer.js" &&
         literal !== "shared/tree-actions.js" &&
-        literal !== "shared/tree-interactions.js",
+        literal !== "shared/tree-interactions.js" &&
+        literal !== "shared/import-export-controls.js",
     )
     .sort();
 }
