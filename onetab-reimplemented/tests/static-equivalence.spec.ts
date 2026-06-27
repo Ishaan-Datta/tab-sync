@@ -190,6 +190,14 @@ const sharedTreeActionsConsumers = new Set([
   "ext-onetab-concatenated-sources-popup.js",
 ]);
 
+const sharedTreeInteractionsConsumers = new Set([
+  "ext-onetab-concatenated-sources-import.js",
+  "ext-onetab-concatenated-sources-onetab.js",
+  "ext-onetab-concatenated-sources-options.js",
+  "ext-onetab-concatenated-sources-placeholder.js",
+  "ext-onetab-concatenated-sources-popup.js",
+]);
+
 const sharedTreeRendererConsumers = new Set([
   "ext-onetab-concatenated-sources-import.js",
   "ext-onetab-concatenated-sources-onetab.js",
@@ -221,6 +229,7 @@ for (const file of concatenatedFiles) {
       sharedUiControls,
       sharedTreeRenderer,
       sharedTreeActions,
+      sharedTreeInteractions,
     ] = await Promise.all([
       readFile(resolve(originalRoot, file), "utf8"),
       readFile(resolve(candidateRoot, file), "utf8"),
@@ -245,6 +254,7 @@ for (const file of concatenatedFiles) {
       readFile(resolve(candidateRoot, "shared/ui-controls.js"), "utf8"),
       readFile(resolve(candidateRoot, "shared/tree-renderer.js"), "utf8"),
       readFile(resolve(candidateRoot, "shared/tree-actions.js"), "utf8"),
+      readFile(resolve(candidateRoot, "shared/tree-interactions.js"), "utf8"),
     ]);
     const candidateRuntimeSource = [
       candidate,
@@ -278,6 +288,9 @@ for (const file of concatenatedFiles) {
       ...(sharedUiControlsConsumers.has(file) ? [sharedUiControls] : []),
       ...(sharedTreeRendererConsumers.has(file) ? [sharedTreeRenderer] : []),
       ...(sharedTreeActionsConsumers.has(file) ? [sharedTreeActions] : []),
+      ...(sharedTreeInteractionsConsumers.has(file)
+        ? [sharedTreeInteractions]
+        : []),
     ].join("\n");
 
     expect(() => new Script(candidate, { filename: file })).not.toThrow();
@@ -322,7 +335,8 @@ function extractStringLiterals(source: string) {
         literal !== "shared/view-controls.js" &&
         literal !== "shared/ui-controls.js" &&
         literal !== "shared/tree-renderer.js" &&
-        literal !== "shared/tree-actions.js",
+        literal !== "shared/tree-actions.js" &&
+        literal !== "shared/tree-interactions.js",
     )
     .sort();
 }
