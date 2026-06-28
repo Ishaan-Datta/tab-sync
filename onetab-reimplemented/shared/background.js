@@ -11,6 +11,7 @@ importScripts(
   "shared/text-helpers.js",
   "shared/url-helpers.js",
   "shared/import-helpers.js",
+  "shared/common-bundle-helpers.js",
   "shared/bundle-prelude.js",
   "shared/page-common.js",
   "shared/url-query-cleanup.js",

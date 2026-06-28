@@ -141,6 +141,17 @@ const sharedBundlePreludeConsumers = new Set([
   "ext-onetab-concatenated-sources-popup.js",
 ]);
 
+const sharedCommonBundleHelperConsumers = new Set([
+  "ext-onetab-concatenated-sources-background.js",
+  "ext-onetab-concatenated-sources-import.js",
+  "ext-onetab-concatenated-sources-localisation.js",
+  "ext-onetab-concatenated-sources-onetab.js",
+  "ext-onetab-concatenated-sources-options.js",
+  "ext-onetab-concatenated-sources-placeholder.js",
+  "ext-onetab-concatenated-sources-popup.js",
+  "ext-onetab-concatenated-sources-shared-page-permission.js",
+]);
+
 const sharedPageCommonConsumers = new Set([
   "ext-onetab-concatenated-sources-background.js",
   "ext-onetab-concatenated-sources-import.js",
@@ -190,6 +201,26 @@ const sharedTreeActionsConsumers = new Set([
   "ext-onetab-concatenated-sources-popup.js",
 ]);
 
+const sharedSmartMoveConsumers = new Set([
+  "ext-onetab-concatenated-sources-import.js",
+  "ext-onetab-concatenated-sources-localisation.js",
+  "ext-onetab-concatenated-sources-onetab.js",
+  "ext-onetab-concatenated-sources-options.js",
+  "ext-onetab-concatenated-sources-placeholder.js",
+  "ext-onetab-concatenated-sources-popup.js",
+  "ext-onetab-concatenated-sources-shared-page-permission.js",
+]);
+
+const sharedPageUiHelperConsumers = new Set([
+  "ext-onetab-concatenated-sources-import.js",
+  "ext-onetab-concatenated-sources-localisation.js",
+  "ext-onetab-concatenated-sources-onetab.js",
+  "ext-onetab-concatenated-sources-options.js",
+  "ext-onetab-concatenated-sources-placeholder.js",
+  "ext-onetab-concatenated-sources-popup.js",
+  "ext-onetab-concatenated-sources-shared-page-permission.js",
+]);
+
 const sharedTreeInteractionsConsumers = new Set([
   "ext-onetab-concatenated-sources-import.js",
   "ext-onetab-concatenated-sources-onetab.js",
@@ -218,11 +249,9 @@ const sharedLargeBundleFiles: Record<string, string> = {
   "ext-onetab-concatenated-sources-background.js": "shared/background.js",
   "ext-onetab-concatenated-sources-import.js": "shared/import.js",
   "ext-onetab-concatenated-sources-localisation.js": "shared/localisation.js",
-  "ext-onetab-concatenated-sources-onetab.js":
-    "shared/large-bundles/onetab.js",
+  "ext-onetab-concatenated-sources-onetab.js": "shared/onetab.js",
   "ext-onetab-concatenated-sources-options.js": "shared/options.js",
-  "ext-onetab-concatenated-sources-popup.js":
-    "shared/large-bundles/popup.js",
+  "ext-onetab-concatenated-sources-popup.js": "shared/popup.js",
   "ext-onetab-concatenated-sources-shared-page-permission.js":
     "shared/shared-page-permission.js",
 };
@@ -272,6 +301,9 @@ for (const file of concatenatedFiles) {
       sharedTextHelpers,
       sharedUrlHelpers,
       sharedImportHelpers,
+      sharedCommonBundleHelpers,
+      sharedSmartMove,
+      sharedPageUiHelpers,
       sharedBundlePrelude,
       sharedPageCommon,
       sharedUrlQueryCleanup,
@@ -302,6 +334,9 @@ for (const file of concatenatedFiles) {
       readFile(resolve(candidateRoot, "shared/text-helpers.js"), "utf8"),
       readFile(resolve(candidateRoot, "shared/url-helpers.js"), "utf8"),
       readFile(resolve(candidateRoot, "shared/import-helpers.js"), "utf8"),
+      readFile(resolve(candidateRoot, "shared/common-bundle-helpers.js"), "utf8"),
+      readFile(resolve(candidateRoot, "shared/smart-move.js"), "utf8"),
+      readFile(resolve(candidateRoot, "shared/page-ui-helpers.js"), "utf8"),
       readFile(resolve(candidateRoot, "shared/bundle-prelude.js"), "utf8"),
       readFile(resolve(candidateRoot, "shared/page-common.js"), "utf8"),
       readFile(resolve(candidateRoot, "shared/url-query-cleanup.js"), "utf8"),
@@ -349,6 +384,11 @@ for (const file of concatenatedFiles) {
       ...(sharedTextHelperConsumers.has(file) ? [sharedTextHelpers] : []),
       ...(sharedUrlHelperConsumers.has(file) ? [sharedUrlHelpers] : []),
       ...(sharedImportHelperConsumers.has(file) ? [sharedImportHelpers] : []),
+      ...(sharedCommonBundleHelperConsumers.has(file)
+        ? [sharedCommonBundleHelpers]
+        : []),
+      ...(sharedSmartMoveConsumers.has(file) ? [sharedSmartMove] : []),
+      ...(sharedPageUiHelperConsumers.has(file) ? [sharedPageUiHelpers] : []),
       ...(sharedBundlePreludeConsumers.has(file) ? [sharedBundlePrelude] : []),
       ...(sharedPageCommonConsumers.has(file) ? [sharedPageCommon] : []),
       ...(sharedUrlQueryCleanupConsumers.has(file)
@@ -402,6 +442,9 @@ function extractStringLiterals(source: string) {
         literal !== "shared/text-helpers.js" &&
         literal !== "shared/url-helpers.js" &&
         literal !== "shared/import-helpers.js" &&
+        literal !== "shared/common-bundle-helpers.js" &&
+        literal !== "shared/smart-move.js" &&
+        literal !== "shared/page-ui-helpers.js" &&
         literal !== "shared/bundle-prelude.js" &&
         literal !== "shared/page-common.js" &&
         literal !== "shared/url-query-cleanup.js" &&
@@ -421,8 +464,8 @@ function extractStringLiterals(source: string) {
         literal !== "shared/options.js" &&
         literal !== "shared/shared-page-permission.js" &&
         literal !== "shared/background.js" &&
-        literal !== "shared/large-bundles/onetab.js" &&
-        literal !== "shared/large-bundles/popup.js",
+        literal !== "shared/onetab.js" &&
+        literal !== "shared/popup.js",
     )
     .sort();
 }
