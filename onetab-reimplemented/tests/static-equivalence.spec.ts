@@ -1,13 +1,27 @@
 import { expect, test } from "@playwright/test";
 import { parse } from "@babel/parser";
-import { readFile } from "node:fs/promises";
+import { access, readFile } from "node:fs/promises";
 import { Script } from "node:vm";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { glob } from "tinyglobby";
 
 const testDir = dirname(fileURLToPath(import.meta.url));
 const candidateRoot = resolve(testDir, "..");
 const originalRoot = resolve(candidateRoot, "..", "onetab-chrome-src");
+const candidateArtifactRoot = resolve(
+  process.env.ONETAB_CANDIDATE_EXTENSION_PATH ?? ".output/chrome-mv3",
+);
+
+const extensionPages = [
+  "popup.html",
+  "onetab.html",
+  "options.html",
+  "import-export.html",
+  "placeholder.html",
+  "shared-page-permission.html",
+  "safari-permissions.html",
+];
 
 const concatenatedFiles = [
   "ext-onetab-concatenated-sources-background.js",
@@ -286,7 +300,10 @@ for (const file of concatenatedFiles) {
   test(`${file} preserves syntax and runtime literals`, async () => {
     const sharedLargeBundleFile = sharedLargeBundleFiles[file];
     const sharedLargeBundle = sharedLargeBundleFile
-      ? await readFile(resolve(candidateRoot, sharedLargeBundleFile), "utf8")
+      ? await readFile(
+          resolve(candidateArtifactRoot, sharedLargeBundleFile),
+          "utf8",
+        )
       : "";
     const [
       original,
@@ -320,40 +337,94 @@ for (const file of concatenatedFiles) {
       sharedIconAtlas,
     ] = await Promise.all([
       readFile(resolve(originalRoot, file), "utf8"),
-      readFile(resolve(candidateRoot, file), "utf8"),
-      readFile(resolve(candidateRoot, "shared/default-settings.js"), "utf8"),
-      readFile(resolve(candidateRoot, "shared/storage-adapters.js"), "utf8"),
-      readFile(resolve(candidateRoot, "shared/model-predicates.js"), "utf8"),
-      readFile(resolve(candidateRoot, "shared/collection-helpers.js"), "utf8"),
-      readFile(resolve(candidateRoot, "shared/runtime-helpers.js"), "utf8"),
-      readFile(resolve(candidateRoot, "shared/search-helpers.js"), "utf8"),
+      readFile(resolve(candidateArtifactRoot, file), "utf8"),
       readFile(
-        resolve(candidateRoot, "shared/dom-transition-helpers.js"),
+        resolve(candidateArtifactRoot, "shared/default-settings.js"),
         "utf8",
       ),
-      readFile(resolve(candidateRoot, "shared/text-helpers.js"), "utf8"),
-      readFile(resolve(candidateRoot, "shared/url-helpers.js"), "utf8"),
-      readFile(resolve(candidateRoot, "shared/import-helpers.js"), "utf8"),
-      readFile(resolve(candidateRoot, "shared/common-bundle-helpers.js"), "utf8"),
-      readFile(resolve(candidateRoot, "shared/smart-move.js"), "utf8"),
-      readFile(resolve(candidateRoot, "shared/page-ui-helpers.js"), "utf8"),
-      readFile(resolve(candidateRoot, "shared/bundle-prelude.js"), "utf8"),
-      readFile(resolve(candidateRoot, "shared/page-common.js"), "utf8"),
-      readFile(resolve(candidateRoot, "shared/url-query-cleanup.js"), "utf8"),
-      readFile(resolve(candidateRoot, "shared/base-controls.js"), "utf8"),
-      readFile(resolve(candidateRoot, "shared/view-controls.js"), "utf8"),
-      readFile(resolve(candidateRoot, "shared/ui-controls.js"), "utf8"),
-      readFile(resolve(candidateRoot, "shared/tree-renderer.js"), "utf8"),
-      readFile(resolve(candidateRoot, "shared/tree-actions.js"), "utf8"),
-      readFile(resolve(candidateRoot, "shared/tree-interactions.js"), "utf8"),
       readFile(
-        resolve(candidateRoot, "shared/import-export-controls.js"),
+        resolve(candidateArtifactRoot, "shared/storage-adapters.js"),
         "utf8",
       ),
-      readFile(resolve(candidateRoot, "shared/permission-page-common.js"), "utf8"),
-      readFile(resolve(candidateRoot, "shared/item-store.js"), "utf8"),
-      readFile(resolve(candidateRoot, "shared/item-cache.js"), "utf8"),
-      readFile(resolve(candidateRoot, "shared/icon-atlas.js"), "utf8"),
+      readFile(
+        resolve(candidateArtifactRoot, "shared/model-predicates.js"),
+        "utf8",
+      ),
+      readFile(
+        resolve(candidateArtifactRoot, "shared/collection-helpers.js"),
+        "utf8",
+      ),
+      readFile(
+        resolve(candidateArtifactRoot, "shared/runtime-helpers.js"),
+        "utf8",
+      ),
+      readFile(
+        resolve(candidateArtifactRoot, "shared/search-helpers.js"),
+        "utf8",
+      ),
+      readFile(
+        resolve(candidateArtifactRoot, "shared/dom-transition-helpers.js"),
+        "utf8",
+      ),
+      readFile(
+        resolve(candidateArtifactRoot, "shared/text-helpers.js"),
+        "utf8",
+      ),
+      readFile(resolve(candidateArtifactRoot, "shared/url-helpers.js"), "utf8"),
+      readFile(
+        resolve(candidateArtifactRoot, "shared/import-helpers.js"),
+        "utf8",
+      ),
+      readFile(
+        resolve(candidateArtifactRoot, "shared/common-bundle-helpers.js"),
+        "utf8",
+      ),
+      readFile(resolve(candidateArtifactRoot, "shared/smart-move.js"), "utf8"),
+      readFile(
+        resolve(candidateArtifactRoot, "shared/page-ui-helpers.js"),
+        "utf8",
+      ),
+      readFile(
+        resolve(candidateArtifactRoot, "shared/bundle-prelude.js"),
+        "utf8",
+      ),
+      readFile(resolve(candidateArtifactRoot, "shared/page-common.js"), "utf8"),
+      readFile(
+        resolve(candidateArtifactRoot, "shared/url-query-cleanup.js"),
+        "utf8",
+      ),
+      readFile(
+        resolve(candidateArtifactRoot, "shared/base-controls.js"),
+        "utf8",
+      ),
+      readFile(
+        resolve(candidateArtifactRoot, "shared/view-controls.js"),
+        "utf8",
+      ),
+      readFile(resolve(candidateArtifactRoot, "shared/ui-controls.js"), "utf8"),
+      readFile(
+        resolve(candidateArtifactRoot, "shared/tree-renderer.js"),
+        "utf8",
+      ),
+      readFile(
+        resolve(candidateArtifactRoot, "shared/tree-actions.js"),
+        "utf8",
+      ),
+      readFile(
+        resolve(candidateArtifactRoot, "shared/tree-interactions.js"),
+        "utf8",
+      ),
+      readFile(
+        resolve(candidateArtifactRoot, "shared/import-export-controls.js"),
+        "utf8",
+      ),
+      readFile(
+        resolve(candidateArtifactRoot, "shared/permission-page-common.js"),
+        "utf8",
+      ),
+      readFile(resolve(candidateArtifactRoot, "shared/item-store.js"), "utf8"),
+      readFile(resolve(candidateArtifactRoot, "shared/item-cache.js"), "utf8"),
+      readFile(resolve(candidateArtifactRoot, "shared/icon-atlas.js"), "utf8"),
     ]);
     const candidateRuntimeSource = [
       candidate,
@@ -417,6 +488,63 @@ for (const file of concatenatedFiles) {
   });
 }
 
+test("built candidate manifest preserves oracle fields with expected WXT worker path", async () => {
+  const [sourceManifest, builtManifest] = await Promise.all([
+    readJson(resolve(candidateRoot, "manifest.json")),
+    readJson(resolve(candidateArtifactRoot, "manifest.json")),
+  ]);
+
+  expect({
+    ...builtManifest,
+    background: {
+      service_worker: "ext-onetab-concatenated-sources-background.js",
+    },
+  }).toEqual(sourceManifest);
+  expect(builtManifest.background).toEqual({ service_worker: "background.js" });
+});
+
+test("built candidate emits loadable extension pages and static assets", async () => {
+  const manifest = await readJson(
+    resolve(candidateArtifactRoot, "manifest.json"),
+  );
+  const expectedFiles = new Set([
+    ...extensionPages,
+    "background.js",
+    manifest.action.default_popup,
+    manifest.options_ui.page,
+    ...concatenatedFiles,
+  ]);
+
+  for (const file of expectedFiles) await expectFileExists(file);
+
+  for (const page of extensionPages) {
+    const html = await readFile(resolve(candidateArtifactRoot, page), "utf8");
+    const references = extractHtmlAssetReferences(html);
+    for (const reference of references) await expectFileExists(reference);
+  }
+
+  const serviceWorker = await readFile(
+    resolve(candidateArtifactRoot, manifest.background.service_worker),
+    "utf8",
+  );
+  expect(serviceWorker).toContain(
+    "ext-onetab-concatenated-sources-background.js",
+  );
+});
+
+test("built candidate JavaScript assets parse as classic scripts", async () => {
+  const scriptFiles = await glob(["*.js", "shared/**/*.js"], {
+    cwd: candidateArtifactRoot,
+    expandDirectories: false,
+  });
+
+  expect(scriptFiles.length).toBeGreaterThan(0);
+  for (const file of scriptFiles.sort()) {
+    const source = await readFile(resolve(candidateArtifactRoot, file), "utf8");
+    expect(() => new Script(source, { filename: file })).not.toThrow();
+  }
+});
+
 function extractChromeApiTouches(source: string) {
   return [...source.matchAll(/\bchrome(?:\.[A-Za-z_$][\w$]*)+/g)]
     .map(([match]) => match)
@@ -425,8 +553,10 @@ function extractChromeApiTouches(source: string) {
 
 function extractStringLiterals(source: string) {
   const literals = collectAstValues(source, (node) => {
-    if (node.type === "StringLiteral") return node.value;
-    if (node.type === "TemplateElement") return node.value.raw;
+    if (node.type === "StringLiteral") return node.value as string;
+    if (node.type === "TemplateElement") {
+      return (node.value as { raw: string }).raw;
+    }
     return undefined;
   });
   return literals
@@ -480,11 +610,31 @@ function collectAstValues(
     sourceType: "script",
   });
   const values: string[] = [];
-  visitAst(ast as AstNode, (node) => {
+  visitAst(ast as unknown as AstNode, (node) => {
     const value = readValue(node);
     if (value !== undefined) values.push(value);
   });
   return values;
+}
+
+async function expectFileExists(pathFromArtifactRoot: string) {
+  await expect(
+    access(resolve(candidateArtifactRoot, pathFromArtifactRoot)),
+    pathFromArtifactRoot,
+  ).resolves.toBeUndefined();
+}
+
+async function readJson(path: string) {
+  return JSON.parse(await readFile(path, "utf8"));
+}
+
+function extractHtmlAssetReferences(html: string) {
+  return [...html.matchAll(/\b(?:src|href)=["']([^"']+)["']/g)]
+    .map(([, reference]) => reference)
+    .filter((reference) => !/^(?:[a-z]+:|#)/i.test(reference))
+    .map((reference) => reference.replace(/[?#].*$/, ""))
+    .map((reference) => reference.replace(/^\/+/, ""))
+    .filter(Boolean);
 }
 
 interface AstNode {

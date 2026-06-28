@@ -129,6 +129,8 @@ test("interaction-triggered UI states render matching snapshots", async ({
     ],
     viewport: { height: 900, width: 900 },
   });
+
+  extensions.assertNoCandidateOnlyErrors();
 });
 
 test("stored tab export text matches the original extension", async ({
@@ -173,17 +175,21 @@ test("stored tab export text matches the original extension", async ({
 
   expect(candidate).toEqual(original);
   const exportedValues = candidate.textareas.map((textarea) => textarea.value);
-  expect(exportedValues.some((value) => value.includes("Alpha Stored Tab"))).toBe(
-    true,
-  );
   expect(
-    exportedValues.some((value) => value.includes("https://example.com/alpha-stored-tab")),
+    exportedValues.some((value) => value.includes("Alpha Stored Tab")),
   ).toBe(true);
-  expect(exportedValues.some((value) => value.includes("Beta Stored Tab"))).toBe(
-    true,
-  );
   expect(
-    exportedValues.some((value) => value.includes("https://example.org/beta-stored-tab?with=query")),
+    exportedValues.some((value) =>
+      value.includes("https://example.com/alpha-stored-tab"),
+    ),
+  ).toBe(true);
+  expect(
+    exportedValues.some((value) => value.includes("Beta Stored Tab")),
+  ).toBe(true);
+  expect(
+    exportedValues.some((value) =>
+      value.includes("https://example.org/beta-stored-tab?with=query"),
+    ),
   ).toBe(true);
 });
 
@@ -227,12 +233,15 @@ test("import text section interaction matches the original extension", async ({
 
   expect(candidate).toEqual(original);
   expect(candidate.bodyText).toContain("https://www.example.com/one");
-  expect(candidate.textareas.some((textarea) => textarea.value === importText)).toBe(
-    true,
-  );
+  expect(
+    candidate.textareas.some((textarea) => textarea.value === importText),
+  ).toBe(true);
+  extensions.assertNoCandidateOnlyErrors();
 });
 
-test("stored tab context menus render matching popups", async ({ extensions }) => {
+test("stored tab context menus render matching popups", async ({
+  extensions,
+}) => {
   await extensions.runBoth((extension) =>
     extension.seedStoredOneTabData(storedRegressionSeed),
   );
@@ -252,7 +261,9 @@ test("stored tab context menus render matching popups", async ({ extensions }) =
       await page.mouse.click(5, 5);
       await page.waitForTimeout(150);
 
-      const secondTab = page.locator('.tab:has-text("Beta Stored Tab")').first();
+      const secondTab = page
+        .locator('.tab:has-text("Beta Stored Tab")')
+        .first();
       await secondTab.waitFor({ state: "visible" });
       await secondTab.hover();
       await secondTab.locator(".tabMoreButton").click();
@@ -270,6 +281,7 @@ test("stored tab context menus render matching popups", async ({ extensions }) =
   expect(candidate.tabMenu.itemCount).toBeGreaterThan(3);
   expect(candidate.secondTabMenu.menuText).toContain("Move to trash");
   expect(candidate.secondTabMenu.itemCount).toBeGreaterThan(3);
+  extensions.assertNoCandidateOnlyErrors();
 });
 
 test("extension pages do not emit unique runtime errors", async ({

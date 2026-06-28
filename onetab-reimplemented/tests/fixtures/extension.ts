@@ -11,6 +11,8 @@ import { tmpdir } from "node:os";
 import { dirname, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
+declare const chrome: any;
+
 type ExtensionLabel = "original" | "candidate";
 
 export interface BrowserStateSeed {
@@ -104,6 +106,7 @@ export interface ExtensionHarness {
 interface ExtensionPair {
   original: ExtensionHarness;
   candidate: ExtensionHarness;
+  assertNoCandidateOnlyErrors(): void;
   compareData(): Promise<void>;
   compareRender(
     pathname: string,
@@ -146,6 +149,7 @@ const fixtureDir = dirname(fileURLToPath(import.meta.url));
 const candidateRoot = resolve(fixtureDir, "../..");
 const repoRoot = resolve(candidateRoot, "..");
 const defaultOriginalRoot = resolve(repoRoot, "onetab-chrome-src");
+const defaultCandidateRoot = resolve(candidateRoot, ".output/chrome-mv3");
 const harnessUrl = "https://example.com/onetab-harness";
 
 const chromiumExecutablePath =
@@ -164,7 +168,7 @@ export const test = base.extend<{ extensions: ExtensionPair }>({
       );
       candidate = await launchExtension(
         "candidate",
-        extensionRoot("ONETAB_CANDIDATE_EXTENSION_PATH", candidateRoot),
+        extensionRoot("ONETAB_CANDIDATE_EXTENSION_PATH", defaultCandidateRoot),
       );
 
       await use(createExtensionPair(original, candidate));
@@ -224,6 +228,7 @@ async function launchExtension(
   context.on("page", (page) => collectPageErrors(label, page, errors));
 
   const serviceWorker = await waitForExtensionServiceWorker(context);
+  collectWorkerErrors(label, serviceWorker, errors);
   const extensionId = new URL(serviceWorker.url()).host;
   await waitForRuntimeState(serviceWorker);
   await closeInitialPages(context);
@@ -233,6 +238,20 @@ async function launchExtension(
   await focusHarnessTab(serviceWorker);
   await harnessPage.bringToFront();
   await waitForHarnessTabState(serviceWorker, { requireSingleTab: true });
+
+  const openExtensionPage = async (
+    pathname: string,
+    options: OpenPageOptions = {},
+  ) => {
+    const page = await context.newPage();
+    if (options.viewport) await page.setViewportSize(options.viewport);
+    if (options.colorScheme) {
+      await page.emulateMedia({ colorScheme: options.colorScheme });
+    }
+    await page.goto(extensionUrl(extensionId, pathname));
+    await page.waitForLoadState("domcontentloaded");
+    return page;
+  };
 
   return {
     context,
@@ -252,21 +271,12 @@ async function launchExtension(
         extensionId,
       );
     },
-    async openPage(pathname: string, options: OpenPageOptions = {}) {
-      const page = await context.newPage();
-      if (options.viewport) await page.setViewportSize(options.viewport);
-      if (options.colorScheme) {
-        await page.emulateMedia({ colorScheme: options.colorScheme });
-      }
-      await page.goto(extensionUrl(extensionId, pathname));
-      await page.waitForLoadState("domcontentloaded");
-      return page;
-    },
+    openPage: openExtensionPage,
     async pageRenderSnapshot(
       pathname: string,
       options: RenderSnapshotOptions = {},
     ) {
-      const page = await this.openPage(pathname, options);
+      const page = await openExtensionPage(pathname, options);
       try {
         if (options.waitForSelector) {
           await page
@@ -300,7 +310,7 @@ async function launchExtension(
       }
     },
     async pageTextSnapshot(pathname: string) {
-      const page = await this.openPage(pathname);
+      const page = await openExtensionPage(pathname);
       try {
         await page.waitForTimeout(250);
         return normalizeSnapshot(
@@ -337,6 +347,11 @@ function createExtensionPair(
   return {
     original,
     candidate,
+    assertNoCandidateOnlyErrors() {
+      expect(candidateOnlyErrors(original.errors, candidate.errors)).toEqual(
+        [],
+      );
+    },
     async runBoth<T>(callback: (extension: ExtensionHarness) => Promise<T>) {
       return (await Promise.all([callback(original), callback(candidate)])) as [
         T,
@@ -417,7 +432,7 @@ async function expectSnapshotsToConverge<T>(
 
   while (Date.now() < deadline) {
     try {
-      expect(lastSnapshots[1]).toEqual(lastSnapshots[0]);
+      expect(lastSnapshots[1] as unknown).toEqual(lastSnapshots[0] as unknown);
       return;
     } catch {
       await new Promise((resolve) => setTimeout(resolve, 100));
@@ -425,7 +440,7 @@ async function expectSnapshotsToConverge<T>(
     }
   }
 
-  expect(lastSnapshots[1]).toEqual(lastSnapshots[0]);
+  expect(lastSnapshots[1] as unknown).toEqual(lastSnapshots[0] as unknown);
 }
 
 async function createBrowserState(
@@ -515,8 +530,8 @@ async function seedStoredOneTabData(seed: StoredOneTabSeed) {
     await requestResult(store.clear());
 
     const groups = seed.groups ?? [];
-    const rootChildIds = groups.map((group, groupIndex) =>
-      group.id ?? `test-group-${groupIndex + 1}`,
+    const rootChildIds = groups.map(
+      (group, groupIndex) => group.id ?? `test-group-${groupIndex + 1}`,
     );
     const systemItems = [
       {
@@ -655,6 +670,34 @@ function collectPageErrors(
   });
 }
 
+function collectWorkerErrors(
+  label: ExtensionLabel,
+  worker: Worker,
+  errors: string[],
+) {
+  worker.on("console", (message) => {
+    if (message.type() === "error") {
+      errors.push(`${label} ${worker.url()} serviceworker: ${message.text()}`);
+    }
+  });
+}
+
+function candidateOnlyErrors(
+  originalErrors: string[],
+  candidateErrors: string[],
+) {
+  const original = new Set(normalizeErrors(originalErrors));
+  return normalizeErrors(candidateErrors).filter(
+    (error) => !original.has(error),
+  );
+}
+
+function normalizeErrors(errors: string[]) {
+  return errors
+    .map((error) => error.replace(/^(candidate|original) /, ""))
+    .sort();
+}
+
 function extensionUrl(extensionId: string, pathname: string) {
   const normalizedPathname = pathname.replace(/^\/+/, "");
   return `chrome-extension://${extensionId}/${normalizedPathname}`;
@@ -713,7 +756,7 @@ async function closeNonHarnessPages(
 
 async function focusHarnessTab(serviceWorker: Worker) {
   await serviceWorker.evaluate(async (url) => {
-    const tabs = await chrome.tabs.query({});
+    const tabs: any[] = await chrome.tabs.query({});
     const tab = tabs.find((candidate) => candidate.url === url);
     if (tab?.id !== undefined)
       await chrome.tabs.update(tab.id, { active: true });
@@ -740,9 +783,10 @@ async function waitForHarnessTabState(
         chrome.storage.session.get("contextMenuState"),
         chrome.tabs.query({}),
       ]);
+      const browserTabs = tabs as any[];
       return {
         contextMenuState,
-        tabs: tabs.map((tab) => ({
+        tabs: browserTabs.map((tab) => ({
           active: tab.active,
           index: tab.index,
           url: tab.url,
@@ -795,7 +839,7 @@ async function waitForRuntimeState(serviceWorker: Worker) {
 }
 
 async function readRuntimeSnapshot() {
-  async function getAllStorage(area: chrome.storage.StorageArea | undefined) {
+  async function getAllStorage(area: any) {
     if (!area) return {};
     return area.get(null);
   }
@@ -848,7 +892,7 @@ async function readRuntimeSnapshot() {
 }
 
 async function readDataSnapshot() {
-  async function getAllStorage(area: chrome.storage.StorageArea | undefined) {
+  async function getAllStorage(area: any) {
     if (!area) return {};
     return area.get(null);
   }
@@ -903,12 +947,12 @@ async function readDataSnapshot() {
       return groupIds.get(groupId);
     };
 
-    const windows = await chrome.windows.getAll({ populate: true });
+    const windows: any[] = await chrome.windows.getAll({ populate: true });
     return windows.map((browserWindow, windowIndex) => ({
       focused: browserWindow.focused,
       incognito: browserWindow.incognito,
       state: browserWindow.state,
-      tabs: (browserWindow.tabs ?? [])
+      tabs: ((browserWindow.tabs ?? []) as any[])
         .sort((left, right) => left.index - right.index)
         .map((tab) => ({
           active: tab.active,

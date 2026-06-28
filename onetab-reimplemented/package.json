@@ -9,8 +9,10 @@
     "postinstall": "wxt prepare",
     "format:concatenated": "prettier --write \"ext-onetab-concatenated-sources-*.js\"",
     "check:concatenated": "prettier --check \"ext-onetab-concatenated-sources-*.js\"",
-    "test:e2e": "playwright test",
-    "test:e2e:headed": "playwright test --headed"
+    "typecheck": "tsc --noEmit",
+    "test:e2e": "npm run build:chrome && ONETAB_CANDIDATE_EXTENSION_PATH=.output/chrome-mv3 playwright test",
+    "test:e2e:headed": "npm run build:chrome && ONETAB_CANDIDATE_EXTENSION_PATH=.output/chrome-mv3 playwright test --headed",
+    "test:e2e:source": "ONETAB_CANDIDATE_EXTENSION_PATH=. playwright test tests/equivalence.spec.ts"
   },
   "devDependencies": {
     "tinyglobby": "^0.2.15",
