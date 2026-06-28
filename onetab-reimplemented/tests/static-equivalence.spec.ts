@@ -215,20 +215,16 @@ const sharedTreeRendererConsumers = new Set([
 ]);
 
 const sharedLargeBundleFiles: Record<string, string> = {
-  "ext-onetab-concatenated-sources-background.js":
-    "shared/large-bundles/background.js",
-  "ext-onetab-concatenated-sources-import.js":
-    "shared/large-bundles/import.js",
-  "ext-onetab-concatenated-sources-localisation.js":
-    "shared/large-bundles/localisation.js",
+  "ext-onetab-concatenated-sources-background.js": "shared/background.js",
+  "ext-onetab-concatenated-sources-import.js": "shared/import.js",
+  "ext-onetab-concatenated-sources-localisation.js": "shared/localisation.js",
   "ext-onetab-concatenated-sources-onetab.js":
     "shared/large-bundles/onetab.js",
-  "ext-onetab-concatenated-sources-options.js":
-    "shared/large-bundles/options.js",
+  "ext-onetab-concatenated-sources-options.js": "shared/options.js",
   "ext-onetab-concatenated-sources-popup.js":
     "shared/large-bundles/popup.js",
   "ext-onetab-concatenated-sources-shared-page-permission.js":
-    "shared/large-bundles/shared-page-permission.js",
+    "shared/shared-page-permission.js",
 };
 
 const sharedPermissionPageCommonConsumers = new Set([
@@ -237,9 +233,23 @@ const sharedPermissionPageCommonConsumers = new Set([
 ]);
 
 const sharedItemStoreConsumers = new Set([
+  "ext-onetab-concatenated-sources-background.js",
   "ext-onetab-concatenated-sources-import.js",
   "ext-onetab-concatenated-sources-onetab.js",
   "ext-onetab-concatenated-sources-options.js",
+  "ext-onetab-concatenated-sources-popup.js",
+]);
+
+const sharedItemCacheConsumers = new Set([
+  "ext-onetab-concatenated-sources-background.js",
+  "ext-onetab-concatenated-sources-import.js",
+  "ext-onetab-concatenated-sources-onetab.js",
+  "ext-onetab-concatenated-sources-options.js",
+  "ext-onetab-concatenated-sources-popup.js",
+]);
+
+const sharedIconAtlasConsumers = new Set([
+  "ext-onetab-concatenated-sources-onetab.js",
   "ext-onetab-concatenated-sources-popup.js",
 ]);
 
@@ -274,6 +284,8 @@ for (const file of concatenatedFiles) {
       sharedImportExportControls,
       sharedPermissionPageCommon,
       sharedItemStore,
+      sharedItemCache,
+      sharedIconAtlas,
     ] = await Promise.all([
       readFile(resolve(originalRoot, file), "utf8"),
       readFile(resolve(candidateRoot, file), "utf8"),
@@ -305,6 +317,8 @@ for (const file of concatenatedFiles) {
       ),
       readFile(resolve(candidateRoot, "shared/permission-page-common.js"), "utf8"),
       readFile(resolve(candidateRoot, "shared/item-store.js"), "utf8"),
+      readFile(resolve(candidateRoot, "shared/item-cache.js"), "utf8"),
+      readFile(resolve(candidateRoot, "shared/icon-atlas.js"), "utf8"),
     ]);
     const candidateRuntimeSource = [
       candidate,
@@ -313,6 +327,8 @@ for (const file of concatenatedFiles) {
         ? [sharedPermissionPageCommon]
         : []),
       ...(sharedItemStoreConsumers.has(file) ? [sharedItemStore] : []),
+      ...(sharedItemCacheConsumers.has(file) ? [sharedItemCache] : []),
+      ...(sharedIconAtlasConsumers.has(file) ? [sharedIconAtlas] : []),
       ...(sharedDefaultSettingsConsumers.has(file)
         ? [sharedDefaultSettings]
         : []),
@@ -398,13 +414,15 @@ function extractStringLiterals(source: string) {
         literal !== "shared/import-export-controls.js" &&
         literal !== "shared/permission-page-common.js" &&
         literal !== "shared/item-store.js" &&
-        literal !== "shared/large-bundles/background.js" &&
-        literal !== "shared/large-bundles/import.js" &&
-        literal !== "shared/large-bundles/localisation.js" &&
+        literal !== "shared/item-cache.js" &&
+        literal !== "shared/icon-atlas.js" &&
+        literal !== "shared/import.js" &&
+        literal !== "shared/localisation.js" &&
+        literal !== "shared/options.js" &&
+        literal !== "shared/shared-page-permission.js" &&
+        literal !== "shared/background.js" &&
         literal !== "shared/large-bundles/onetab.js" &&
-        literal !== "shared/large-bundles/options.js" &&
-        literal !== "shared/large-bundles/popup.js" &&
-        literal !== "shared/large-bundles/shared-page-permission.js",
+        literal !== "shared/large-bundles/popup.js",
     )
     .sort();
 }

@@ -183,316 +183,35 @@ const {
   isMicrosoftEdge: rr,
 });
 const { cleanUrlForSearch: Ir } = globalThis.createOneTabUrlQueryCleanup();
-class kt {
-  constructor(t = []) {
-    ((this.$t = new Map()), t.forEach((e) => this.$t.set(e.id, e)));
+const { ItemCache: kt } = globalThis.createOneTabItemCache(
+  {
+    get kt() { return kt; },
+    get rt() { return lt; },
+    get ge() { return ge; },
+    get Ir() { return Or; },
+    get prettyPrintUrl() { return prettyPrintUrl; },
+    get vr() { return Mr; },
+    get Or() { return Sr; },
+    get He() { return Be; },
+    get Ct() { return Zt; },
+    get at() { return ot; },
+    get Vt() { return Vt; },
+    get Mr() { return Lr; },
+    get G() { return P; },
+    get _() { return _; },
+    get _t() { return _t; },
+    get j() { return j; },
+    get V() { return V; },
+    get w() { return h; },
+    get as() { return ds; },
+    get $r() { return Ir; },
+    get we() { return ne; },
+    get Gr() { return Gr; },
+    get Zn() { return Zn; },
+    get je() { return He; },
+    get O() { return $; },
   }
-  static qn = Symbol("uncommitted");
-  async ht(t) {
-    let e = this.$t.get(t);
-    if (!e) {
-      if (((e = await lt(t)), !e)) return;
-      this.put(e);
-    }
-    return e;
-  }
-  async getItems(t) {
-    let e = t.filter((n) => !this.$t.has(n));
-    return (
-      (await ge(e)).forEach((n) => this.put(n)),
-      t.map((n) => this.$t.get(n))
-    );
-  }
-  put(t) {
-    this.$t.set(t.id, t);
-  }
-  Wo(t) {
-    for (let e of t) this.put(e);
-  }
-  has(t) {
-    return this.$t.has(t);
-  }
-  v(t) {
-    return this.$t.get(t);
-  }
-  qp(t) {
-    return this.v(t)?.type === "group";
-  }
-  Up(t) {
-    return this.v(t)?.groupType === "folder";
-  }
-  async zp() {
-    return (
-      this.Nu ||
-        ((this.Nu = !0),
-        (await Or()).forEach((t) => this.put(t)),
-        this.Ya(),
-        this._a(),
-        (this.Jo = new Map()),
-        this.$t.forEach((t) => {
-          j(t) && this.Jo.set(t.id, prettyPrintUrl(t.url));
-        })),
-      this
-    );
-  }
-  async ke() {
-    return (
-      this.Ru ||
-        ((this.Ru = !0),
-        (this.Va = !0),
-        (await Mr()).forEach((e) => this.put(e)),
-        this.Ya(),
-        this._a()),
-      this
-    );
-  }
-  async tl() {
-    if ((await this.ke(), !this.Zu)) {
-      this.Zu = !0;
-      let t = await Sr();
-      (t.forEach((s) => this.put(s)),
-        (this.Un = new Set(
-          t.filter(Be(Zt)).flatMap((s) =>
-            s.parentIds
-              .filter(ot)
-              .map((o) => this.v(o))
-              .filter(Be(Zt))
-              .map(Vt),
-          ),
-        )));
-      let e = new Set(this.Un);
-      for (; e.size; ) {
-        let s = new Set();
-        (e.forEach((n) => {
-          this.v(n)
-            .parentIds.filter(ot)
-            .map((a) => this.v(a))
-            .filter(Be(Zt))
-            .map(Vt)
-            .forEach((a) => {
-              this.Un.has(a) || (this.Un.add(a), s.add(a));
-            });
-        }),
-          (e = s));
-      }
-    }
-    return this;
-  }
-  async Wp() {
-    return (
-      this.Va || ((this.Va = !0), (await Lr()).forEach((e) => this.put(e))),
-      this
-    );
-  }
-  _a() {
-    this.Qu = new Set();
-    let e = [...this.$t.values()].filter(Zt).filter(_).map(Vt);
-    for (; e.length; ) {
-      let s = e.pop();
-      (this.Qu.add(s), this.v(s)?.childIds?.forEach((r) => e.push(r)));
-    }
-    for (this.el = new Set(), e = ["root"]; e.length; ) {
-      let s = e.pop();
-      (this.el.add(s),
-        this.v(s)?.childIds?.forEach((r) => {
-          let o = this.v(r);
-          !o || j(o) ? this.el.add(r) : Zt(o) || e.push(r);
-        }));
-    }
-  }
-  Ya() {
-    this.re = new Set();
-    let t = ["trash"];
-    for (; t.length; ) {
-      let e = t.pop();
-      (this.re.add(e), this.v(e)?.childIds?.forEach((n) => t.push(n)));
-    }
-    for (t = ["root"]; t.length; ) {
-      let e = t.pop();
-      (this.re.delete(e), this.v(e)?.childIds?.forEach((n) => t.push(n)));
-    }
-  }
-  Np() {
-    return this.v("root").childIds.some((t) => {
-      let e = this.v(t);
-      return e && P(e);
-    });
-  }
-  async il({ count: t, B: e, Rp: s, sl: n, Ju: r }) {
-    await this.ke();
-    let o = [...this.$t.values()]
-      .filter((a) => !a.archived)
-      .filter((a) => (e ? P(a) : !0))
-      .filter((a) => (s ? !P(a) : !0))
-      .filter((a) => _(a) && a.label)
-      .filter((a) => !this.re.has(a.id))
-      .filter((a) => !a[kt.qn])
-      .sort(_t((a) => a.modifyDate));
-    if ((!o.length && !r && o.push(this.v("root")), n)) {
-      let a = new Set(),
-        l = [...o];
-      o = [];
-      for (let u of l) a.has(u.label) || (o.push(u), a.add(u.label));
-    }
-    return o.slice(0, t);
-  }
-  Ku({ ti: t, maxResults: e, B: s }) {
-    return (
-      (t = t.map((n) => n.toLocaleLowerCase())),
-      [...this.$t.values()]
-        .filter((n) => !(s && !P(n)))
-        .filter((n) => {
-          if (!_(n) || this.re.has(n.id)) return !1;
-          let r = (V(n) ? h("all") : n.label)?.toLocaleLowerCase();
-          return r && t.every((o) => r.includes(o));
-        })
-        .sort(_t((n) => n.modifyDate))
-        .slice(0, e)
-    );
-  }
-  Zp({
-    ti: t = [],
-    Qp: e = [],
-    filter: s,
-    Xu: n,
-    maxResults: r,
-    Jp: o,
-    ei: a,
-    ii: l,
-  }) {
-    let u = e.length || s;
-    a || (t = t.map((x) => x.toLocaleLowerCase()));
-    let d = new Set(n ? this.nl(n) : []),
-      p = (x, m) => (l ? ds(x, !0, a).test(m) : m.includes(x)),
-      b = h("all");
-    return [...this.$t.values()]
-      .filter((x) => {
-        if (
-          x.parentIds.filter((m) => !this.re.has(m) && m !== "quickList")
-            .length === 0
-        )
-          return !1;
-        if (n && !x.parentIds.some((m) => d.has(m))) return !1;
-        if (this.re.has(x.id)) return !1;
-        if (["quickList", "trash"].some((m) => m === x.id)) return !1;
-        if (s && !s(x)) return !1;
-        if (u && !t.length) return !0;
-        if (V(x)) return o && t.every((m) => p(m, b));
-        if (j(x)) {
-          let m = [x.title, this.Jo.get(x.id) ?? x.url, x.notes?.text].filter(
-            (w) => w,
-          );
-          return (
-            a || (m = m.map((w) => w.toLocaleLowerCase())),
-            t.every((w) => m.some((T) => p(w, T)))
-              ? ((m = [
-                  x.title,
-                  Ir(this.Jo.get(x.id) ?? x.url),
-                  x.notes?.text,
-                ].filter((w) => w)),
-                a || (m = m.map((w) => w.toLocaleLowerCase())),
-                t.every((w) => m.some((T) => p(w, T))))
-              : !1
-          );
-        } else if (_(x)) {
-          let m = [x.label, x.notes?.text].filter((g) => g);
-          return (
-            a || (m = m.map((g) => g.toLocaleLowerCase())),
-            t.every((g) => m.some((w) => p(g, w)))
-          );
-        } else return !1;
-      })
-      .sort(ne(...e))
-      .slice(0, r);
-  }
-  Yu(t) {
-    return this.Un.has(t.id);
-  }
-  async Te({ groupId: t, ol: e, rl: s }) {
-    let n = await this.ht(t),
-      { _u: r, items: o, al: a } = await Gr({ groupId: n.id, ol: e, rl: s });
-    return (
-      o.forEach((l) => this.put(l)),
-      { h: this, group: n, Vu: r, al: a, items: o }
-    );
-  }
-  nl(t) {
-    let e = this.v(t);
-    return [
-      t,
-      ...e.childIds
-        .map((s) => {
-          let n = this.v(s);
-          return n && _(n) ? n.id : void 0;
-        })
-        .filter(Zn)
-        .flatMap((s) => this.nl(s)),
-    ];
-  }
-  Xi(t) {
-    let e = 0,
-      n = [this.v(t)];
-    for (; n.length; )
-      (n.pop().childIds ?? []).forEach((o) => {
-        let a = this.v(o);
-        a && _(a) ? n.push(a) : e++;
-      });
-    return e;
-  }
-  ll(t) {
-    let e = 0,
-      s = 0,
-      n = 0,
-      r = this.v(t),
-      o = (u) => {
-        (e++, u.done ? n++ : s++);
-      },
-      a = new Set(),
-      l = [r];
-    for (; l.length; ) {
-      let u = l.pop();
-      Zt(u) ||
-        (He(u) && o(u),
-        (u.childIds ?? []).forEach((d) => {
-          let p = this.v(d);
-          p &&
-            !Zt(p) &&
-            (_(p) ? l.push(p) : He(p) && (a.has(p.id) || (a.add(p.id), o(p))));
-        }));
-    }
-    return { Kp: e, cl: s, Xp: n };
-  }
-  Yp(t) {
-    let s = [this.v(t)],
-      n = [];
-    for (; s.length; )
-      (s.pop().childIds ?? []).forEach((o) => {
-        let a = this.v(o);
-        (a || console.log("getTabItemIdsForGroupIdViaCache cache miss"),
-          a && _(a) ? s.push(a) : n.push(o));
-      });
-    return n;
-  }
-  async Hn(t, e) {
-    let s = ["quickList"],
-      n = await this.ht(t),
-      r = n.parentIds.find((o) => !s.includes(o));
-    if (r) {
-      let o = await this.ht(r);
-      return [...(await this.Hn(r)), o, ...$(e, n)];
-    } else return [];
-  }
-  async th(t) {
-    let e = t.filter((s) => !this.$t.has(s));
-    return (
-      e.length && (await ge(e)).forEach((s) => this.put(s)),
-      t.map((s) => this.$t.get(s))
-    );
-  }
-  ul(t) {
-    return t.map((e) => this.$t.get(e));
-  }
-}
+);
 const { S: G, bl: yl, ge, rt: lt, Ir: Or, vr: Mr, Or: Sr, Mr: Lr, Lr: Pr, gl, Gr } = globalThis.createOneTabItemStore({
   hi: fi,
   jn,

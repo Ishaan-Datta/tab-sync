@@ -1,3 +1,3 @@
 // Copyright 2026 OneTab Ltd.  All rights reserved.
-importScripts("shared/large-bundles/background.js");
+importScripts("shared/background.js");
 globalThis.runOneTabBackgroundBundle();
