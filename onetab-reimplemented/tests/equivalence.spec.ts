@@ -172,6 +172,105 @@ test("stored tabs restore into the browser like the original extension", async (
   extensions.assertNoCandidateOnlyErrors();
 });
 
+test("stored groups restore all tabs like the original extension", async ({
+  extensions,
+}) => {
+  const restoredUrls = [
+    "https://example.com/alpha-stored-tab",
+    "https://example.org/beta-stored-tab?with=query",
+  ];
+
+  const [original, candidate] = await extensions.runBoth(async (extension) => {
+    for (const routePattern of [
+      "https://example.com/**",
+      "https://example.org/**",
+    ]) {
+      await extension.context.route(routePattern, async (route) => {
+        if (route.request().resourceType() !== "document") {
+          await route.fulfill({ status: 204 });
+          return;
+        }
+
+        const url = route.request().url();
+        await route.fulfill({
+          body: `<!doctype html><title>${url}</title><h1>${url}</h1>`,
+          contentType: "text/html",
+        });
+      });
+    }
+
+    await extension.seedStoredOneTabData(storedRegressionSeed);
+    await seedOneTabAttr(extension, "autoActionOnOpenOptionChosen", true);
+
+    const page = await extension.openPage("onetab.html", {
+      viewport: { height: 900, width: 1100 },
+    });
+
+    try {
+      await page.locator('.tab:has-text("Alpha Stored Tab")').waitFor({
+        state: "visible",
+      });
+      await page
+        .locator(".controlButton")
+        .filter({ hasText: /^Restore all$/ })
+        .first()
+        .click();
+
+      await expect
+        .poll(
+          async () =>
+            await extension.serviceWorker.evaluate(
+              async (urls) => {
+                const tabs: Array<{ url?: string }> = await chrome.tabs.query(
+                  {},
+                );
+                return urls.every((url) =>
+                  tabs.some((tab) => tab.url?.startsWith(url)),
+                );
+              },
+              restoredUrls,
+            ),
+          { timeout: 5_000 },
+        )
+        .toBe(true);
+      await page.waitForTimeout(500);
+
+      return {
+        bodyText: documentText(await page.locator("body").innerText()),
+        tabs: await extension.serviceWorker.evaluate(async () => {
+          const extensionId = chrome.runtime.id;
+          const tabs: Array<{
+            active?: boolean;
+            index: number;
+            pinned?: boolean;
+            title?: string;
+            url?: string;
+          }> = await chrome.tabs.query({});
+          return tabs
+            .map((tab) => ({
+              active: tab.active,
+              index: tab.index,
+              pinned: tab.pinned,
+              title: tab.title,
+              url: tab.url?.replace(extensionId, "<extension-id>"),
+            }))
+            .sort((left, right) => left.index - right.index);
+        }),
+      };
+    } finally {
+      await page.close().catch(() => {});
+    }
+  });
+
+  expect(candidate).toEqual(original);
+  for (const restoredUrl of restoredUrls) {
+    expect(
+      candidate.tabs.some((tab) => tab.url?.startsWith(restoredUrl)),
+    ).toBe(true);
+  }
+  extensions.assertNoCandidateOnlyErrors();
+});
+
 test("extension pages render matching user-facing text", async ({
   extensions,
 }) => {
