@@ -589,6 +589,54 @@ test("stored tabs toggle archive status like the original extension", async ({
   extensions.assertNoCandidateOnlyErrors();
 });
 
+test("stored tabs toggle task status like the original extension", async ({
+  extensions,
+}) => {
+  await extensions.runBoth((extension) =>
+    extension.seedStoredOneTabData(storedRegressionSeed),
+  );
+
+  const [original, candidate] = await extensions.runBoth(async (extension) => {
+    const page = await extension.openPage("onetab.html", {
+      viewport: { height: 900, width: 1100 },
+    });
+
+    try {
+      await chooseTabMenuItem(
+        page,
+        "Alpha Stored Tab",
+        /^Mark as pending task$/,
+      );
+      await expect(
+        page.locator(".tab").filter({ hasText: "Alpha Stored Tab" }).first(),
+      ).toHaveClass(/task-pending/);
+      const pendingSnapshot = await tabStatusSnapshot(page, "Alpha Stored Tab");
+
+      await chooseTabMenuItem(page, "Alpha Stored Tab", /^Mark as done task$/);
+      await expect(
+        page.locator(".tab").filter({ hasText: "Alpha Stored Tab" }).first(),
+      ).toHaveClass(/task-done/);
+      const doneSnapshot = await tabStatusSnapshot(page, "Alpha Stored Tab");
+
+      await chooseTabMenuItem(page, "Alpha Stored Tab", /^Unmark as task$/);
+      await expect(
+        page.locator(".tab").filter({ hasText: "Alpha Stored Tab" }).first(),
+      ).not.toHaveClass(/task-/);
+      const unmarkedSnapshot = await tabStatusSnapshot(page, "Alpha Stored Tab");
+
+      return { doneSnapshot, pendingSnapshot, unmarkedSnapshot };
+    } finally {
+      await page.close().catch(() => {});
+    }
+  });
+
+  expect(candidate).toEqual(original);
+  expect(candidate.pendingSnapshot.className).toContain("task-pending");
+  expect(candidate.doneSnapshot.className).toContain("task-done");
+  expect(candidate.unmarkedSnapshot.className).not.toContain("task-");
+  extensions.assertNoCandidateOnlyErrors();
+});
+
 test("stored tabs move to trash like the original extension", async ({
   extensions,
 }) => {
@@ -855,7 +903,7 @@ async function chooseTabMenuItem(
   await tab.hover();
   await tab.locator(".tabMoreButton").click();
   await page
-    .locator(".menuItem")
+    .locator(".menuItem:visible")
     .filter({ hasText: menuItemText })
     .first()
     .click();
