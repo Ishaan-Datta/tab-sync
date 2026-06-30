@@ -545,6 +545,50 @@ test("imported text links become stored tabs like the original extension", async
   extensions.assertNoCandidateOnlyErrors();
 });
 
+test("stored tabs toggle archive status like the original extension", async ({
+  extensions,
+}) => {
+  await extensions.runBoth((extension) =>
+    extension.seedStoredOneTabData(storedRegressionSeed),
+  );
+
+  const [original, candidate] = await extensions.runBoth(async (extension) => {
+    const page = await extension.openPage("onetab.html", {
+      viewport: { height: 900, width: 1100 },
+    });
+
+    try {
+      await chooseTabMenuItem(page, "Alpha Stored Tab", /^Mark as archived$/);
+      await expect(
+        page.locator(".tab").filter({ hasText: "Alpha Stored Tab" }).first(),
+      ).toHaveClass(/archived/);
+      const archivedSnapshot = await tabStatusSnapshot(page, "Alpha Stored Tab");
+
+      await chooseTabMenuItem(
+        page,
+        "Alpha Stored Tab",
+        /^Unmark as archived$/,
+      );
+      await expect(
+        page.locator(".tab").filter({ hasText: "Alpha Stored Tab" }).first(),
+      ).not.toHaveClass(/archived/);
+      const unarchivedSnapshot = await tabStatusSnapshot(
+        page,
+        "Alpha Stored Tab",
+      );
+
+      return { archivedSnapshot, unarchivedSnapshot };
+    } finally {
+      await page.close().catch(() => {});
+    }
+  });
+
+  expect(candidate).toEqual(original);
+  expect(candidate.archivedSnapshot.className).toContain("archived");
+  expect(candidate.unarchivedSnapshot.className).not.toContain("archived");
+  extensions.assertNoCandidateOnlyErrors();
+});
+
 test("stored tabs move to trash like the original extension", async ({
   extensions,
 }) => {
@@ -798,15 +842,46 @@ async function moveTabToTrash(
   page: import("@playwright/test").Page,
   tabTitle: string,
 ) {
+  await chooseTabMenuItem(page, tabTitle, /^Move to trash$/);
+}
+
+async function chooseTabMenuItem(
+  page: import("@playwright/test").Page,
+  tabTitle: string,
+  menuItemText: RegExp,
+) {
   const tab = page.locator(".tab").filter({ hasText: tabTitle }).first();
   await tab.waitFor({ state: "visible" });
   await tab.hover();
   await tab.locator(".tabMoreButton").click();
   await page
     .locator(".menuItem")
-    .filter({ hasText: /^Move to trash$/ })
+    .filter({ hasText: menuItemText })
     .first()
     .click();
+}
+
+async function tabStatusSnapshot(
+  page: import("@playwright/test").Page,
+  tabTitle: string,
+) {
+  return await page.evaluate((title) => {
+    const tab = Array.from(document.querySelectorAll<HTMLElement>(".tab")).find(
+      (element) => element.innerText.includes(title),
+    );
+
+    if (!tab) throw new Error(`Tab not found: ${title}`);
+    const linkText = tab.querySelector<HTMLElement>(
+      ".tabLinkTextStripesPossible",
+    );
+    return {
+      className: tab.className,
+      linkTextBackground: linkText
+        ? getComputedStyle(linkText).backgroundImage
+        : "",
+      text: tab.innerText.replace(/\s+/g, " ").trim(),
+    };
+  }, tabTitle);
 }
 
 async function openTrashView(page: import("@playwright/test").Page) {
