@@ -446,6 +446,90 @@ test("imported text links become stored tabs like the original extension", async
   extensions.assertNoCandidateOnlyErrors();
 });
 
+test("stored tabs move to trash like the original extension", async ({
+  extensions,
+}) => {
+  await extensions.runBoth((extension) =>
+    extension.seedStoredOneTabData(storedRegressionSeed),
+  );
+
+  const [original, candidate] = await extensions.runBoth(async (extension) => {
+    const page = await extension.openPage("onetab.html", {
+      viewport: { height: 900, width: 1100 },
+    });
+
+    try {
+      await moveTabToTrash(page, "Alpha Stored Tab");
+
+      await expect(
+        page.locator('.tab:has-text("Alpha Stored Tab")'),
+      ).toHaveCount(0);
+      await expect(page.locator("body")).toContainText("Trash1");
+
+      return await page.evaluate(() => ({
+        bodyText: document.body.innerText.replace(/\s+/g, " ").trim(),
+        tabTexts: Array.from(document.querySelectorAll<HTMLElement>(".tab"))
+          .map((tab) => tab.innerText.replace(/\s+/g, " ").trim())
+          .filter(Boolean),
+      }));
+    } finally {
+      await page.close().catch(() => {});
+    }
+  });
+
+  expect(candidate).toEqual(original);
+  expect(candidate.bodyText).not.toContain("Alpha Stored Tab");
+  expect(candidate.bodyText).toContain("Beta Stored Tab");
+  expect(candidate.bodyText).toContain("Trash 1");
+  extensions.assertNoCandidateOnlyErrors();
+});
+
+test("trashed tabs delete all trash like the original extension", async ({
+  extensions,
+}) => {
+  await extensions.runBoth((extension) =>
+    extension.seedStoredOneTabData(storedRegressionSeed),
+  );
+
+  const [original, candidate] = await extensions.runBoth(async (extension) => {
+    const page = await extension.openPage("onetab.html", {
+      viewport: { height: 900, width: 1100 },
+    });
+
+    try {
+      await moveTabToTrash(page, "Alpha Stored Tab");
+      await openTrashView(page);
+      await page.locator('.tab:has-text("Alpha Stored Tab")').waitFor({
+        state: "visible",
+      });
+      await page
+        .locator(".controlButton")
+        .filter({ hasText: /^Delete all trash$/ })
+        .first()
+        .click();
+
+      await expect(
+        page.locator('.tab:has-text("Alpha Stored Tab")'),
+      ).toHaveCount(0);
+
+      return await page.evaluate(() => ({
+        bodyText: document.body.innerText.replace(/\s+/g, " ").trim(),
+        tabTexts: Array.from(document.querySelectorAll<HTMLElement>(".tab"))
+          .map((tab) => tab.innerText.replace(/\s+/g, " ").trim())
+          .filter(Boolean),
+      }));
+    } finally {
+      await page.close().catch(() => {});
+    }
+  });
+
+  expect(candidate).toEqual(original);
+  expect(candidate.bodyText).not.toContain("Alpha Stored Tab");
+  expect(candidate.bodyText).not.toContain("Trash 1");
+  expect(candidate.bodyText).not.toContain("Trash1");
+  extensions.assertNoCandidateOnlyErrors();
+});
+
 test("stored tab context menus render matching popups", async ({
   extensions,
 }) => {
@@ -608,5 +692,31 @@ async function menuSnapshot(page: import("@playwright/test").Page) {
         .filter(Boolean)
         .join(" | "),
     };
+  });
+}
+
+async function moveTabToTrash(
+  page: import("@playwright/test").Page,
+  tabTitle: string,
+) {
+  const tab = page.locator(".tab").filter({ hasText: tabTitle }).first();
+  await tab.waitFor({ state: "visible" });
+  await tab.hover();
+  await tab.locator(".tabMoreButton").click();
+  await page
+    .locator(".menuItem")
+    .filter({ hasText: /^Move to trash$/ })
+    .first()
+    .click();
+}
+
+async function openTrashView(page: import("@playwright/test").Page) {
+  await page.evaluate(() => {
+    const trashLabel = Array.from(
+      document.querySelectorAll<HTMLElement>(".editInPlaceLabelSpan"),
+    ).find((element) => element.textContent?.trim() === "Trash");
+
+    if (!trashLabel) throw new Error("Trash navigation label not found");
+    trashLabel.click();
   });
 }
