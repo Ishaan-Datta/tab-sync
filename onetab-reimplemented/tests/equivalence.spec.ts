@@ -39,6 +39,57 @@ test("runtime baseline state matches the original extension", async ({
   await extensions.compareRuntime();
 });
 
+test("browser action stores current window tabs like the original extension", async ({
+  extensions,
+}) => {
+  await extensions.runBoth((extension) =>
+    extension.createBrowserState({
+      tabs: [
+        {
+          title: "Action Stored Alpha",
+          url: "https://example.com/action-stored-alpha",
+        },
+        {
+          active: true,
+          title: "Action Stored Beta",
+          url: "https://example.org/action-stored-beta?with=query",
+        },
+      ],
+    }),
+  );
+
+  await extensions.runBoth((extension) => extension.storeCurrentWindowTabs());
+
+  const [original, candidate] = await extensions.runBoth(async (extension) => {
+    const page = await extension.openPage("onetab.html", {
+      viewport: { height: 900, width: 1100 },
+    });
+
+    try {
+      await page.locator('.tab:has-text("Action Stored Alpha")').waitFor({
+        state: "visible",
+      });
+      await page.locator('.tab:has-text("Action Stored Beta")').waitFor({
+        state: "visible",
+      });
+
+      return await page.evaluate(() => ({
+        bodyText: document.body.innerText.replace(/\s+/g, " ").trim(),
+        tabTexts: Array.from(document.querySelectorAll<HTMLElement>(".tab"))
+          .map((tab) => tab.innerText.replace(/\s+/g, " ").trim())
+          .filter(Boolean),
+      }));
+    } finally {
+      await page.close().catch(() => {});
+    }
+  });
+
+  expect(candidate).toEqual(original);
+  expect(candidate.bodyText).toContain("Action Stored Alpha");
+  expect(candidate.bodyText).toContain("Action Stored Beta");
+  extensions.assertNoCandidateOnlyErrors();
+});
+
 test("extension pages render matching user-facing text", async ({
   extensions,
 }) => {

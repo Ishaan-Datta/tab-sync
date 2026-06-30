@@ -101,6 +101,7 @@ export interface ExtensionHarness {
   pageTextSnapshot(pathname: string): Promise<unknown>;
   runtimeSnapshot(): Promise<unknown>;
   seedStoredOneTabData(seed: StoredOneTabSeed): Promise<void>;
+  storeCurrentWindowTabs(): Promise<void>;
 }
 
 interface ExtensionPair {
@@ -235,6 +236,7 @@ async function launchExtension(
   const harnessPage = await openHarnessTab(context);
   await waitForHarnessTabState(serviceWorker);
   await closeNonHarnessPages(context, harnessPage);
+  await closeNonHarnessTabs(serviceWorker);
   await focusHarnessTab(serviceWorker);
   await harnessPage.bringToFront();
   await waitForHarnessTabState(serviceWorker, { requireSingleTab: true });
@@ -337,6 +339,24 @@ async function launchExtension(
     async seedStoredOneTabData(seed: StoredOneTabSeed) {
       await serviceWorker.evaluate(seedStoredOneTabData, seed);
     },
+    async storeCurrentWindowTabs() {
+      await pinHarnessTab(serviceWorker);
+      const page = await openExtensionPage("popup.html", {
+        viewport: { height: 700, width: 900 },
+      });
+      try {
+        await page.getByText("Open OneTab after storing tabs").click();
+        const storeButton = page
+          .locator(".button")
+          .filter({ hasText: /Close tabs? and store in/i })
+          .first();
+        await storeButton.waitFor({ state: "visible" });
+        await storeButton.click();
+        await page.waitForTimeout(750).catch(() => {});
+      } finally {
+        await page.close().catch(() => {});
+      }
+    },
   };
 }
 
@@ -368,11 +388,9 @@ function createExtensionPair(
       );
     },
     async compareData() {
-      const [originalSnapshot, candidateSnapshot] = await Promise.all([
-        original.dataSnapshot(),
-        candidate.dataSnapshot(),
-      ]);
-      expect(candidateSnapshot).toEqual(originalSnapshot);
+      await expectSnapshotsToConverge(() =>
+        Promise.all([original.dataSnapshot(), candidate.dataSnapshot()]),
+      );
     },
     async compareRender(pathname: string, options: RenderSnapshotOptions = {}) {
       const [originalSnapshot, candidateSnapshot] = await Promise.all([
@@ -754,6 +772,17 @@ async function closeNonHarnessPages(
   );
 }
 
+async function closeNonHarnessTabs(serviceWorker: Worker) {
+  await serviceWorker.evaluate(async (url) => {
+    const tabs: any[] = await chrome.tabs.query({});
+    await Promise.all(
+      tabs
+        .filter((tab) => tab.url !== url && tab.id !== undefined)
+        .map((tab) => chrome.tabs.remove(tab.id).catch(() => {})),
+    );
+  }, harnessUrl);
+}
+
 async function focusHarnessTab(serviceWorker: Worker) {
   await serviceWorker.evaluate(async (url) => {
     const tabs: any[] = await chrome.tabs.query({});
@@ -762,6 +791,16 @@ async function focusHarnessTab(serviceWorker: Worker) {
       await chrome.tabs.update(tab.id, { active: true });
     if (tab?.windowId !== undefined && chrome.windows?.update) {
       await chrome.windows.update(tab.windowId, { focused: true });
+    }
+  }, harnessUrl);
+}
+
+async function pinHarnessTab(serviceWorker: Worker) {
+  await serviceWorker.evaluate(async (url) => {
+    const tabs: any[] = await chrome.tabs.query({});
+    const tab = tabs.find((candidate) => candidate.url === url);
+    if (tab?.id !== undefined) {
+      await chrome.tabs.update(tab.id, { pinned: true });
     }
   }, harnessUrl);
 }
