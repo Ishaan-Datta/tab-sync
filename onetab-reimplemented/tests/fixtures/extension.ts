@@ -225,6 +225,9 @@ async function launchExtension(
   });
 
   const errors: string[] = [];
+  await context.route("https://t2.gstatic.com/faviconV2**", async (route) => {
+    await route.fulfill({ status: 204 });
+  });
   context.pages().forEach((page) => collectPageErrors(label, page, errors));
   context.on("page", (page) => collectPageErrors(label, page, errors));
 

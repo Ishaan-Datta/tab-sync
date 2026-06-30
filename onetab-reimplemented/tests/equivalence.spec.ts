@@ -1,5 +1,7 @@
 import { expect, test } from "./fixtures/extension";
 
+declare const chrome: any;
+
 const storedRegressionSeed = {
   groups: [
     {
@@ -87,6 +89,86 @@ test("browser action stores current window tabs like the original extension", as
   expect(candidate).toEqual(original);
   expect(candidate.bodyText).toContain("Action Stored Alpha");
   expect(candidate.bodyText).toContain("Action Stored Beta");
+  extensions.assertNoCandidateOnlyErrors();
+});
+
+test("stored tabs restore into the browser like the original extension", async ({
+  extensions,
+}) => {
+  const restoredUrl = "https://example.com/alpha-stored-tab";
+
+  const [original, candidate] = await extensions.runBoth(async (extension) => {
+    await extension.context.route(
+      restoredUrl,
+      async (route) => {
+        await route.fulfill({
+          body: "<!doctype html><title>Alpha Restored Page</title><h1>Alpha Restored Page</h1>",
+          contentType: "text/html",
+        });
+      },
+      { times: 1 },
+    );
+    await extension.seedStoredOneTabData(storedRegressionSeed);
+    await seedOneTabAttr(extension, "autoActionOnOpenOptionChosen", true);
+
+    const page = await extension.openPage("onetab.html", {
+      viewport: { height: 900, width: 1100 },
+    });
+
+    try {
+      const storedTab = page
+        .locator('.tab:has-text("Alpha Stored Tab")')
+        .first();
+      await storedTab.waitFor({ state: "visible" });
+      await storedTab.locator(".tabLinkTextStripesPossible").first().click();
+
+      await expect
+        .poll(
+          async () =>
+            await extension.serviceWorker.evaluate(
+              async (url) =>
+                (await chrome.tabs.query({})).some((tab: any) =>
+                  tab.url?.startsWith(url),
+                ),
+              restoredUrl,
+            ),
+          { timeout: 5_000 },
+        )
+        .toBe(true);
+      await page.waitForTimeout(500);
+
+      return {
+        bodyText: documentText(await page.locator("body").innerText()),
+        tabs: await extension.serviceWorker.evaluate(async () => {
+          const extensionId = chrome.runtime.id;
+          const tabs: Array<{
+            active?: boolean;
+            index: number;
+            pinned?: boolean;
+            title?: string;
+            url?: string;
+          }> = await chrome.tabs.query({});
+          return tabs
+            .map((tab) => ({
+              active: tab.active,
+              index: tab.index,
+              pinned: tab.pinned,
+              title: tab.title,
+              url: tab.url?.replace(extensionId, "<extension-id>"),
+            }))
+            .sort((left, right) => left.index - right.index);
+        }),
+      };
+    } finally {
+      await page.close().catch(() => {});
+    }
+  });
+
+  expect(candidate).toEqual(original);
+  expect(candidate.bodyText).toContain("Beta Stored Tab");
+  expect(candidate.tabs.some((tab) => tab.url?.startsWith(restoredUrl))).toBe(
+    true,
+  );
   extensions.assertNoCandidateOnlyErrors();
 });
 
@@ -354,6 +436,45 @@ function normalizeErrors(errors: string[]) {
   return errors
     .map((error) => error.replace(/^(candidate|original) /, ""))
     .sort();
+}
+
+function documentText(value: string) {
+  return value.replace(/\s+/g, " ").trim();
+}
+
+async function seedOneTabAttr(
+  extension: { serviceWorker: import("@playwright/test").Worker },
+  id: string,
+  value: unknown,
+) {
+  await extension.serviceWorker.evaluate(
+    async ({ id, value }) => {
+      function requestResult<T>(request: IDBRequest<T>): Promise<T> {
+        return new Promise((resolve, reject) => {
+          request.onerror = () => reject(request.error);
+          request.onsuccess = () => resolve(request.result);
+        });
+      }
+
+      function transactionDone(transaction: IDBTransaction): Promise<void> {
+        return new Promise((resolve, reject) => {
+          transaction.onabort = () => reject(transaction.error);
+          transaction.onerror = () => reject(transaction.error);
+          transaction.oncomplete = () => resolve();
+        });
+      }
+
+      const database = await requestResult(indexedDB.open("onetab", 2));
+      try {
+        const transaction = database.transaction("attr", "readwrite");
+        transaction.objectStore("attr").put({ id, value });
+        await transactionDone(transaction);
+      } finally {
+        database.close();
+      }
+    },
+    { id, value },
+  );
 }
 
 async function menuSnapshot(page: import("@playwright/test").Page) {
