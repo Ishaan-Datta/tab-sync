@@ -372,6 +372,80 @@ test("import text section interaction matches the original extension", async ({
   extensions.assertNoCandidateOnlyErrors();
 });
 
+test("imported text links become stored tabs like the original extension", async ({
+  extensions,
+}) => {
+  const importHtml = [
+    '<a href="https://example.net/imported-alpha">Imported Alpha</a>',
+    '<a href="https://example.net/imported-beta?with=query">Imported Beta</a>',
+  ].join("<br>");
+
+  const [original, candidate] = await extensions.runBoth(async (extension) => {
+    const importPage = await extension.openPage("import-export.html", {
+      viewport: { height: 900, width: 900 },
+    });
+
+    try {
+      await importPage.locator("iframe").first().waitFor({ state: "attached" });
+      const importFrameElement = await importPage
+        .locator("iframe")
+        .first()
+        .elementHandle();
+      const importFrame = await importFrameElement?.contentFrame();
+      if (!importFrame) throw new Error("Import editor frame not found");
+
+      await importFrame.evaluate((html) => {
+        document.body.innerHTML = html;
+      }, importHtml);
+
+      await importPage
+        .locator(".button")
+        .filter({ hasText: /^Import$/ })
+        .first()
+        .click();
+      await importPage.waitForTimeout(500).catch(() => {});
+    } finally {
+      await importPage.close().catch(() => {});
+    }
+
+    const oneTabPage = await existingOrNewOneTabPage(extension, {
+      viewport: { height: 900, width: 1100 },
+    });
+
+    try {
+      await oneTabPage.locator('.tab:has-text("Imported Alpha")').waitFor({
+        state: "visible",
+      });
+      await oneTabPage.locator('.tab:has-text("Imported Beta")').waitFor({
+        state: "visible",
+      });
+
+      return await oneTabPage.evaluate(() => ({
+        bodyText: document.body.innerText.replace(/\s+/g, " ").trim(),
+        hrefs: Array.from(
+          document.querySelectorAll<HTMLAnchorElement>(".tab a"),
+        )
+          .map((link) => link.href)
+          .filter(Boolean),
+        tabTexts: Array.from(document.querySelectorAll<HTMLElement>(".tab"))
+          .map((tab) => tab.innerText.replace(/\s+/g, " ").trim())
+          .filter(Boolean),
+      }));
+    } finally {
+      await oneTabPage.close().catch(() => {});
+    }
+  });
+
+  expect(candidate).toEqual(original);
+  expect(candidate.bodyText).toContain("Imported Alpha");
+  expect(candidate.bodyText).toContain("Imported Beta");
+  expect(candidate.hrefs).toContain("https://example.net/imported-alpha");
+  expect(candidate.hrefs).toContain(
+    "https://example.net/imported-beta?with=query",
+  );
+  extensions.assertNoCandidateOnlyErrors();
+});
+
 test("stored tab context menus render matching popups", async ({
   extensions,
 }) => {
@@ -475,6 +549,38 @@ async function seedOneTabAttr(
     },
     { id, value },
   );
+}
+
+async function existingOrNewOneTabPage(
+  extension: {
+    context: import("@playwright/test").BrowserContext;
+    extensionId: string;
+    openPage(
+      pathname: string,
+      options?: { viewport?: { height: number; width: number } },
+    ): Promise<import("@playwright/test").Page>;
+  },
+  options: { viewport: { height: number; width: number } },
+) {
+  const oneTabUrl = `chrome-extension://${extension.extensionId}/onetab.html`;
+  const deadline = Date.now() + 5_000;
+
+  while (Date.now() < deadline) {
+    const page = extension.context
+      .pages()
+      .find(
+        (candidate) =>
+          candidate.url().startsWith(oneTabUrl) && !candidate.isClosed(),
+      );
+    if (page) {
+      await page.setViewportSize(options.viewport);
+      await page.waitForLoadState("domcontentloaded").catch(() => {});
+      return page;
+    }
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  }
+
+  return await extension.openPage("onetab.html", options);
 }
 
 async function menuSnapshot(page: import("@playwright/test").Page) {
