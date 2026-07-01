@@ -985,6 +985,94 @@ test("stored tabs move to trash like the original extension", async ({
   extensions.assertNoCandidateOnlyErrors();
 });
 
+test("stored groups move to trash like the original extension", async ({
+  extensions,
+}) => {
+  await extensions.runBoth((extension) =>
+    extension.seedStoredOneTabData(storedRegressionSeed),
+  );
+
+  const [original, candidate] = await extensions.runBoth(async (extension) => {
+    const page = await extension.openPage("onetab.html", {
+      viewport: { height: 900, width: 1100 },
+    });
+
+    try {
+      await moveGroupToTrash(page, "Seeded Regression Window");
+      await dismissMoveToTrashGroupHint(page);
+      await waitForItemStatus(page, "test-window-1", { parentIds: ["trash"] });
+      await expect(
+        page.locator('.tabGroup:has-text("Seeded Regression Window")'),
+      ).toHaveCount(0);
+
+      const trashedSnapshot = await itemStatusSnapshot(page, "test-window-1");
+      await openTrashView(page);
+      await page
+        .locator('.tabGroup:has-text("Seeded Regression Window")')
+        .waitFor({ state: "visible" });
+      const trashViewText = documentText(await page.locator("body").innerText());
+
+      return { trashedSnapshot, trashViewText };
+    } finally {
+      await page.close().catch(() => {});
+    }
+  });
+
+  expect(candidate).toEqual(original);
+  expect(candidate.trashedSnapshot.parentIds).toEqual(["trash"]);
+  expect(candidate.trashViewText).toContain("Seeded Regression Window");
+  extensions.assertNoCandidateOnlyErrors();
+});
+
+test("trashed groups delete all trash like the original extension", async ({
+  extensions,
+}) => {
+  await extensions.runBoth((extension) =>
+    extension.seedStoredOneTabData(storedRegressionSeed),
+  );
+
+  const [original, candidate] = await extensions.runBoth(async (extension) => {
+    const page = await extension.openPage("onetab.html", {
+      viewport: { height: 900, width: 1100 },
+    });
+
+    try {
+      await moveGroupToTrash(page, "Seeded Regression Window");
+      await dismissMoveToTrashGroupHint(page);
+      await waitForItemStatus(page, "test-window-1", { parentIds: ["trash"] });
+      await openTrashView(page);
+      await page
+        .locator('.tabGroup:has-text("Seeded Regression Window")')
+        .waitFor({ state: "visible" });
+      await page
+        .locator(".controlButton")
+        .filter({ hasText: /^Delete all trash$/ })
+        .first()
+        .click();
+
+      await waitForItemMissing(page, "test-window-1");
+      await waitForItemMissing(page, "test-tab-alpha");
+      await waitForItemMissing(page, "test-tab-beta");
+
+      return {
+        bodyText: documentText(await page.locator("body").innerText()),
+        group: await itemRecordSnapshot(page, "test-window-1"),
+        tabAlpha: await itemRecordSnapshot(page, "test-tab-alpha"),
+        tabBeta: await itemRecordSnapshot(page, "test-tab-beta"),
+      };
+    } finally {
+      await page.close().catch(() => {});
+    }
+  });
+
+  expect(candidate).toEqual(original);
+  expect(candidate.bodyText).not.toContain("Seeded Regression Window");
+  expect(candidate.group).toBeNull();
+  expect(candidate.tabAlpha).toBeNull();
+  expect(candidate.tabBeta).toBeNull();
+  extensions.assertNoCandidateOnlyErrors();
+});
+
 test("trashed tabs delete all trash like the original extension", async ({
   extensions,
 }) => {
@@ -1209,6 +1297,22 @@ async function moveTabToTrash(
   await chooseTabMenuItem(page, tabTitle, /^Move to trash$/);
 }
 
+async function moveGroupToTrash(
+  page: import("@playwright/test").Page,
+  groupTitle: string,
+) {
+  await chooseGroupMenuItem(page, groupTitle, /^Move to trash$/);
+}
+
+async function dismissMoveToTrashGroupHint(
+  page: import("@playwright/test").Page,
+) {
+  await page
+    .getByText("Got it", { exact: true })
+    .click({ timeout: 1_000 })
+    .catch(() => {});
+}
+
 async function chooseTabMenuItem(
   page: import("@playwright/test").Page,
   tabTitle: string,
@@ -1374,14 +1478,47 @@ async function groupStatusSnapshot(
 async function waitForItemStatus(
   page: import("@playwright/test").Page,
   itemId: string,
-  expected: { archived?: number; done?: number; task?: number },
+  expected: {
+    archived?: number;
+    childIds?: string[];
+    done?: number;
+    parentIds?: string[];
+    task?: number;
+  },
 ) {
   await expect
     .poll(async () => await itemStatusSnapshot(page, itemId), { timeout: 5_000 })
     .toMatchObject(expected);
 }
 
+async function waitForItemMissing(
+  page: import("@playwright/test").Page,
+  itemId: string,
+) {
+  await expect
+    .poll(async () => await itemRecordSnapshot(page, itemId), { timeout: 5_000 })
+    .toBeNull();
+}
+
 async function itemStatusSnapshot(
+  page: import("@playwright/test").Page,
+  itemId: string,
+) {
+  const item = await itemRecordSnapshot(page, itemId);
+  if (!item) throw new Error(`OneTab item not found: ${itemId}`);
+
+  return {
+    archived: item.archived ?? 0,
+    childIds: item.childIds ?? [],
+    done: item.done ?? 0,
+    id: item.id,
+    parentIds: item.parentIds ?? [],
+    task: item.task ?? 0,
+    type: item.type,
+  };
+}
+
+async function itemRecordSnapshot(
   page: import("@playwright/test").Page,
   itemId: string,
 ) {
@@ -1396,16 +1533,9 @@ async function itemStatusSnapshot(
     const database = await requestResult(indexedDB.open("onetab", 2));
     try {
       const transaction = database.transaction("item", "readonly");
-      const item = await requestResult(transaction.objectStore("item").get(id));
-      if (!item) throw new Error(`OneTab item not found: ${id}`);
-
-      return {
-        archived: item.archived ?? 0,
-        done: item.done ?? 0,
-        id: item.id,
-        task: item.task ?? 0,
-        type: item.type,
-      };
+      return (
+        (await requestResult(transaction.objectStore("item").get(id))) ?? null
+      );
     } finally {
       database.close();
     }
