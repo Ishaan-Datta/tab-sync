@@ -379,6 +379,53 @@ test("interaction-triggered UI states render matching snapshots", async ({
   extensions.assertNoCandidateOnlyErrors();
 });
 
+test("options page renders persisted selections like the original extension", async ({
+  extensions,
+}) => {
+  await extensions.runBoth(async (extension) => {
+    await seedOneTabAttr(extension, "browserAction", "openPopup");
+    await seedOneTabAttr(extension, "urlDisplay", "full");
+  });
+
+  const [original, candidate] = await extensions.runBoth(async (extension) => {
+    const page = await extension.openPage("options.html", {
+      viewport: { height: 900, width: 900 },
+    });
+
+    try {
+      await page.locator('img[src*="option-button"]').first().waitFor({
+        state: "visible",
+      });
+
+      await page.reload();
+      await page.locator('img[src*="option-button"]').first().waitFor({
+        state: "visible",
+      });
+
+      return {
+        selectedRows: await optionSelectionSnapshot(page, [
+          "Show the OneTab action popup",
+          "Full",
+        ]),
+        settings: await attrValuesSnapshot(page, ["browserAction", "urlDisplay"]),
+      };
+    } finally {
+      await page.close().catch(() => {});
+    }
+  });
+
+  expect(candidate).toEqual(original);
+  expect(candidate.settings).toEqual({
+    browserAction: "openPopup",
+    urlDisplay: "full",
+  });
+  expect(candidate.selectedRows).toEqual({
+    "Full": true,
+    "Show the OneTab action popup": true,
+  });
+  extensions.assertNoCandidateOnlyErrors();
+});
+
 test("stored tab export text matches the original extension", async ({
   extensions,
 }) => {
@@ -556,6 +603,43 @@ test("imported text links become stored tabs like the original extension", async
   expect(candidate.hrefs).toContain(
     "https://example.net/imported-beta?with=query",
   );
+  extensions.assertNoCandidateOnlyErrors();
+});
+
+test("stored tabs search results match the original extension", async ({
+  extensions,
+}) => {
+  await extensions.runBoth((extension) =>
+    extension.seedStoredOneTabData(storedRegressionSeed),
+  );
+
+  const [original, candidate] = await extensions.runBoth(async (extension) => {
+    const page = await extension.openPage("onetab.html", {
+      viewport: { height: 900, width: 1100 },
+    });
+
+    try {
+      await page.locator('.tab:has-text("Alpha Stored Tab")').waitFor({
+        state: "visible",
+      });
+
+      const alphaSnapshot = await searchStoredTabs(page, "alpha-stored-tab");
+      const missingSnapshot = await searchStoredTabs(
+        page,
+        "missing-regression-term",
+      );
+
+      return { alphaSnapshot, missingSnapshot };
+    } finally {
+      await page.close().catch(() => {});
+    }
+  });
+
+  expect(candidate).toEqual(original);
+  expect(candidate.alphaSnapshot.inputValue).toBe("alpha-stored-tab");
+  expect(candidate.alphaSnapshot.panelText).toContain("Results 1 match");
+  expect(candidate.missingSnapshot.inputValue).toBe("missing-regression-term");
+  expect(candidate.missingSnapshot.panelText).toContain("No matches");
   extensions.assertNoCandidateOnlyErrors();
 });
 
@@ -1230,6 +1314,60 @@ async function seedOneTabAttr(
   );
 }
 
+async function attrValuesSnapshot(
+  page: import("@playwright/test").Page,
+  ids: string[],
+) {
+  return await page.evaluate(async (attrIds) => {
+    function requestResult<T>(request: IDBRequest<T>): Promise<T> {
+      return new Promise((resolve, reject) => {
+        request.onerror = () => reject(request.error);
+        request.onsuccess = () => resolve(request.result);
+      });
+    }
+
+    const database = await requestResult(indexedDB.open("onetab", 2));
+    try {
+      const transaction = database.transaction("attr", "readonly");
+      const store = transaction.objectStore("attr");
+      const entries = await Promise.all(
+        attrIds.map(async (id) => [
+          id,
+          (await requestResult(store.get(id)))?.value,
+        ]),
+      );
+
+      return Object.fromEntries(entries);
+    } finally {
+      database.close();
+    }
+  }, ids);
+}
+
+async function optionSelectionSnapshot(
+  page: import("@playwright/test").Page,
+  labels: string[],
+) {
+  return await page.evaluate((optionLabels) => {
+    return Object.fromEntries(
+      optionLabels.map((label) => {
+        const labelElement = Array.from(
+          document.querySelectorAll<HTMLElement>("body *"),
+        ).find((element) => element.textContent?.trim() === label);
+        let row: HTMLElement | null | undefined = labelElement;
+        while (row && !row.querySelector('img[src*="option-button"]')) {
+          row = row.parentElement;
+        }
+
+        const image = row?.querySelector<HTMLImageElement>(
+          'img[src*="option-button"]',
+        );
+        return [label, /option-button-on/.test(image?.src ?? "")];
+      }),
+    );
+  }, labels);
+}
+
 async function existingOrNewOneTabPage(
   extension: {
     context: import("@playwright/test").BrowserContext;
@@ -1260,6 +1398,43 @@ async function existingOrNewOneTabPage(
   }
 
   return await extension.openPage("onetab.html", options);
+}
+
+async function searchStoredTabs(
+  page: import("@playwright/test").Page,
+  query: string,
+) {
+  await page.keyboard.press("/");
+  const input = page.locator('input[type="text"]:visible').first();
+  await input.waitFor({ state: "visible" });
+  await input.fill(query);
+  await expect
+    .poll(async () => (await searchPanelSnapshot(page)).inputValue)
+    .toBe(query);
+
+  await expect
+    .poll(async () => (await searchPanelSnapshot(page)).panelText, {
+      timeout: 5_000,
+    })
+    .not.toBe("");
+
+  return await searchPanelSnapshot(page);
+}
+
+async function searchPanelSnapshot(page: import("@playwright/test").Page) {
+  return await page.evaluate(() => {
+    const input = Array.from(
+      document.querySelectorAll<HTMLInputElement>('input[type="text"]'),
+    ).find((element) => element.offsetParent !== null);
+    if (!input) throw new Error("Search input not found");
+
+    const searchRoot = input.parentElement?.parentElement?.parentElement;
+    const panel = searchRoot?.children[1] as HTMLElement | undefined;
+    return {
+      inputValue: input.value,
+      panelText: panel?.innerText.replace(/\s+/g, " ").trim() ?? "",
+    };
+  });
 }
 
 async function menuSnapshot(page: import("@playwright/test").Page) {
