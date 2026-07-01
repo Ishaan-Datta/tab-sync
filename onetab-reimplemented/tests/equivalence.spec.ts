@@ -731,6 +731,97 @@ test("stored groups rename and add notes like the original extension", async ({
   extensions.assertNoCandidateOnlyErrors();
 });
 
+test("stored groups toggle archive status like the original extension", async ({
+  extensions,
+}) => {
+  await extensions.runBoth((extension) =>
+    extension.seedStoredOneTabData(storedRegressionSeed),
+  );
+
+  const [original, candidate] = await extensions.runBoth(async (extension) => {
+    const page = await extension.openPage("onetab.html", {
+      viewport: { height: 900, width: 1100 },
+    });
+
+    try {
+      await chooseGroupMenuItem(
+        page,
+        "Seeded Regression Window",
+        /^Mark as archived$/,
+      );
+      await waitForItemStatus(page, "test-window-1", { archived: 1 });
+      const archivedSnapshot = await itemStatusSnapshot(page, "test-window-1");
+
+      await chooseGroupMenuItem(
+        page,
+        "Seeded Regression Window",
+        /^Unmark as archived$/,
+      );
+      await waitForItemStatus(page, "test-window-1", { archived: 0 });
+      const unarchivedSnapshot = await itemStatusSnapshot(page, "test-window-1");
+
+      return { archivedSnapshot, unarchivedSnapshot };
+    } finally {
+      await page.close().catch(() => {});
+    }
+  });
+
+  expect(candidate).toEqual(original);
+  expect(candidate.archivedSnapshot.archived).toBe(1);
+  expect(candidate.unarchivedSnapshot.archived).toBe(0);
+  extensions.assertNoCandidateOnlyErrors();
+});
+
+test("stored groups toggle task status like the original extension", async ({
+  extensions,
+}) => {
+  await extensions.runBoth((extension) =>
+    extension.seedStoredOneTabData(storedRegressionSeed),
+  );
+
+  const [original, candidate] = await extensions.runBoth(async (extension) => {
+    const page = await extension.openPage("onetab.html", {
+      viewport: { height: 900, width: 1100 },
+    });
+
+    try {
+      await chooseGroupMenuItem(
+        page,
+        "Seeded Regression Window",
+        /^Mark as pending task$/,
+      );
+      await waitForItemStatus(page, "test-window-1", { done: 0, task: 1 });
+      const pendingSnapshot = await itemStatusSnapshot(page, "test-window-1");
+
+      await chooseGroupMenuItem(
+        page,
+        "Seeded Regression Window",
+        /^Mark as done task$/,
+      );
+      await waitForItemStatus(page, "test-window-1", { done: 1, task: 1 });
+      const doneSnapshot = await itemStatusSnapshot(page, "test-window-1");
+
+      await chooseGroupMenuItem(
+        page,
+        "Seeded Regression Window",
+        /^Unmark as task$/,
+      );
+      await waitForItemStatus(page, "test-window-1", { done: 0, task: 0 });
+      const unmarkedSnapshot = await itemStatusSnapshot(page, "test-window-1");
+
+      return { doneSnapshot, pendingSnapshot, unmarkedSnapshot };
+    } finally {
+      await page.close().catch(() => {});
+    }
+  });
+
+  expect(candidate).toEqual(original);
+  expect(candidate.pendingSnapshot).toMatchObject({ done: 0, task: 1 });
+  expect(candidate.doneSnapshot).toMatchObject({ done: 1, task: 1 });
+  expect(candidate.unmarkedSnapshot).toMatchObject({ done: 0, task: 0 });
+  extensions.assertNoCandidateOnlyErrors();
+});
+
 test("stored groups toggle lock status like the original extension", async ({
   extensions,
 }) => {
@@ -1278,6 +1369,47 @@ async function groupStatusSnapshot(
       ].sort(),
     };
   }, groupTitle);
+}
+
+async function waitForItemStatus(
+  page: import("@playwright/test").Page,
+  itemId: string,
+  expected: { archived?: number; done?: number; task?: number },
+) {
+  await expect
+    .poll(async () => await itemStatusSnapshot(page, itemId), { timeout: 5_000 })
+    .toMatchObject(expected);
+}
+
+async function itemStatusSnapshot(
+  page: import("@playwright/test").Page,
+  itemId: string,
+) {
+  return await page.evaluate(async (id) => {
+    function requestResult<T>(request: IDBRequest<T>): Promise<T> {
+      return new Promise((resolve, reject) => {
+        request.onerror = () => reject(request.error);
+        request.onsuccess = () => resolve(request.result);
+      });
+    }
+
+    const database = await requestResult(indexedDB.open("onetab", 2));
+    try {
+      const transaction = database.transaction("item", "readonly");
+      const item = await requestResult(transaction.objectStore("item").get(id));
+      if (!item) throw new Error(`OneTab item not found: ${id}`);
+
+      return {
+        archived: item.archived ?? 0,
+        done: item.done ?? 0,
+        id: item.id,
+        task: item.task ?? 0,
+        type: item.type,
+      };
+    } finally {
+      database.close();
+    }
+  }, itemId);
 }
 
 async function editTabTitleAndNotes(
