@@ -685,6 +685,46 @@ test("stored tabs rename and add notes like the original extension", async ({
   extensions.assertNoCandidateOnlyErrors();
 });
 
+test("stored groups rename and add notes like the original extension", async ({
+  extensions,
+}) => {
+  await extensions.runBoth((extension) =>
+    extension.seedStoredOneTabData(storedRegressionSeed),
+  );
+
+  const [original, candidate] = await extensions.runBoth(async (extension) => {
+    const page = await extension.openPage("onetab.html", {
+      viewport: { height: 900, width: 1100 },
+    });
+
+    try {
+      await editGroupTitleAndNotes(page, {
+        notes: "Regression group note added by equivalence test",
+        originalTitle: "Seeded Regression Window",
+        title: "Renamed Regression Window",
+      });
+
+      await expect(page.locator("body")).toContainText(
+        "Renamed Regression Window",
+      );
+      await expect(page.locator("body")).toContainText(
+        "Regression group note added by equivalence test",
+      );
+
+      return await groupStatusSnapshot(page, "Renamed Regression Window");
+    } finally {
+      await page.close().catch(() => {});
+    }
+  });
+
+  expect(candidate).toEqual(original);
+  expect(candidate.bodyText).toContain("Renamed Regression Window");
+  expect(candidate.bodyText).toContain(
+    "Regression group note added by equivalence test",
+  );
+  extensions.assertNoCandidateOnlyErrors();
+});
+
 test("stored tabs move to trash like the original extension", async ({
   extensions,
 }) => {
@@ -988,6 +1028,25 @@ async function tabStatusSnapshot(
   }, tabTitle);
 }
 
+async function groupStatusSnapshot(
+  page: import("@playwright/test").Page,
+  groupTitle: string,
+) {
+  return await page.evaluate((title) => {
+    const label = Array.from(
+      document.querySelectorAll<HTMLElement>(".tabGroupLabelText"),
+    ).find((element) => element.innerText.includes(title));
+
+    if (!label) throw new Error(`Group not found: ${title}`);
+
+    return {
+      bodyText: document.body.innerText.replace(/\s+/g, " ").trim(),
+      className: label.className,
+      labelText: label.innerText.replace(/\s+/g, " ").trim(),
+    };
+  }, groupTitle);
+}
+
 async function editTabTitleAndNotes(
   page: import("@playwright/test").Page,
   values: { notes: string; originalTitle: string; title: string },
@@ -1012,6 +1071,42 @@ async function editTabTitleAndNotes(
   const notesInput = page.locator('textarea[placeholder="Notes"]').last();
   await notesInput.waitFor({ state: "visible" });
   await notesInput.fill(values.notes);
+  await page.mouse.click(5, 5);
+}
+
+async function editGroupTitleAndNotes(
+  page: import("@playwright/test").Page,
+  values: { notes: string; originalTitle: string; title: string },
+) {
+  await page
+    .locator(".tabGroupLabelText")
+    .filter({ hasText: values.originalTitle })
+    .first()
+    .click();
+
+  await page.locator('textarea[placeholder="Title"]').first().waitFor({
+    state: "visible",
+  });
+  await fillVisibleTextarea(page, {
+    placeholder: "Title",
+    submitWithEnter: true,
+    value: values.title,
+    valueToReplace: values.originalTitle,
+  });
+  await expect(page.locator("body")).toContainText(values.title);
+
+  await page
+    .locator(".tabGroupLabelText")
+    .filter({ hasText: values.title })
+    .first()
+    .click();
+  await page.locator('textarea[placeholder="Notes"]').last().waitFor({
+    state: "visible",
+  });
+  await fillVisibleTextarea(page, {
+    placeholder: "Notes",
+    value: values.notes,
+  });
   await page.mouse.click(5, 5);
 }
 
