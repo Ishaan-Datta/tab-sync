@@ -724,8 +724,8 @@ test("stored groups rename and add notes like the original extension", async ({
   });
 
   expect(candidate).toEqual(original);
-  expect(candidate.bodyText).toContain("Renamed Regression Window");
-  expect(candidate.bodyText).toContain(
+  expect(candidate.labelText).toContain("Renamed Regression Window");
+  expect(candidate.texts).toContain(
     "Regression group note added by equivalence test",
   );
   extensions.assertNoCandidateOnlyErrors();
@@ -767,6 +767,92 @@ test("stored groups toggle lock status like the original extension", async ({
   expect(candidate).toEqual(original);
   expect(candidate.lockedSnapshot.lockIconCount).toBe(1);
   expect(candidate.unlockedSnapshot.lockIconCount).toBe(0);
+  extensions.assertNoCandidateOnlyErrors();
+});
+
+test("stored groups toggle pin status like the original extension", async ({
+  extensions,
+}) => {
+  await extensions.runBoth((extension) =>
+    extension.seedStoredOneTabData(storedRegressionSeed),
+  );
+
+  const [original, candidate] = await extensions.runBoth(async (extension) => {
+    const page = await extension.openPage("onetab.html", {
+      viewport: { height: 900, width: 1100 },
+    });
+
+    try {
+      await chooseGroupMenuItem(
+        page,
+        "Seeded Regression Window",
+        /^Pin to top of folder$/,
+      );
+      await waitForGroupPinIconCount(page, "Seeded Regression Window", 1);
+      const pinnedSnapshot = await groupStatusSnapshot(
+        page,
+        "Seeded Regression Window",
+      );
+
+      await chooseGroupMenuItem(page, "Seeded Regression Window", /^Unpin$/);
+      await waitForGroupPinIconCount(page, "Seeded Regression Window", 0);
+      const unpinnedSnapshot = await groupStatusSnapshot(
+        page,
+        "Seeded Regression Window",
+      );
+
+      return { pinnedSnapshot, unpinnedSnapshot };
+    } finally {
+      await page.close().catch(() => {});
+    }
+  });
+
+  expect(candidate).toEqual(original);
+  expect(candidate.pinnedSnapshot.pinIconCount).toBe(1);
+  expect(candidate.unpinnedSnapshot.pinIconCount).toBe(0);
+  extensions.assertNoCandidateOnlyErrors();
+});
+
+test("stored groups toggle star status like the original extension", async ({
+  extensions,
+}) => {
+  await extensions.runBoth((extension) =>
+    extension.seedStoredOneTabData(storedRegressionSeed),
+  );
+
+  const [original, candidate] = await extensions.runBoth(async (extension) => {
+    const page = await extension.openPage("onetab.html", {
+      viewport: { height: 900, width: 1100 },
+    });
+
+    try {
+      await chooseGroupMenuItem(page, "Seeded Regression Window", /^Star$/);
+      await waitForGroupStarIconCount(page, "Seeded Regression Window", 1);
+      const starredSnapshot = await groupStatusSnapshot(
+        page,
+        "Seeded Regression Window",
+      );
+
+      await chooseGroupMenuItem(
+        page,
+        "Seeded Regression Window",
+        /^Remove star$/,
+      );
+      await waitForGroupStarIconCount(page, "Seeded Regression Window", 0);
+      const unstarredSnapshot = await groupStatusSnapshot(
+        page,
+        "Seeded Regression Window",
+      );
+
+      return { starredSnapshot, unstarredSnapshot };
+    } finally {
+      await page.close().catch(() => {});
+    }
+  });
+
+  expect(candidate).toEqual(original);
+  expect(candidate.starredSnapshot.starIconCount).toBe(1);
+  expect(candidate.unstarredSnapshot.starIconCount).toBe(0);
   extensions.assertNoCandidateOnlyErrors();
 });
 
@@ -1103,6 +1189,32 @@ async function waitForGroupLockIconCount(
     .toBe(count);
 }
 
+async function waitForGroupPinIconCount(
+  page: import("@playwright/test").Page,
+  groupTitle: string,
+  count: number,
+) {
+  await expect
+    .poll(
+      async () => (await groupStatusSnapshot(page, groupTitle)).pinIconCount,
+      { timeout: 5_000 },
+    )
+    .toBe(count);
+}
+
+async function waitForGroupStarIconCount(
+  page: import("@playwright/test").Page,
+  groupTitle: string,
+  count: number,
+) {
+  await expect
+    .poll(
+      async () => (await groupStatusSnapshot(page, groupTitle)).starIconCount,
+      { timeout: 5_000 },
+    )
+    .toBe(count);
+}
+
 async function tabStatusSnapshot(
   page: import("@playwright/test").Page,
   tabTitle: string,
@@ -1141,12 +1253,29 @@ async function groupStatusSnapshot(
     if (!group || !label) throw new Error(`Group not found: ${title}`);
 
     return {
-      bodyText: document.body.innerText.replace(/\s+/g, " ").trim(),
       className: label.className,
       labelText: label.innerText.replace(/\s+/g, " ").trim(),
       lockIconCount: Array.from(group.querySelectorAll<HTMLImageElement>("img"))
         .filter((element) => /\/images\/lock(-dark)?\.png$/.test(element.src))
         .filter((element) => element.offsetParent !== null).length,
+      pinIconCount: Array.from(group.querySelectorAll<HTMLImageElement>("img"))
+        .filter((element) => /\/images\/pin(-dark)?\.png$/.test(element.src))
+        .filter((element) => element.offsetParent !== null).length,
+      starIconCount: Array.from(group.querySelectorAll<HTMLImageElement>("img"))
+        .filter((element) => /\/images\/star2(-dark)?\.png$/.test(element.src))
+        .filter((element) => element.offsetParent !== null).length,
+      texts: [
+        ...new Set(
+          Array.from(
+            group.querySelectorAll<HTMLElement>(
+              ".tabGroupLabelText, .tabLinkText, .tabLinkTextStripesPossible",
+            ),
+          )
+            .filter((element) => element.offsetParent !== null)
+            .map((element) => element.innerText.replace(/\s+/g, " ").trim())
+            .filter(Boolean),
+        ),
+      ].sort(),
     };
   }, groupTitle);
 }
