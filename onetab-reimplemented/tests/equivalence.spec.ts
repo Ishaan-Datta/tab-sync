@@ -181,23 +181,23 @@ test("stored groups restore all tabs like the original extension", async ({
   ];
 
   const [original, candidate] = await extensions.runBoth(async (extension) => {
-    for (const routePattern of [
-      "https://example.com/**",
-      "https://example.org/**",
-    ]) {
-      await extension.context.route(routePattern, async (route) => {
-        if (route.request().resourceType() !== "document") {
-          await route.fulfill({ status: 204 });
-          return;
-        }
+    await extension.context.route("**/*", async (route) => {
+      const url = new URL(route.request().url());
+      if (!new Set(["example.com", "example.org"]).has(url.hostname)) {
+        await route.continue();
+        return;
+      }
 
-        const url = route.request().url();
-        await route.fulfill({
-          body: `<!doctype html><title>${url}</title><h1>${url}</h1>`,
-          contentType: "text/html",
-        });
+      if (route.request().resourceType() !== "document") {
+        await route.fulfill({ status: 204 });
+        return;
+      }
+
+      await route.fulfill({
+        body: `<!doctype html><title>${url.href}</title><h1>${url.href}</h1>`,
+        contentType: "text/html",
       });
-    }
+    });
 
     await extension.seedStoredOneTabData(storedRegressionSeed);
     await seedOneTabAttr(extension, "autoActionOnOpenOptionChosen", true);
@@ -268,7 +268,15 @@ test("stored groups restore all tabs like the original extension", async ({
       candidate.tabs.some((tab) => tab.url?.startsWith(restoredUrl)),
     ).toBe(true);
   }
-  extensions.assertNoCandidateOnlyErrors();
+  expect(
+    normalizeErrors(extensions.candidate.errors).filter(
+      (error) => !isRestoredPageResourceError(error),
+    ),
+  ).toEqual(
+    normalizeErrors(extensions.original.errors).filter(
+      (error) => !isRestoredPageResourceError(error),
+    ),
+  );
 });
 
 test("extension pages render matching user-facing text", async ({
@@ -637,6 +645,46 @@ test("stored tabs toggle task status like the original extension", async ({
   extensions.assertNoCandidateOnlyErrors();
 });
 
+test("stored tabs rename and add notes like the original extension", async ({
+  extensions,
+}) => {
+  await extensions.runBoth((extension) =>
+    extension.seedStoredOneTabData(storedRegressionSeed),
+  );
+
+  const [original, candidate] = await extensions.runBoth(async (extension) => {
+    const page = await extension.openPage("onetab.html", {
+      viewport: { height: 900, width: 1100 },
+    });
+
+    try {
+      await editTabTitleAndNotes(page, {
+        notes: "Alpha note added by equivalence test",
+        originalTitle: "Alpha Stored Tab",
+        title: "Alpha Renamed Tab",
+      });
+
+      await expect(
+        page.locator(".tab").filter({ hasText: "Alpha Renamed Tab" }).first(),
+      ).toBeVisible();
+      await expect(page.locator("body")).toContainText(
+        "Alpha note added by equivalence test",
+      );
+
+      return await tabStatusSnapshot(page, "Alpha Renamed Tab");
+    } finally {
+      await page.close().catch(() => {});
+    }
+  });
+
+  expect(candidate).toEqual(original);
+  expect(candidate.stripedTexts).toContain("Alpha Renamed Tab");
+  expect(candidate.stripedTexts).toContain(
+    "Alpha note added by equivalence test",
+  );
+  extensions.assertNoCandidateOnlyErrors();
+});
+
 test("stored tabs move to trash like the original extension", async ({
   extensions,
 }) => {
@@ -791,6 +839,12 @@ function documentText(value: string) {
   return value.replace(/\s+/g, " ").trim();
 }
 
+function isRestoredPageResourceError(error: string) {
+  return /^https:\/\/example\.(com|org)\/.* console: Failed to load resource:/.test(
+    error,
+  );
+}
+
 async function seedOneTabAttr(
   extension: { serviceWorker: import("@playwright/test").Worker },
   id: string,
@@ -901,7 +955,7 @@ async function chooseTabMenuItem(
   const tab = page.locator(".tab").filter({ hasText: tabTitle }).first();
   await tab.waitFor({ state: "visible" });
   await tab.hover();
-  await tab.locator(".tabMoreButton").click();
+  await tab.locator(".tabMoreButton").click({ force: true });
   await page
     .locator(".menuItem:visible")
     .filter({ hasText: menuItemText })
@@ -919,17 +973,82 @@ async function tabStatusSnapshot(
     );
 
     if (!tab) throw new Error(`Tab not found: ${title}`);
-    const linkText = tab.querySelector<HTMLElement>(
-      ".tabLinkTextStripesPossible",
+    const linkTexts = Array.from(
+      tab.querySelectorAll<HTMLElement>(".tabLinkTextStripesPossible"),
     );
     return {
       className: tab.className,
-      linkTextBackground: linkText
-        ? getComputedStyle(linkText).backgroundImage
+      linkTextBackground: linkTexts[0]
+        ? getComputedStyle(linkTexts[0]).backgroundImage
         : "",
-      text: tab.innerText.replace(/\s+/g, " ").trim(),
+      stripedTexts: linkTexts
+        .map((element) => element.innerText.replace(/\s+/g, " ").trim())
+        .filter(Boolean),
     };
   }, tabTitle);
+}
+
+async function editTabTitleAndNotes(
+  page: import("@playwright/test").Page,
+  values: { notes: string; originalTitle: string; title: string },
+) {
+  await chooseTabMenuItem(page, values.originalTitle, /^Rename \/ Add note$/);
+
+  await page.locator('textarea[placeholder="Title"]').first().waitFor({
+    state: "visible",
+  });
+  await fillVisibleTextarea(page, {
+    placeholder: "Title",
+    submitWithEnter: true,
+    value: values.title,
+    valueToReplace: values.originalTitle,
+  });
+  await page.locator(".tab").filter({ hasText: values.title }).first().waitFor({
+    state: "visible",
+  });
+
+  await chooseTabMenuItem(page, values.title, /^Rename \/ Add note$/);
+
+  const notesInput = page.locator('textarea[placeholder="Notes"]').last();
+  await notesInput.waitFor({ state: "visible" });
+  await notesInput.fill(values.notes);
+  await page.mouse.click(5, 5);
+}
+
+async function fillVisibleTextarea(
+  page: import("@playwright/test").Page,
+  options: {
+    placeholder: string;
+    submitWithEnter?: boolean;
+    value: string;
+    valueToReplace?: string;
+  },
+) {
+  await page.evaluate(
+    ({ placeholder, submitWithEnter, value, valueToReplace }) => {
+      const textarea = Array.from(document.querySelectorAll("textarea")).find(
+        (element) =>
+          element.placeholder === placeholder &&
+          element.offsetParent !== null &&
+          (valueToReplace === undefined || element.value === valueToReplace),
+      );
+
+      if (!textarea) throw new Error(`Textarea not found: ${placeholder}`);
+      textarea.focus();
+      textarea.value = value;
+      textarea.dispatchEvent(new InputEvent("input", { bubbles: true }));
+      if (submitWithEnter) {
+        textarea.dispatchEvent(
+          new KeyboardEvent("keydown", {
+            bubbles: true,
+            cancelable: true,
+            key: "Enter",
+          }),
+        );
+      }
+    },
+    options,
+  );
 }
 
 async function openTrashView(page: import("@playwright/test").Page) {
