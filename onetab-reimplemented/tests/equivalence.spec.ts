@@ -98,16 +98,22 @@ test("stored tabs restore into the browser like the original extension", async (
   const restoredUrl = "https://example.com/alpha-stored-tab";
 
   const [original, candidate] = await extensions.runBoth(async (extension) => {
-    await extension.context.route(
-      restoredUrl,
-      async (route) => {
-        await route.fulfill({
-          body: "<!doctype html><title>Alpha Restored Page</title><h1>Alpha Restored Page</h1>",
-          contentType: "text/html",
-        });
-      },
-      { times: 1 },
-    );
+    await extension.context.route("**/*", async (route) => {
+      if (!route.request().url().startsWith(restoredUrl)) {
+        await route.continue();
+        return;
+      }
+
+      if (route.request().resourceType() !== "document") {
+        await route.fulfill({ status: 204 });
+        return;
+      }
+
+      await route.fulfill({
+        body: "<!doctype html><title>Alpha Restored Page</title><h1>Alpha Restored Page</h1>",
+        contentType: "text/html",
+      });
+    });
     await extension.seedStoredOneTabData(storedRegressionSeed);
     await seedOneTabAttr(extension, "autoActionOnOpenOptionChosen", true);
 
@@ -725,6 +731,45 @@ test("stored groups rename and add notes like the original extension", async ({
   extensions.assertNoCandidateOnlyErrors();
 });
 
+test("stored groups toggle lock status like the original extension", async ({
+  extensions,
+}) => {
+  await extensions.runBoth((extension) =>
+    extension.seedStoredOneTabData(storedRegressionSeed),
+  );
+
+  const [original, candidate] = await extensions.runBoth(async (extension) => {
+    const page = await extension.openPage("onetab.html", {
+      viewport: { height: 900, width: 1100 },
+    });
+
+    try {
+      await chooseGroupMenuItem(page, "Seeded Regression Window", /^Lock$/);
+      await waitForGroupLockIconCount(page, "Seeded Regression Window", 1);
+      const lockedSnapshot = await groupStatusSnapshot(
+        page,
+        "Seeded Regression Window",
+      );
+
+      await chooseGroupMenuItem(page, "Seeded Regression Window", /^Unlock$/);
+      await waitForGroupLockIconCount(page, "Seeded Regression Window", 0);
+      const unlockedSnapshot = await groupStatusSnapshot(
+        page,
+        "Seeded Regression Window",
+      );
+
+      return { lockedSnapshot, unlockedSnapshot };
+    } finally {
+      await page.close().catch(() => {});
+    }
+  });
+
+  expect(candidate).toEqual(original);
+  expect(candidate.lockedSnapshot.lockIconCount).toBe(1);
+  expect(candidate.unlockedSnapshot.lockIconCount).toBe(0);
+  extensions.assertNoCandidateOnlyErrors();
+});
+
 test("stored tabs move to trash like the original extension", async ({
   extensions,
 }) => {
@@ -1003,6 +1048,61 @@ async function chooseTabMenuItem(
     .click();
 }
 
+async function chooseGroupMenuItem(
+  page: import("@playwright/test").Page,
+  groupTitle: string,
+  menuItemText: RegExp,
+) {
+  const group = page
+    .locator(".tabGroup")
+    .filter({
+      has: page.locator(".tabGroupLabelText").filter({ hasText: groupTitle }),
+    })
+    .first();
+  await group.waitFor({ state: "visible" });
+  await group.hover();
+  const moreButton = await group.evaluate((element) => {
+    const buttons = Array.from(
+      element.querySelectorAll<HTMLElement>(".controlButton"),
+    );
+    const buttonTexts = buttons.map((button) =>
+      button.innerText.replace(/\s+/g, " ").trim(),
+    );
+    const button = buttons.find((candidate) =>
+      /^More/.test(candidate.innerText.replace(/\s+/g, " ").trim()),
+    );
+
+    button?.click();
+    return { buttonTexts, clicked: !!button };
+  });
+
+  if (!moreButton.clicked) {
+    throw new Error(
+      `Group More button not found for ${groupTitle}: ${JSON.stringify(
+        moreButton.buttonTexts,
+      )}`,
+    );
+  }
+  await page
+    .locator(".menuItem:visible")
+    .filter({ hasText: menuItemText })
+    .first()
+    .click();
+}
+
+async function waitForGroupLockIconCount(
+  page: import("@playwright/test").Page,
+  groupTitle: string,
+  count: number,
+) {
+  await expect
+    .poll(
+      async () => (await groupStatusSnapshot(page, groupTitle)).lockIconCount,
+      { timeout: 5_000 },
+    )
+    .toBe(count);
+}
+
 async function tabStatusSnapshot(
   page: import("@playwright/test").Page,
   tabTitle: string,
@@ -1033,16 +1133,20 @@ async function groupStatusSnapshot(
   groupTitle: string,
 ) {
   return await page.evaluate((title) => {
-    const label = Array.from(
-      document.querySelectorAll<HTMLElement>(".tabGroupLabelText"),
+    const group = Array.from(
+      document.querySelectorAll<HTMLElement>(".tabGroup"),
     ).find((element) => element.innerText.includes(title));
+    const label = group?.querySelector<HTMLElement>(".tabGroupLabelText");
 
-    if (!label) throw new Error(`Group not found: ${title}`);
+    if (!group || !label) throw new Error(`Group not found: ${title}`);
 
     return {
       bodyText: document.body.innerText.replace(/\s+/g, " ").trim(),
       className: label.className,
       labelText: label.innerText.replace(/\s+/g, " ").trim(),
+      lockIconCount: Array.from(group.querySelectorAll<HTMLImageElement>("img"))
+        .filter((element) => /\/images\/lock(-dark)?\.png$/.test(element.src))
+        .filter((element) => element.offsetParent !== null).length,
     };
   }, groupTitle);
 }
