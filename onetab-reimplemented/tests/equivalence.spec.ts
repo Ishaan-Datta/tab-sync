@@ -643,6 +643,64 @@ test("stored tabs search results match the original extension", async ({
   extensions.assertNoCandidateOnlyErrors();
 });
 
+test("stored group tabs sort by title like the original extension", async ({
+  extensions,
+}) => {
+  const sortSeed = {
+    groups: [
+      {
+        groupType: "window" as const,
+        id: "sort-window-1",
+        label: "Sortable Regression Window",
+        tabs: [
+          {
+            id: "sort-tab-zeta",
+            title: "Zeta Sort Tab",
+            url: "https://example.com/zeta-sort-tab",
+          },
+          {
+            id: "sort-tab-alpha",
+            title: "Alpha Sort Tab",
+            url: "https://example.com/alpha-sort-tab",
+          },
+        ],
+      },
+    ],
+  };
+
+  await extensions.runBoth((extension) =>
+    extension.seedStoredOneTabData(sortSeed),
+  );
+
+  const [original, candidate] = await extensions.runBoth(async (extension) => {
+    const page = await extension.openPage("onetab.html", {
+      viewport: { height: 900, width: 1100 },
+    });
+
+    try {
+      await page.locator('.tab:has-text("Zeta Sort Tab")').waitFor({
+        state: "visible",
+      });
+      await sortGroupTabsByTitle(page, "Sortable Regression Window");
+      await waitForItemStatus(page, "sort-window-1", {
+        childIds: ["sort-tab-alpha", "sort-tab-zeta"],
+      });
+
+      return {
+        group: await itemStatusSnapshot(page, "sort-window-1"),
+        tabTexts: await visibleTabTexts(page),
+      };
+    } finally {
+      await page.close().catch(() => {});
+    }
+  });
+
+  expect(candidate).toEqual(original);
+  expect(candidate.group.childIds).toEqual(["sort-tab-alpha", "sort-tab-zeta"]);
+  expect(candidate.tabTexts).toEqual(["Alpha Sort Tab", "Zeta Sort Tab"]);
+  extensions.assertNoCandidateOnlyErrors();
+});
+
 test("stored tabs toggle archive status like the original extension", async ({
   extensions,
 }) => {
@@ -1479,6 +1537,18 @@ async function moveGroupToTrash(
   await chooseGroupMenuItem(page, groupTitle, /^Move to trash$/);
 }
 
+async function sortGroupTabsByTitle(
+  page: import("@playwright/test").Page,
+  groupTitle: string,
+) {
+  await chooseGroupMenuItem(page, groupTitle, /^Sort$/);
+  await page
+    .locator(".menuItem:visible")
+    .filter({ hasText: /^Title$/ })
+    .first()
+    .click();
+}
+
 async function dismissMoveToTrashGroupHint(
   page: import("@playwright/test").Page,
 ) {
@@ -1648,6 +1718,14 @@ async function groupStatusSnapshot(
       ].sort(),
     };
   }, groupTitle);
+}
+
+async function visibleTabTexts(page: import("@playwright/test").Page) {
+  return await page.evaluate(() =>
+    Array.from(document.querySelectorAll<HTMLElement>(".tab"))
+      .map((element) => element.innerText.replace(/\s+/g, " ").trim())
+      .filter(Boolean),
+  );
 }
 
 async function waitForItemStatus(
