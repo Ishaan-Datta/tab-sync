@@ -1283,6 +1283,49 @@ test("stored groups toggle star status like the original extension", async ({
   extensions.assertNoCandidateOnlyErrors();
 });
 
+test("stored group sharing dialog renders like the original extension", async ({
+  extensions,
+}) => {
+  await extensions.runBoth((extension) =>
+    extension.seedStoredOneTabData(storedRegressionSeed),
+  );
+
+  const [original, candidate] = await extensions.runBoth(async (extension) => {
+    const page = await extension.openPage("onetab.html", {
+      viewport: { height: 900, width: 1100 },
+    });
+
+    try {
+      await chooseGroupMenuItem(
+        page,
+        "Seeded Regression Window",
+        /^Share as a web page$/,
+      );
+      await page
+        .getByText("Include notes", { exact: true })
+        .waitFor({ state: "visible", timeout: 1_000 })
+        .catch(async () => {
+          const bodyText = await page.evaluate(() =>
+            document.body.innerText.replace(/\s+/g, " ").trim(),
+          );
+          throw new Error(`Sharing dialog did not open: ${bodyText}`);
+        });
+
+      return await sharingDialogSnapshot(page);
+    } finally {
+      await page.close().catch(() => {});
+    }
+  });
+
+  expect(candidate).toEqual(original);
+  expect(candidate.text).toContain("Share as a web page");
+  expect(candidate.text).toContain("Expires:");
+  expect(candidate.text).toContain("Include notes");
+  expect(candidate.text).toContain("Include stars");
+  expect(candidate.buttons).toEqual(["Cancel", "Share"]);
+  extensions.assertNoCandidateOnlyErrors();
+});
+
 test("stored tabs move to trash like the original extension", async ({
   extensions,
 }) => {
@@ -2001,6 +2044,25 @@ async function visibleTabTexts(page: import("@playwright/test").Page) {
       .map((element) => element.innerText.replace(/\s+/g, " ").trim())
       .filter(Boolean),
   );
+}
+
+async function sharingDialogSnapshot(page: import("@playwright/test").Page) {
+  return await page.evaluate(() => ({
+    buttons: Array.from(document.querySelectorAll<HTMLElement>(".button"))
+      .filter((element) => {
+        const style = getComputedStyle(element);
+        const rect = element.getBoundingClientRect();
+        return (
+          style.display !== "none" &&
+          style.visibility !== "hidden" &&
+          rect.width > 0 &&
+          rect.height > 0
+        );
+      })
+      .map((element) => element.innerText.replace(/\s+/g, " ").trim())
+      .filter((text) => text === "Cancel" || text === "Share"),
+    text: document.body.innerText.replace(/\s+/g, " ").trim(),
+  }));
 }
 
 async function waitForItemStatus(
