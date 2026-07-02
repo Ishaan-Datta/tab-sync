@@ -92,6 +92,70 @@ test("browser action stores current window tabs like the original extension", as
   extensions.assertNoCandidateOnlyErrors();
 });
 
+test("browser action ignores pinned tabs by default like the original extension", async ({
+  extensions,
+}) => {
+  await extensions.runBoth((extension) =>
+    extension.createBrowserState({
+      tabs: [
+        {
+          pinned: true,
+          title: "Pinned Action Tab",
+          url: "https://example.com/pinned-action-tab",
+        },
+        {
+          active: true,
+          title: "Unpinned Action Tab",
+          url: "https://example.com/unpinned-action-tab",
+        },
+      ],
+    }),
+  );
+
+  await extensions.runBoth((extension) => extension.storeCurrentWindowTabs());
+
+  const [original, candidate] = await extensions.runBoth(async (extension) => {
+    const page = await existingOrNewOneTabPage(extension, {
+      viewport: { height: 900, width: 1100 },
+    });
+
+    try {
+      await page.locator('.tab:has-text("Unpinned Action Tab")').waitFor({
+        state: "visible",
+      });
+
+      return {
+        bodyText: documentText(await page.locator("body").innerText()),
+        browserTabs: await extension.serviceWorker.evaluate(async () => {
+          const extensionId = chrome.runtime.id;
+          const tabs: Array<{ pinned?: boolean; title?: string; url?: string }> =
+            await chrome.tabs.query({});
+          return tabs.map((tab) => ({
+            pinned: tab.pinned,
+            title: tab.title,
+            url: tab.url?.replace(extensionId, "<extension-id>"),
+          }));
+        }),
+        tabTexts: await visibleTabTexts(page),
+      };
+    } finally {
+      await page.close().catch(() => {});
+    }
+  });
+
+  expect(candidate).toEqual(original);
+  expect(candidate.bodyText).toContain("Unpinned Action Tab");
+  expect(candidate.bodyText).not.toContain("Pinned Action Tab");
+  expect(candidate.tabTexts).toEqual(["Unpinned Action Tab"]);
+  expect(
+    candidate.browserTabs.some(
+      (tab) =>
+        tab.pinned && tab.url?.startsWith("https://example.com/pinned-action-tab"),
+    ),
+  ).toBe(true);
+  extensions.assertNoCandidateOnlyErrors();
+});
+
 test("stored tabs restore into the browser like the original extension", async ({
   extensions,
 }) => {
