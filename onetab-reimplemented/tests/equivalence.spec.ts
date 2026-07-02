@@ -486,6 +486,72 @@ test("stored tab export text matches the original extension", async ({
   ).toBe(true);
 });
 
+test("stored group copy-to-clipboard text formats match the original extension", async ({
+  extensions,
+}) => {
+  const formats = [
+    {
+      expectedText: [
+        "https://example.com/alpha-stored-tab | Alpha Stored Tab",
+        "https://example.org/beta-stored-tab?with=query | Beta Stored Tab",
+      ].join("\n"),
+      value: "urlAndTitle",
+    },
+    {
+      expectedText: [
+        "Alpha Stored Tab | https://example.com/alpha-stored-tab",
+        "Beta Stored Tab | https://example.org/beta-stored-tab?with=query",
+      ].join("\n"),
+      value: "titleAndUrl",
+    },
+    {
+      expectedText: [
+        "https://example.com/alpha-stored-tab",
+        "https://example.org/beta-stored-tab?with=query",
+      ].join("\n"),
+      value: "url",
+    },
+  ];
+
+  for (const format of formats) {
+    await extensions.runBoth(async (extension) => {
+      await extension.seedStoredOneTabData(storedRegressionSeed);
+      await seedOneTabAttr(extension, "copyToClipboardFormat", format.value);
+    });
+
+    const [original, candidate] = await extensions.runBoth(async (extension) => {
+      const page = await extension.openPage("onetab.html", {
+        viewport: { height: 900, width: 1100 },
+      });
+
+      try {
+        await installClipboardWriteCapture(page);
+        await page.locator('.tab:has-text("Alpha Stored Tab")').waitFor({
+          state: "visible",
+        });
+        await chooseGroupMenuItem(
+          page,
+          "Seeded Regression Window",
+          /^Copy to clipboard$/,
+        );
+
+        return await clipboardWritesSnapshot(page);
+      } finally {
+        await page.close().catch(() => {});
+      }
+    });
+
+    expect(candidate).toEqual(original);
+    expect(candidate).toEqual([
+      {
+        entries: [{ text: format.expectedText, type: "text/plain" }],
+      },
+    ]);
+  }
+
+  extensions.assertNoCandidateOnlyErrors();
+});
+
 test("import text section interaction matches the original extension", async ({
   extensions,
 }) => {
@@ -1568,6 +1634,75 @@ async function searchPanelSnapshot(page: import("@playwright/test").Page) {
       panelText: panel?.innerText.replace(/\s+/g, " ").trim() ?? "",
     };
   });
+}
+
+async function installClipboardWriteCapture(
+  page: import("@playwright/test").Page,
+) {
+  await page.evaluate(() => {
+    const writes: Array<Array<{ text: string; type: string }>> = [];
+    class CapturedClipboardItem {
+      data: Record<string, Blob>;
+      types: string[];
+
+      constructor(data: Record<string, Blob>) {
+        this.data = data;
+        this.types = Object.keys(data);
+      }
+
+      async getType(type: string) {
+        return this.data[type];
+      }
+    }
+
+    Object.defineProperty(window, "ClipboardItem", {
+      configurable: true,
+      value: CapturedClipboardItem,
+    });
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: {
+        async write(items: Array<{ getType(type: string): Promise<Blob>; types: string[] }>) {
+          writes.push(
+            await Promise.all(
+              items.flatMap((item) =>
+                item.types.map(async (type) => ({
+                  text: await (await item.getType(type)).text(),
+                  type,
+                })),
+              ),
+            ),
+          );
+        },
+      },
+    });
+    Object.defineProperty(window, "__onetabClipboardWrites", {
+      configurable: true,
+      value: writes,
+    });
+  });
+}
+
+async function clipboardWritesSnapshot(page: import("@playwright/test").Page) {
+  await expect
+    .poll(
+      async () =>
+        await page.evaluate(
+          () =>
+            (window as typeof window & {
+              __onetabClipboardWrites?: Array<unknown>;
+            }).__onetabClipboardWrites?.length ?? 0,
+        ),
+      { timeout: 5_000 },
+    )
+    .toBe(1);
+
+  return await page.evaluate(
+    () =>
+      ((window as typeof window & {
+        __onetabClipboardWrites?: Array<Array<{ text: string; type: string }>>;
+      }).__onetabClipboardWrites ?? []).map((entries) => ({ entries })),
+  );
 }
 
 async function menuSnapshot(page: import("@playwright/test").Page) {
