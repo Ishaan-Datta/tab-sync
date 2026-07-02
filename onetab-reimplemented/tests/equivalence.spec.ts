@@ -701,6 +701,81 @@ test("stored group tabs sort by title like the original extension", async ({
   extensions.assertNoCandidateOnlyErrors();
 });
 
+test("stored group duplicate tabs remove within group like the original extension", async ({
+  extensions,
+}) => {
+  const duplicateSeed = {
+    groups: [
+      {
+        groupType: "window" as const,
+        id: "duplicate-window-1",
+        label: "Duplicate Regression Window",
+        tabs: [
+          {
+            id: "duplicate-tab-shared",
+            title: "Shared Duplicate Tab",
+            url: "https://example.com/shared-duplicate-tab",
+          },
+          {
+            id: "duplicate-tab-shared",
+            title: "Shared Duplicate Tab",
+            url: "https://example.com/shared-duplicate-tab",
+          },
+          {
+            id: "duplicate-tab-unique",
+            title: "Unique Duplicate Control Tab",
+            url: "https://example.com/unique-duplicate-control-tab",
+          },
+        ],
+      },
+    ],
+  };
+
+  await extensions.runBoth((extension) =>
+    extension.seedStoredOneTabData(duplicateSeed),
+  );
+
+  const [original, candidate] = await extensions.runBoth(async (extension) => {
+    const page = await extension.openPage("onetab.html", {
+      viewport: { height: 900, width: 1100 },
+    });
+
+    try {
+      await page
+        .locator('.tab:has-text("Shared Duplicate Tab")')
+        .first()
+        .waitFor({ state: "visible" });
+      await removeGroupDuplicateTabsWithinHere(
+        page,
+        "Duplicate Regression Window",
+      );
+      await waitForItemStatus(page, "duplicate-window-1", {
+        childIds: ["duplicate-tab-shared", "duplicate-tab-unique"],
+      });
+
+      return {
+        group: await itemStatusSnapshot(page, "duplicate-window-1"),
+        tabTexts: await visibleTabTexts(page),
+        trash: await itemStatusSnapshot(page, "trash"),
+      };
+    } finally {
+      await page.close().catch(() => {});
+    }
+  });
+
+  expect(candidate).toEqual(original);
+  expect(candidate.group.childIds).toEqual([
+    "duplicate-tab-shared",
+    "duplicate-tab-unique",
+  ]);
+  expect(candidate.tabTexts).toEqual([
+    "Shared Duplicate Tab",
+    "Unique Duplicate Control Tab",
+  ]);
+  expect(candidate.trash.childIds).toEqual(["duplicate-tab-shared"]);
+  extensions.assertNoCandidateOnlyErrors();
+});
+
 test("stored tabs toggle archive status like the original extension", async ({
   extensions,
 }) => {
@@ -1545,6 +1620,18 @@ async function sortGroupTabsByTitle(
   await page
     .locator(".menuItem:visible")
     .filter({ hasText: /^Title$/ })
+    .first()
+    .click();
+}
+
+async function removeGroupDuplicateTabsWithinHere(
+  page: import("@playwright/test").Page,
+  groupTitle: string,
+) {
+  await chooseGroupMenuItem(page, groupTitle, /^Remove duplicates$/);
+  await page
+    .locator(".menuItem:visible")
+    .filter({ hasText: /^Remove 1 duplicate tab within here$/ })
     .first()
     .click();
 }
