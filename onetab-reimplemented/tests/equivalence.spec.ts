@@ -552,6 +552,59 @@ test("stored group copy-to-clipboard text formats match the original extension",
   extensions.assertNoCandidateOnlyErrors();
 });
 
+test("stored group copy-to-clipboard rich text matches the original extension", async ({
+  extensions,
+}) => {
+  await extensions.runBoth(async (extension) => {
+    await extension.seedStoredOneTabData(storedRegressionSeed);
+    await seedOneTabAttr(extension, "copyToClipboardFormat", "richText");
+  });
+
+  const [original, candidate] = await extensions.runBoth(async (extension) => {
+    const page = await extension.openPage("onetab.html", {
+      viewport: { height: 900, width: 1100 },
+    });
+
+    try {
+      await installClipboardWriteCapture(page);
+      await page.locator('.tab:has-text("Alpha Stored Tab")').waitFor({
+        state: "visible",
+      });
+      await chooseGroupMenuItem(
+        page,
+        "Seeded Regression Window",
+        /^Copy to clipboard$/,
+      );
+
+      return await clipboardWritesSnapshot(page);
+    } finally {
+      await page.close().catch(() => {});
+    }
+  });
+
+  expect(candidate).toEqual(original);
+  const entries = candidate[0]?.entries ?? [];
+  const plainText = entries.find((entry) => entry.type === "text/plain")?.text;
+  const htmlText = entries.find((entry) => entry.type === "text/html")?.text;
+
+  expect(plainText).toContain("Seeded Regression Window");
+  expect(plainText).toContain(
+    "https://example.com/alpha-stored-tab | Alpha Stored Tab",
+  );
+  expect(plainText).toContain(
+    "https://example.org/beta-stored-tab?with=query | Beta Stored Tab",
+  );
+  expect(plainText).toContain("Beta note for export coverage");
+  expect(htmlText).toContain(
+    '<a href="https://example.com/alpha-stored-tab">Alpha Stored Tab</a>',
+  );
+  expect(htmlText).toContain(
+    '<a href="https://example.org/beta-stored-tab?with=query">Beta Stored Tab</a>',
+  );
+  expect(htmlText).toContain("Beta note for export coverage");
+  extensions.assertNoCandidateOnlyErrors();
+});
+
 test("import text section interaction matches the original extension", async ({
   extensions,
 }) => {
