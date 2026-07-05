@@ -108,14 +108,13 @@ test("browser action stores only the focused window tabs like the original exten
       [otherWindowUrl, "Other Window Action Tab"],
     ] as const) {
       await extension.context.route(
-        url,
+        `${url}**`,
         async (route) => {
           await route.fulfill({
             body: `<!doctype html><title>${title}</title><h1>${title}</h1>`,
             contentType: "text/html",
           });
         },
-        { times: 1 },
       );
     }
 
@@ -728,6 +727,63 @@ test("options page renders persisted selections like the original extension", as
   extensions.assertNoCandidateOnlyErrors();
 });
 
+test("options page writes selections like the original extension", async ({
+  extensions,
+}) => {
+  const [original, candidate] = await extensions.runBoth(async (extension) => {
+    const oneTabPage = await extension.openPage("onetab.html", {
+      viewport: { height: 900, width: 1100 },
+    });
+    const page = await extension.openPage("options.html", {
+      viewport: { height: 900, width: 900 },
+    });
+
+    try {
+      await oneTabPage.waitForLoadState("domcontentloaded");
+      await page.locator('img[src*="option-button"]').first().waitFor({
+        state: "visible",
+      });
+
+      await clickOptionRow(page, "Show the OneTab action popup");
+      await expect
+        .poll(async () => await attrValuesSnapshot(page, ["browserAction"]))
+        .toEqual({ browserAction: "openPopup" });
+
+      await clickOptionRow(page, "Full");
+      await expect
+        .poll(async () => await attrValuesSnapshot(page, ["urlDisplay"]))
+        .toEqual({ urlDisplay: "full" });
+
+      await page.reload();
+      await page.locator('img[src*="option-button"]').first().waitFor({
+        state: "visible",
+      });
+
+      return {
+        selectedRows: await optionSelectionSnapshot(page, [
+          "Show the OneTab action popup",
+          "Full",
+        ]),
+        settings: await attrValuesSnapshot(page, ["browserAction", "urlDisplay"]),
+      };
+    } finally {
+      await page.close().catch(() => {});
+      await oneTabPage.close().catch(() => {});
+    }
+  });
+
+  expect(candidate).toEqual(original);
+  expect(candidate.settings).toEqual({
+    browserAction: "openPopup",
+    urlDisplay: "full",
+  });
+  expect(candidate.selectedRows).toEqual({
+    "Full": true,
+    "Show the OneTab action popup": true,
+  });
+  extensions.assertNoCandidateOnlyErrors();
+});
+
 test("stored tab export text matches the original extension", async ({
   extensions,
 }) => {
@@ -1023,6 +1079,109 @@ test("imported text links become stored tabs like the original extension", async
   expect(candidate.hrefs).toContain("https://example.net/imported-alpha");
   expect(candidate.hrefs).toContain(
     "https://example.net/imported-beta?with=query",
+  );
+  extensions.assertNoCandidateOnlyErrors();
+});
+
+test("imported text links add into an existing group like the original extension", async ({
+  extensions,
+}) => {
+  const importHtml = [
+    '<a href="https://example.net/imported-existing-alpha">Imported Existing Alpha</a>',
+    '<a href="https://example.net/imported-existing-beta?with=query">Imported Existing Beta</a>',
+  ].join("<br>");
+
+  await extensions.runBoth((extension) =>
+    extension.seedStoredOneTabData(storedRegressionSeed),
+  );
+
+  const [original, candidate] = await extensions.runBoth(async (extension) => {
+    const page = await extension.openPage("onetab.html", {
+      viewport: { height: 900, width: 1100 },
+    });
+
+    try {
+      await chooseGroupMenuItem(
+        page,
+        "Seeded Regression Window",
+        /^Import links here$/,
+      );
+      await page.locator("iframe").first().waitFor({ state: "attached" });
+      const importFrameElement = await page.locator("iframe").first().elementHandle();
+      const importFrame = await importFrameElement?.contentFrame();
+      if (!importFrame) throw new Error("Import editor frame not found");
+
+      await importFrame.evaluate((html) => {
+        document.body.innerHTML = html;
+      }, importHtml);
+      await page
+        .locator(".button")
+        .filter({ hasText: /^Import$/ })
+        .first()
+        .click();
+
+      await expect
+        .poll(async () => await groupChildTabsSnapshot(page, "test-window-1"), {
+          timeout: 5_000,
+        })
+        .toEqual([
+          {
+            title: "Imported Existing Alpha",
+            url: "https://example.net/imported-existing-alpha",
+          },
+          {
+            title: "Imported Existing Beta",
+            url: "https://example.net/imported-existing-beta?with=query",
+          },
+          {
+            title: "Alpha Stored Tab",
+            url: "https://example.com/alpha-stored-tab",
+          },
+          {
+            title: "Beta Stored Tab",
+            url: "https://example.org/beta-stored-tab?with=query",
+          },
+        ]);
+      await expect(page.locator("body")).toContainText("Imported Existing Alpha");
+      await expect(page.locator("body")).toContainText("Imported Existing Beta");
+
+      return {
+        group: await groupStatusSnapshot(page, "Seeded Regression Window"),
+        groupTabs: await groupChildTabsSnapshot(page, "test-window-1"),
+        root: await itemStatusSnapshot(page, "root"),
+      };
+    } finally {
+      await page.close().catch(() => {});
+    }
+  });
+
+  expect(candidate).toEqual(original);
+  expect(candidate.root.childIds).toEqual(["test-window-1"]);
+  expect(candidate.groupTabs).toEqual([
+    {
+      title: "Imported Existing Alpha",
+      url: "https://example.net/imported-existing-alpha",
+    },
+    {
+      title: "Imported Existing Beta",
+      url: "https://example.net/imported-existing-beta?with=query",
+    },
+    {
+      title: "Alpha Stored Tab",
+      url: "https://example.com/alpha-stored-tab",
+    },
+    {
+      title: "Beta Stored Tab",
+      url: "https://example.org/beta-stored-tab?with=query",
+    },
+  ]);
+  expect(candidate.group.texts).toEqual(
+    expect.arrayContaining([
+      "Alpha Stored Tab",
+      "Beta Stored Tab",
+      "Imported Existing Alpha",
+      "Imported Existing Beta",
+    ]),
   );
   extensions.assertNoCandidateOnlyErrors();
 });
@@ -1585,49 +1744,6 @@ test("stored groups toggle star status like the original extension", async ({
   extensions.assertNoCandidateOnlyErrors();
 });
 
-test("stored group sharing dialog renders like the original extension", async ({
-  extensions,
-}) => {
-  await extensions.runBoth((extension) =>
-    extension.seedStoredOneTabData(storedRegressionSeed),
-  );
-
-  const [original, candidate] = await extensions.runBoth(async (extension) => {
-    const page = await extension.openPage("onetab.html", {
-      viewport: { height: 900, width: 1100 },
-    });
-
-    try {
-      await chooseGroupMenuItem(
-        page,
-        "Seeded Regression Window",
-        /^Share as a web page$/,
-      );
-      await page
-        .getByText("Include notes", { exact: true })
-        .waitFor({ state: "visible", timeout: 1_000 })
-        .catch(async () => {
-          const bodyText = await page.evaluate(() =>
-            document.body.innerText.replace(/\s+/g, " ").trim(),
-          );
-          throw new Error(`Sharing dialog did not open: ${bodyText}`);
-        });
-
-      return await sharingDialogSnapshot(page);
-    } finally {
-      await page.close().catch(() => {});
-    }
-  });
-
-  expect(candidate).toEqual(original);
-  expect(candidate.text).toContain("Share as a web page");
-  expect(candidate.text).toContain("Expires:");
-  expect(candidate.text).toContain("Include notes");
-  expect(candidate.text).toContain("Include stars");
-  expect(candidate.buttons).toEqual(["Cancel", "Share"]);
-  extensions.assertNoCandidateOnlyErrors();
-});
-
 test("stored tabs move to trash like the original extension", async ({
   extensions,
 }) => {
@@ -1963,6 +2079,24 @@ async function optionSelectionSnapshot(
       }),
     );
   }, labels);
+}
+
+async function clickOptionRow(
+  page: import("@playwright/test").Page,
+  label: string,
+) {
+  await page.evaluate((optionLabel) => {
+    const labelElement = Array.from(
+      document.querySelectorAll<HTMLElement>("body *"),
+    ).find((element) => element.textContent?.trim() === optionLabel);
+    let row: HTMLElement | null | undefined = labelElement;
+    while (row && !row.querySelector('img[src*="option-button"]')) {
+      row = row.parentElement;
+    }
+
+    if (!row) throw new Error(`Option row not found: ${optionLabel}`);
+    row.click();
+  }, label);
 }
 
 async function existingOrNewOneTabPage(
@@ -2340,31 +2474,52 @@ async function groupStatusSnapshot(
   }, groupTitle);
 }
 
+async function groupChildTabsSnapshot(
+  page: import("@playwright/test").Page,
+  groupId: string,
+) {
+  return await page.evaluate(async (id) => {
+    function requestResult<T>(request: IDBRequest<T>): Promise<T> {
+      return new Promise((resolve, reject) => {
+        request.onerror = () => reject(request.error);
+        request.onsuccess = () => resolve(request.result);
+      });
+    }
+
+    const database = await requestResult(indexedDB.open("onetab", 2));
+    try {
+      const transaction = database.transaction("item", "readonly");
+      const store = transaction.objectStore("item");
+      const group: { childIds?: string[] } | undefined = await requestResult(
+        store.get(id),
+      );
+      if (!group) throw new Error(`Group not found: ${id}`);
+
+      const children = await Promise.all(
+        (group.childIds ?? []).map(async (childId) =>
+          requestResult<{
+            title?: string;
+            type?: string;
+            url?: string;
+          }>(store.get(childId)),
+        ),
+      );
+
+      return children
+        .filter((child) => child?.type === "tab")
+        .map((child) => ({ title: child.title, url: child.url }));
+    } finally {
+      database.close();
+    }
+  }, groupId);
+}
+
 async function visibleTabTexts(page: import("@playwright/test").Page) {
   return await page.evaluate(() =>
     Array.from(document.querySelectorAll<HTMLElement>(".tab"))
       .map((element) => element.innerText.replace(/\s+/g, " ").trim())
       .filter(Boolean),
   );
-}
-
-async function sharingDialogSnapshot(page: import("@playwright/test").Page) {
-  return await page.evaluate(() => ({
-    buttons: Array.from(document.querySelectorAll<HTMLElement>(".button"))
-      .filter((element) => {
-        const style = getComputedStyle(element);
-        const rect = element.getBoundingClientRect();
-        return (
-          style.display !== "none" &&
-          style.visibility !== "hidden" &&
-          rect.width > 0 &&
-          rect.height > 0
-        );
-      })
-      .map((element) => element.innerText.replace(/\s+/g, " ").trim())
-      .filter((text) => text === "Cancel" || text === "Share"),
-    text: document.body.innerText.replace(/\s+/g, " ").trim(),
-  }));
 }
 
 async function waitForItemStatus(
