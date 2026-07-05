@@ -25,6 +25,51 @@ const storedRegressionSeed = {
   ],
 };
 
+const dragDropSeed = {
+  groups: [
+    {
+      groupType: "window" as const,
+      id: "drag-source-window",
+      label: "Drag Source Window",
+      tabs: [
+        {
+          id: "drag-tab-alpha",
+          title: "Alpha Drag Tab",
+          url: "https://example.com/alpha-drag-tab",
+        },
+        {
+          id: "drag-tab-beta",
+          title: "Beta Drag Tab",
+          url: "https://example.com/beta-drag-tab",
+        },
+        {
+          id: "drag-tab-gamma",
+          title: "Gamma Drag Tab",
+          url: "https://example.com/gamma-drag-tab",
+        },
+      ],
+    },
+    {
+      groupType: "window" as const,
+      id: "drag-target-window",
+      label: "Drag Target Window",
+      tabs: [
+        {
+          id: "drag-tab-delta",
+          title: "Delta Drag Tab",
+          url: "https://example.org/delta-drag-tab",
+        },
+      ],
+    },
+    {
+      groupType: "folder" as const,
+      id: "drag-folder",
+      label: "Drag Folder",
+      tabs: [],
+    },
+  ],
+};
+
 const extensionPages = [
   "popup.html",
   "onetab.html",
@@ -254,7 +299,7 @@ test("browser action stores only the focused window tabs like the original exten
       tab.url?.startsWith(activeWindowUrls[1]),
     ),
   ).toBe(false);
-  extensions.assertNoCandidateOnlyErrors();
+  expectNoCandidateOnlyErrorsExceptRestoredResources(extensions);
 });
 
 test("browser action ignores pinned tabs by default like the original extension", async ({
@@ -476,7 +521,7 @@ test("stored tabs restore into the browser like the original extension", async (
   expect(candidate.tabs.some((tab) => tab.url?.startsWith(restoredUrl))).toBe(
     true,
   );
-  extensions.assertNoCandidateOnlyErrors();
+  expectNoCandidateOnlyErrorsExceptRestoredResources(extensions);
 });
 
 test("stored groups restore all tabs like the original extension", async ({
@@ -575,15 +620,7 @@ test("stored groups restore all tabs like the original extension", async ({
       candidate.tabs.some((tab) => tab.url?.startsWith(restoredUrl)),
     ).toBe(true);
   }
-  expect(
-    normalizeErrors(extensions.candidate.errors).filter(
-      (error) => !isRestoredPageResourceError(error),
-    ),
-  ).toEqual(
-    normalizeErrors(extensions.original.errors).filter(
-      (error) => !isRestoredPageResourceError(error),
-    ),
-  );
+  expectNoCandidateOnlyErrorsExceptRestoredResources(extensions);
 });
 
 test("extension pages render matching user-facing text", async ({
@@ -1356,6 +1393,173 @@ test("stored group duplicate tabs remove within group like the original extensio
   extensions.assertNoCandidateOnlyErrors();
 });
 
+test("center column drags reorder and move tabs like the original extension", async ({
+  extensions,
+}) => {
+  await extensions.runBoth((extension) =>
+    extension.seedStoredOneTabData(dragDropSeed),
+  );
+
+  const [original, candidate] = await extensions.runBoth(async (extension) => {
+    const page = await extension.openPage("onetab.html", {
+      viewport: { height: 900, width: 1100 },
+    });
+
+    try {
+      await page.locator('.tab:has-text("Beta Drag Tab")').waitFor({
+        state: "visible",
+      });
+
+      await dragItem(
+        page,
+        centerTab(page, "Beta Drag Tab"),
+        centerTab(page, "Alpha Drag Tab"),
+        "before",
+      );
+      await waitForItemStatus(page, "drag-source-window", {
+        childIds: ["drag-tab-beta", "drag-tab-alpha", "drag-tab-gamma"],
+      });
+
+      await dragItem(
+        page,
+        centerTab(page, "Beta Drag Tab"),
+        centerTab(page, "Delta Drag Tab"),
+        "after",
+      );
+      await waitForItemStatus(page, "drag-source-window", {
+        childIds: ["drag-tab-alpha", "drag-tab-gamma"],
+      });
+      await waitForItemStatus(page, "drag-target-window", {
+        childIds: ["drag-tab-delta", "drag-tab-beta"],
+      });
+      await waitForItemStatus(page, "drag-tab-beta", {
+        parentIds: ["drag-target-window"],
+      });
+
+      return {
+        source: await itemStatusSnapshot(page, "drag-source-window"),
+        target: await itemStatusSnapshot(page, "drag-target-window"),
+        movedTab: await itemStatusSnapshot(page, "drag-tab-beta"),
+        tabTexts: await visibleTabTexts(page),
+      };
+    } finally {
+      await page.close().catch(() => {});
+    }
+  });
+
+  expect(candidate).toEqual(original);
+  expect(candidate.source.childIds).toEqual([
+    "drag-tab-alpha",
+    "drag-tab-gamma",
+  ]);
+  expect(candidate.target.childIds).toEqual([
+    "drag-tab-delta",
+    "drag-tab-beta",
+  ]);
+  expect(candidate.movedTab.parentIds).toEqual(["drag-target-window"]);
+  extensions.assertNoCandidateOnlyErrors();
+});
+
+test("center column drags reorder groups like the original extension", async ({
+  extensions,
+}) => {
+  await extensions.runBoth((extension) =>
+    extension.seedStoredOneTabData(dragDropSeed),
+  );
+
+  const [original, candidate] = await extensions.runBoth(async (extension) => {
+    const page = await extension.openPage("onetab.html", {
+      viewport: { height: 900, width: 1100 },
+    });
+
+    try {
+      await page
+        .locator('.tabGroupLabelText:has-text("Drag Target Window")')
+        .waitFor({
+          state: "visible",
+        });
+
+      await dragItem(
+        page,
+        centerGroup(page, "Drag Target Window"),
+        centerGroup(page, "Drag Source Window"),
+        "before",
+      );
+      await waitForItemStatus(page, "root", {
+        childIds: ["drag-target-window", "drag-source-window", "drag-folder"],
+      });
+
+      return {
+        groupLabels: await visibleGroupLabels(page),
+        root: await itemStatusSnapshot(page, "root"),
+      };
+    } finally {
+      await page.close().catch(() => {});
+    }
+  });
+
+  expect(candidate).toEqual(original);
+  expect(candidate.root.childIds).toEqual([
+    "drag-target-window",
+    "drag-source-window",
+    "drag-folder",
+  ]);
+  expect(candidate.groupLabels).toEqual([
+    "Drag Target Window",
+    "Drag Source Window",
+    "Drag Folder",
+  ]);
+  extensions.assertNoCandidateOnlyErrors();
+});
+
+test("sidebar drop targets reorder groups like the original extension", async ({
+  extensions,
+}) => {
+  await extensions.runBoth(async (extension) => {
+    await extension.seedStoredOneTabData(dragDropSeed);
+    await seedOneTabAttr(extension, "treeItemsOpen:navCol-root", [
+      "root",
+      "drag-folder",
+    ]);
+  });
+
+  const [original, candidate] = await extensions.runBoth(async (extension) => {
+    const page = await extension.openPage("onetab.html", {
+      viewport: { height: 900, width: 1200 },
+    });
+
+    try {
+      await sidebarItem(page, "drag-target-window").waitFor({
+        state: "visible",
+      });
+
+      await dragItem(
+        page,
+        centerGroup(page, "Drag Target Window"),
+        sidebarItem(page, "drag-source-window"),
+        "before",
+      );
+      await waitForItemStatus(page, "root", {
+        childIds: ["drag-target-window", "drag-source-window", "drag-folder"],
+      });
+
+      return {
+        root: await itemStatusSnapshot(page, "root"),
+      };
+    } finally {
+      await page.close().catch(() => {});
+    }
+  });
+
+  expect(candidate).toEqual(original);
+  expect(candidate.root.childIds).toEqual([
+    "drag-target-window",
+    "drag-source-window",
+    "drag-folder",
+  ]);
+  extensions.assertNoCandidateOnlyErrors();
+});
+
 test("stored tabs toggle archive status like the original extension", async ({
   extensions,
 }) => {
@@ -1992,6 +2196,97 @@ function isRestoredPageResourceError(error: string) {
   );
 }
 
+function expectNoCandidateOnlyErrorsExceptRestoredResources(extensions: {
+  candidate: { errors: string[] };
+  original: { errors: string[] };
+}) {
+  expect(
+    normalizeErrors(extensions.candidate.errors).filter(
+      (error) => !isRestoredPageResourceError(error),
+    ),
+  ).toEqual(
+    normalizeErrors(extensions.original.errors).filter(
+      (error) => !isRestoredPageResourceError(error),
+    ),
+  );
+}
+
+function centerTab(page: import("@playwright/test").Page, tabTitle: string) {
+  return page.locator(".tab").filter({ hasText: tabTitle }).first();
+}
+
+function centerGroup(
+  page: import("@playwright/test").Page,
+  groupTitle: string,
+) {
+  return page
+    .locator(".tabGroup")
+    .filter({
+      has: page.locator(".tabGroupLabelText").filter({ hasText: groupTitle }),
+    })
+    .first();
+}
+
+function sidebarItem(page: import("@playwright/test").Page, itemId: string) {
+  return page
+    .locator(`.treeItem[data-id="${itemId}-tree-navCol-root"]`)
+    .first();
+}
+
+async function dragItem(
+  page: import("@playwright/test").Page,
+  source: import("@playwright/test").Locator,
+  target: import("@playwright/test").Locator,
+  position: "after" | "before" | "within",
+) {
+  await source.waitFor({ state: "visible" });
+  await target.waitFor({ state: "visible" });
+  await source.scrollIntoViewIfNeeded();
+  await target.scrollIntoViewIfNeeded();
+
+  const sourceBox = await source.boundingBox();
+  const targetBox = await target.boundingBox();
+  if (!sourceBox) throw new Error("Drag source has no bounding box");
+  if (!targetBox) throw new Error("Drag target has no bounding box");
+
+  const startX = sourceBox.x + Math.min(Math.max(sourceBox.width / 2, 10), 45);
+  const startY = sourceBox.y + sourceBox.height / 2;
+  const targetX = targetBox.x + Math.min(Math.max(targetBox.width / 2, 10), 80);
+  const targetY =
+    position === "before"
+      ? targetBox.y + Math.min(6, targetBox.height / 4)
+      : position === "after"
+        ? targetBox.y + targetBox.height - Math.min(6, targetBox.height / 4)
+        : targetBox.y + targetBox.height / 2;
+
+  await page.mouse.move(startX, startY);
+  await page.mouse.down();
+  await page.mouse.move(startX + 8, startY + 8, { steps: 4 });
+  await page.mouse.move(targetX, targetY, { steps: 16 });
+  await page.waitForTimeout(100);
+  await target.evaluate(
+    (element, point) => {
+      for (const type of ["pointermove", "pointerup"] as const) {
+        element.dispatchEvent(
+          new PointerEvent(type, {
+            bubbles: true,
+            buttons: type === "pointerup" ? 0 : 1,
+            cancelable: true,
+            clientX: point.x,
+            clientY: point.y,
+            composed: true,
+            pointerId: 1,
+            pointerType: "mouse",
+          }),
+        );
+      }
+    },
+    { x: targetX, y: targetY },
+  );
+  await page.mouse.up();
+  await page.waitForTimeout(250);
+}
+
 async function seedOneTabAttr(
   extension: { serviceWorker: import("@playwright/test").Worker },
   id: string,
@@ -2518,6 +2813,18 @@ async function visibleTabTexts(page: import("@playwright/test").Page) {
   return await page.evaluate(() =>
     Array.from(document.querySelectorAll<HTMLElement>(".tab"))
       .map((element) => element.innerText.replace(/\s+/g, " ").trim())
+      .filter(Boolean),
+  );
+}
+
+async function visibleGroupLabels(page: import("@playwright/test").Page) {
+  return await page.evaluate(() =>
+    Array.from(
+      document.querySelectorAll<HTMLElement>(".tabGroup .tabGroupLabelText"),
+    )
+      .filter((element) => element.offsetParent !== null)
+      .map((element) => element.innerText.replace(/\s+/g, " ").trim())
+      .filter((text) => text !== "All")
       .filter(Boolean),
   );
 }
