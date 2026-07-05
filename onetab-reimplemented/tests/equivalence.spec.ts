@@ -92,6 +92,172 @@ test("browser action stores current window tabs like the original extension", as
   extensions.assertNoCandidateOnlyErrors();
 });
 
+test("browser action stores only the focused window tabs like the original extension", async ({
+  extensions,
+}) => {
+  const activeWindowUrls = [
+    "https://example.com/focused-window-action-alpha",
+    "https://example.org/focused-window-action-beta",
+  ];
+  const otherWindowUrl = "https://example.com/other-window-action-tab";
+
+  await extensions.runBoth(async (extension) => {
+    for (const [url, title] of [
+      [activeWindowUrls[0], "Focused Window Action Alpha"],
+      [activeWindowUrls[1], "Focused Window Action Beta"],
+      [otherWindowUrl, "Other Window Action Tab"],
+    ] as const) {
+      await extension.context.route(
+        url,
+        async (route) => {
+          await route.fulfill({
+            body: `<!doctype html><title>${title}</title><h1>${title}</h1>`,
+            contentType: "text/html",
+          });
+        },
+        { times: 1 },
+      );
+    }
+
+    const activeWindowId = await extension.serviceWorker.evaluate(
+      async ({ activeWindowUrls, otherWindowUrl }) => {
+        await chrome.windows.create({ focused: false, url: otherWindowUrl });
+        const activeWindow = await chrome.windows.create({
+          focused: true,
+          url: activeWindowUrls,
+        });
+        let tabs: Array<{ id?: number; url?: string }> = [];
+        const deadline = Date.now() + 5_000;
+        while (Date.now() < deadline) {
+          tabs = await chrome.tabs.query({ windowId: activeWindow.id });
+          if (
+            activeWindowUrls.every((url) =>
+              tabs.some((tab) => tab.url === url),
+            )
+          ) {
+            break;
+          }
+          await new Promise((resolve) => setTimeout(resolve, 100));
+        }
+        if (
+          !activeWindowUrls.every((url) =>
+            tabs.some((tab) => tab.url === url),
+          )
+        ) {
+          throw new Error("Focused window test tabs were not created");
+        }
+        const activeTab = tabs.find((tab) => tab.url === activeWindowUrls[1]);
+        if (activeTab?.id !== undefined) {
+          await chrome.tabs.update(activeTab.id, { active: true });
+        }
+        await chrome.windows.update(activeWindow.id, { focused: true });
+        return activeWindow.id;
+      },
+      { activeWindowUrls, otherWindowUrl },
+    );
+
+    const popupUrl = `chrome-extension://${extension.extensionId}/popup.html`;
+    const popupPromise = extension.context.waitForEvent("page", {
+      predicate: (candidate) => candidate.url().startsWith(popupUrl),
+      timeout: 5_000,
+    });
+    await extension.serviceWorker.evaluate(
+      async ({ activeWindowId, popupUrl }) => {
+        await chrome.tabs.create({
+          active: true,
+          url: popupUrl,
+          windowId: activeWindowId,
+        });
+        await chrome.windows.update(activeWindowId, { focused: true });
+      },
+      { activeWindowId, popupUrl },
+    );
+    const popup = await popupPromise;
+    await popup.setViewportSize({ height: 700, width: 900 });
+    await popup.waitForLoadState("domcontentloaded");
+    try {
+      await popup.getByText("Open OneTab after storing tabs").click();
+      const storeButton = popup
+        .locator(".button")
+        .filter({ hasText: /Close tabs? and store in/i })
+        .first();
+      await storeButton.waitFor({ state: "visible" });
+      await storeButton.click();
+      await popup.waitForTimeout(750).catch(() => {});
+    } finally {
+      await popup.close().catch(() => {});
+    }
+  });
+
+  const [original, candidate] = await extensions.runBoth(async (extension) => {
+    const page = await existingOrNewOneTabPage(extension, {
+      viewport: { height: 900, width: 1100 },
+    });
+
+    try {
+      await page.waitForTimeout(1_000);
+
+      return {
+        bodyText: documentText(await page.locator("body").innerText()),
+        browserTabs: await extension.serviceWorker.evaluate(async () => {
+          const extensionId = chrome.runtime.id;
+          const tabs: Array<{ title?: string; url?: string }> =
+            await chrome.tabs.query({});
+          return tabs
+            .map((tab) => ({
+              title: tab.title,
+              url: tab.url?.replace(extensionId, "<extension-id>"),
+            }))
+            .sort((a, b) => (a.url ?? "").localeCompare(b.url ?? ""));
+        }),
+        storedTabUrls: await page.evaluate(async () => {
+          function requestResult<T>(request: IDBRequest<T>): Promise<T> {
+            return new Promise((resolve, reject) => {
+              request.onerror = () => reject(request.error);
+              request.onsuccess = () => resolve(request.result);
+            });
+          }
+
+          const database = await requestResult(indexedDB.open("onetab", 2));
+          try {
+            const transaction = database.transaction("item", "readonly");
+            const items: Array<{ type?: string; url?: string }> =
+              await requestResult(transaction.objectStore("item").getAll());
+            return items
+              .filter((item) => item.type === "tab")
+              .map((item) => item.url)
+              .sort();
+          } finally {
+            database.close();
+          }
+        }),
+        tabTexts: await visibleTabTexts(page),
+      };
+    } finally {
+      await page.close().catch(() => {});
+    }
+  });
+
+  expect(candidate).toEqual(original);
+  expect(candidate.storedTabUrls).toEqual([...activeWindowUrls].sort());
+  expect(candidate.storedTabUrls).not.toContain(otherWindowUrl);
+  expect(candidate.tabTexts).toHaveLength(2);
+  expect(
+    candidate.browserTabs.some((tab) => tab.url?.startsWith(otherWindowUrl)),
+  ).toBe(true);
+  expect(
+    candidate.browserTabs.some((tab) =>
+      tab.url?.startsWith(activeWindowUrls[0]),
+    ),
+  ).toBe(false);
+  expect(
+    candidate.browserTabs.some((tab) =>
+      tab.url?.startsWith(activeWindowUrls[1]),
+    ),
+  ).toBe(false);
+  extensions.assertNoCandidateOnlyErrors();
+});
+
 test("browser action ignores pinned tabs by default like the original extension", async ({
   extensions,
 }) => {
