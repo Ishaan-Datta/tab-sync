@@ -438,6 +438,188 @@ test("browser action stores pinned tabs when popup setting allows them like the 
   extensions.assertNoCandidateOnlyErrors();
 });
 
+test("popup excludes grouped tabs when the setting disables them like the original extension", async ({
+  extensions,
+}) => {
+  const groupedUrl = "https://example.com/grouped-popup-setting-tab";
+  const ungroupedUrl = "https://example.org/ungrouped-popup-setting-tab";
+
+  await extensions.runBoth(async (extension) => {
+    await seedOneTabAttr(extension, "popupIncludeGroupedTabs", "false");
+    await extension.createBrowserState({
+      tabs: [
+        {
+          title: "Grouped Popup Setting Tab",
+          url: groupedUrl,
+        },
+        {
+          active: true,
+          title: "Ungrouped Popup Setting Tab",
+          url: ungroupedUrl,
+        },
+      ],
+    });
+    await groupBrowserTabs(extension, [groupedUrl], "Popup Setting Group");
+  });
+
+  await extensions.runBoth((extension) => extension.storeCurrentWindowTabs());
+
+  const [original, candidate] = await extensions.runBoth(async (extension) => {
+    const page = await existingOrNewOneTabPage(extension, {
+      viewport: { height: 900, width: 1100 },
+    });
+
+    try {
+      await page
+        .locator('.tab:has-text("Ungrouped Popup Setting Tab")')
+        .waitFor({ state: "visible" });
+
+      return {
+        browserUrls: await browserTabUrlsSnapshot(extension),
+        storedUrls: await storedTabUrlsSnapshot(page),
+        tabTexts: await visibleTabTexts(page),
+      };
+    } finally {
+      await page.close().catch(() => {});
+    }
+  });
+
+  expect(candidate).toEqual(original);
+  expect(candidate.storedUrls).toEqual([ungroupedUrl]);
+  expect(candidate.tabTexts).toEqual(["Ungrouped Popup Setting Tab"]);
+  expect(candidate.browserUrls.some((url) => url.startsWith(groupedUrl))).toBe(
+    true,
+  );
+  expect(
+    candidate.browserUrls.some((url) => url.startsWith(ungroupedUrl)),
+  ).toBe(false);
+  extensions.assertNoCandidateOnlyErrors();
+});
+
+test("popup excludes configured domains when the setting disables them like the original extension", async ({
+  extensions,
+}) => {
+  const excludedUrl = "https://excluded.example.com/excluded-popup-setting-tab";
+  const includedUrl = "https://example.org/included-popup-setting-tab";
+
+  await extensions.runBoth(async (extension) => {
+    await seedOneTabAttr(extension, "excludedDomains", ["excluded.example.com"]);
+    await seedOneTabAttr(extension, "popupIncludeExcludedDomains", "false");
+    await extension.createBrowserState({
+      tabs: [
+        {
+          title: "Excluded Domain Popup Setting Tab",
+          url: excludedUrl,
+        },
+        {
+          active: true,
+          title: "Included Domain Popup Setting Tab",
+          url: includedUrl,
+        },
+      ],
+    });
+  });
+
+  await extensions.runBoth((extension) => extension.storeCurrentWindowTabs());
+
+  const [original, candidate] = await extensions.runBoth(async (extension) => {
+    const page = await existingOrNewOneTabPage(extension, {
+      viewport: { height: 900, width: 1100 },
+    });
+
+    try {
+      await page
+        .locator('.tab:has-text("Included Domain Popup Setting Tab")')
+        .waitFor({ state: "visible" });
+
+      return {
+        browserUrls: await browserTabUrlsSnapshot(extension),
+        storedUrls: await storedTabUrlsSnapshot(page),
+        tabTexts: await visibleTabTexts(page),
+      };
+    } finally {
+      await page.close().catch(() => {});
+    }
+  });
+
+  expect(candidate).toEqual(original);
+  expect(candidate.storedUrls).toEqual([includedUrl]);
+  expect(candidate.tabTexts).toEqual(["Included Domain Popup Setting Tab"]);
+  expect(candidate.browserUrls.some((url) => url.startsWith(excludedUrl))).toBe(
+    true,
+  );
+  expect(candidate.browserUrls.some((url) => url.startsWith(includedUrl))).toBe(
+    false,
+  );
+  extensions.assertNoCandidateOnlyErrors();
+});
+
+test("popup already-stored tab setting follows the original duplicate behavior", async ({
+  extensions,
+}) => {
+  const duplicateUrl = "https://example.com/alpha-stored-tab";
+  const freshUrl = "https://example.net/fresh-popup-setting-tab";
+
+  await extensions.runBoth(async (extension) => {
+    await extension.seedStoredOneTabData(storedRegressionSeed);
+    await seedOneTabAttr(extension, "popupIncludeAlreadyStoredTabs", "false");
+    await extension.createBrowserState({
+      tabs: [
+        {
+          title: "Alpha Stored Tab",
+          url: duplicateUrl,
+        },
+        {
+          active: true,
+          title: "Fresh Popup Setting Tab",
+          url: freshUrl,
+        },
+      ],
+    });
+  });
+
+  await extensions.runBoth((extension) => extension.storeCurrentWindowTabs());
+
+  const [original, candidate] = await extensions.runBoth(async (extension) => {
+    const page = await existingOrNewOneTabPage(extension, {
+      viewport: { height: 900, width: 1100 },
+    });
+
+    try {
+      await page
+        .locator('.tab:has-text("Fresh Popup Setting Tab")')
+        .waitFor({ state: "visible" });
+
+      return {
+        browserUrls: await browserTabUrlsSnapshot(extension),
+        storedUrls: await storedTabUrlsSnapshot(page),
+        tabTexts: await visibleTabTexts(page),
+      };
+    } finally {
+      await page.close().catch(() => {});
+    }
+  });
+
+  expect(candidate).toEqual(original);
+  expect(candidate.storedUrls.filter((url) => url === duplicateUrl)).toHaveLength(
+    2,
+  );
+  expect(candidate.storedUrls).toContain(freshUrl);
+  expect(
+    candidate.tabTexts.filter((text) => text === "Alpha Stored Tab"),
+  ).toHaveLength(2);
+  expect(candidate.tabTexts.some((text) => text.includes("Beta Stored Tab")))
+    .toBe(true);
+  expect(candidate.tabTexts).toContain("Fresh Popup Setting Tab");
+  expect(
+    candidate.browserUrls.some((url) => url.startsWith(duplicateUrl)),
+  ).toBe(false);
+  expect(candidate.browserUrls.some((url) => url.startsWith(freshUrl))).toBe(
+    false,
+  );
+  extensions.assertNoCandidateOnlyErrors();
+});
+
 test("stored tabs restore into the browser like the original extension", async ({
   extensions,
 }) => {
@@ -2285,6 +2467,66 @@ async function dragItem(
   );
   await page.mouse.up();
   await page.waitForTimeout(250);
+}
+
+async function groupBrowserTabs(
+  extension: { serviceWorker: import("@playwright/test").Worker },
+  urls: string[],
+  title: string,
+) {
+  await extension.serviceWorker.evaluate(
+    async ({ title, urls }) => {
+      const tabs: Array<{ id?: number; url?: string }> = await chrome.tabs.query(
+        {},
+      );
+      const tabIds = urls.map((url) => {
+        const tab = tabs.find((candidate) => candidate.url === url);
+        if (tab?.id === undefined) throw new Error(`Tab not found: ${url}`);
+        return tab.id;
+      });
+      const groupId = await chrome.tabs.group({ tabIds });
+      await chrome.tabGroups.update(groupId, { color: "blue", title });
+    },
+    { title, urls },
+  );
+}
+
+async function browserTabUrlsSnapshot(extension: {
+  serviceWorker: import("@playwright/test").Worker;
+}) {
+  return await extension.serviceWorker.evaluate(async () => {
+    const tabs: Array<{ url?: string }> = await chrome.tabs.query({});
+    return tabs
+      .map((tab) => tab.url)
+      .filter((url): url is string => !!url)
+      .sort();
+  });
+}
+
+async function storedTabUrlsSnapshot(page: import("@playwright/test").Page) {
+  return await page.evaluate(async () => {
+    function requestResult<T>(request: IDBRequest<T>): Promise<T> {
+      return new Promise((resolve, reject) => {
+        request.onerror = () => reject(request.error);
+        request.onsuccess = () => resolve(request.result);
+      });
+    }
+
+    const database = await requestResult(indexedDB.open("onetab", 2));
+    try {
+      const transaction = database.transaction("item", "readonly");
+      const items: Array<{ type?: string; url?: string }> = await requestResult(
+        transaction.objectStore("item").getAll(),
+      );
+      return items
+        .filter((item) => item.type === "tab")
+        .map((item) => item.url)
+        .filter((url): url is string => !!url)
+        .sort();
+    } finally {
+      database.close();
+    }
+  });
 }
 
 async function seedOneTabAttr(
