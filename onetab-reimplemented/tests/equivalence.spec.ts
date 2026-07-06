@@ -2358,6 +2358,169 @@ test("sidebar drop targets reorder groups like the original extension", async ({
   extensions.assertNoCandidateOnlyErrors();
 });
 
+test("sidebar navigation drags reorder groups like the original extension", async ({
+  extensions,
+}) => {
+  await extensions.runBoth(async (extension) => {
+    await extension.seedStoredOneTabData(dragDropSeed);
+    await seedOneTabAttr(extension, "navColExpanded", "true");
+    await seedOneTabAttr(extension, "treeItemsOpen:navCol-root", ["root"]);
+  });
+
+  const [original, candidate] = await extensions.runBoth(async (extension) => {
+    const page = await extension.openPage("onetab.html", {
+      viewport: { height: 900, width: 1200 },
+    });
+
+    try {
+      await sidebarItem(page, "drag-target-window").waitFor({
+        state: "visible",
+      });
+
+      await dragTreeItem(
+        page,
+        sidebarItem(page, "drag-target-window"),
+        sidebarItem(page, "drag-source-window"),
+        "before",
+      );
+      await waitForItemStatus(page, "root", {
+        childIds: ["drag-target-window", "drag-source-window", "drag-folder"],
+      });
+
+      return {
+        groupLabels: await visibleGroupLabels(page),
+        root: await itemStatusSnapshot(page, "root"),
+      };
+    } finally {
+      await page.close().catch(() => {});
+    }
+  });
+
+  expect(candidate).toEqual(original);
+  expect(candidate.root.childIds).toEqual([
+    "drag-target-window",
+    "drag-source-window",
+    "drag-folder",
+  ]);
+  expect(candidate.groupLabels).toEqual([
+    "Drag Target Window",
+    "Drag Source Window",
+    "Drag Folder",
+  ]);
+  extensions.assertNoCandidateOnlyErrors();
+});
+
+test("sidebar navigation drags move groups into folders like the original extension", async ({
+  extensions,
+}) => {
+  await extensions.runBoth(async (extension) => {
+    await extension.seedStoredOneTabData(dragDropSeed);
+    await seedOneTabAttr(extension, "navColExpanded", "true");
+    await seedOneTabAttr(extension, "treeItemsOpen:navCol-root", [
+      "root",
+      "drag-folder",
+    ]);
+  });
+
+  const [original, candidate] = await extensions.runBoth(async (extension) => {
+    const page = await extension.openPage("onetab.html", {
+      viewport: { height: 900, width: 1200 },
+    });
+
+    try {
+      await sidebarItem(page, "drag-folder").waitFor({ state: "visible" });
+
+      await dragTreeItem(
+        page,
+        sidebarItem(page, "drag-target-window"),
+        sidebarItem(page, "drag-folder"),
+        "within",
+      );
+      await waitForItemStatus(page, "root", {
+        childIds: ["drag-source-window", "drag-folder"],
+      });
+      await waitForItemStatus(page, "drag-folder", {
+        childIds: ["drag-target-window"],
+      });
+      await waitForItemStatus(page, "drag-target-window", {
+        parentIds: ["drag-folder"],
+      });
+
+      return {
+        folder: await itemStatusSnapshot(page, "drag-folder"),
+        movedGroup: await itemStatusSnapshot(page, "drag-target-window"),
+        root: await itemStatusSnapshot(page, "root"),
+      };
+    } finally {
+      await page.close().catch(() => {});
+    }
+  });
+
+  expect(candidate).toEqual(original);
+  expect(candidate.root.childIds).toEqual(["drag-source-window", "drag-folder"]);
+  expect(candidate.folder.childIds).toEqual(["drag-target-window"]);
+  expect(candidate.movedGroup.parentIds).toEqual(["drag-folder"]);
+  extensions.assertNoCandidateOnlyErrors();
+});
+
+test("sidebar navigation drags add groups to quick list like the original extension", async ({
+  extensions,
+}) => {
+  await extensions.runBoth(async (extension) => {
+    await extension.seedStoredOneTabData(dragDropSeed);
+    await seedOneTabAttr(extension, "navColExpanded", "true");
+    await seedOneTabAttr(extension, "quickAccessColExpanded", "true");
+    await seedOneTabAttr(extension, "treeItemsOpen:navCol-root", ["root"]);
+  });
+
+  const [original, candidate] = await extensions.runBoth(async (extension) => {
+    const page = await extension.openPage("onetab.html", {
+      viewport: { height: 900, width: 1200 },
+    });
+
+    try {
+      await quickListRootItem(page).waitFor({ state: "visible" });
+
+      await dragTreeItem(
+        page,
+        sidebarItem(page, "drag-source-window"),
+        quickListRootItem(page),
+        "within",
+      );
+      await waitForItemStatus(page, "quickList", {
+        childIds: ["drag-source-window"],
+      });
+      await waitForItemStatus(page, "drag-source-window", {
+        parentIds: ["root", "quickList"],
+      });
+      await quickListSidebarItem(page, "drag-source-window").waitFor({
+        state: "visible",
+      });
+
+      return {
+        quickList: await itemStatusSnapshot(page, "quickList"),
+        source: await itemStatusSnapshot(page, "drag-source-window"),
+        quickListGroupText: await quickListSidebarItem(page, "drag-source-window")
+          .textContent()
+          .then((text) => text?.replace(/\s+/g, " ").trim()),
+      };
+    } finally {
+      await page.close().catch(() => {});
+    }
+  });
+
+  expect(candidate).toEqual(original);
+  expect(candidate.source.childIds).toEqual([
+    "drag-tab-alpha",
+    "drag-tab-beta",
+    "drag-tab-gamma",
+  ]);
+  expect(candidate.quickList.childIds).toEqual(["drag-source-window"]);
+  expect(candidate.source.parentIds).toEqual(["root", "quickList"]);
+  expect(candidate.quickListGroupText).toContain("Drag Source Window");
+  extensions.assertNoCandidateOnlyErrors();
+});
+
 test("sidebar folder drop targets move groups into folders like the original extension", async ({
   extensions,
 }) => {
@@ -3255,6 +3418,21 @@ function sidebarItem(page: import("@playwright/test").Page, itemId: string) {
     .first();
 }
 
+function quickListSidebarItem(
+  page: import("@playwright/test").Page,
+  itemId: string,
+) {
+  return page
+    .locator(`.treeItem[data-id="${itemId}-tree-quickAccessCol-quickList"]`)
+    .first();
+}
+
+function quickListRootItem(page: import("@playwright/test").Page) {
+  return page
+    .locator('.treeItem[data-id="quickList-tree-quickAccessCol-quickList"]')
+    .first();
+}
+
 async function dragItem(
   page: import("@playwright/test").Page,
   source: import("@playwright/test").Locator,
@@ -3307,6 +3485,79 @@ async function dragItem(
   );
   await page.mouse.up();
   await page.waitForTimeout(250);
+}
+
+async function dragTreeItem(
+  page: import("@playwright/test").Page,
+  source: import("@playwright/test").Locator,
+  target: import("@playwright/test").Locator,
+  position: "after" | "before" | "within",
+) {
+  await source.waitFor({ state: "visible" });
+  await target.waitFor({ state: "visible" });
+  await source.scrollIntoViewIfNeeded();
+  await target.scrollIntoViewIfNeeded();
+
+  const sourceText = treeItemVisibleText(source);
+  const targetText = treeItemVisibleText(target);
+  const sourceBox = await sourceText.boundingBox();
+  const targetBox = (await targetText.boundingBox()) ?? (await target.boundingBox());
+  if (!sourceBox) throw new Error("Tree drag source has no bounding box");
+  if (!targetBox) throw new Error("Tree drag target has no bounding box");
+
+  const startX = sourceBox.x + Math.min(Math.max(sourceBox.width / 2, 4), 40);
+  const startY = sourceBox.y + sourceBox.height / 2;
+  const targetX = targetBox.x + Math.min(Math.max(targetBox.width / 2, 4), 40);
+  const targetY =
+    position === "before"
+      ? targetBox.y + Math.min(5, targetBox.height / 4)
+      : position === "after"
+        ? targetBox.y + targetBox.height - Math.min(5, targetBox.height / 4)
+        : targetBox.y + targetBox.height / 2;
+
+  await page.mouse.move(startX, startY);
+  await page.mouse.down();
+  await page.waitForTimeout(50);
+  await page.mouse.move(startX + 10, startY + 10, { steps: 6 });
+  await page.mouse.move(targetX, targetY, { steps: 28 });
+  await page.waitForTimeout(150);
+  await dispatchTreePointerEvent(target, "pointermove", targetX, targetY, 1);
+  await page.waitForTimeout(75);
+  await dispatchTreePointerEvent(target, "pointerup", targetX, targetY, 0);
+  await page.mouse.up();
+  await page.waitForTimeout(300);
+}
+
+function treeItemVisibleText(item: import("@playwright/test").Locator) {
+  return item.locator(".tree-item-text").filter({ hasText: /\S/ }).first();
+}
+
+async function dispatchTreePointerEvent(
+  target: import("@playwright/test").Locator,
+  type: "pointermove" | "pointerup",
+  x: number,
+  y: number,
+  buttons: number,
+) {
+  await target.evaluate(
+    (element, { buttons, type, x, y }) => {
+      element.dispatchEvent(
+        new PointerEvent(type, {
+          bubbles: true,
+          button: type === "pointerup" ? 0 : -1,
+          buttons,
+          cancelable: true,
+          clientX: x,
+          clientY: y,
+          composed: true,
+          isPrimary: true,
+          pointerId: 1,
+          pointerType: "mouse",
+        }),
+      );
+    },
+    { buttons, type, x, y },
+  );
 }
 
 async function groupBrowserTabs(
