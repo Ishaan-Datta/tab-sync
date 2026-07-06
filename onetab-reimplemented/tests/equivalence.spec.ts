@@ -684,6 +684,397 @@ test("popup setting checkboxes persist like the original extension", async ({
   extensions.assertNoCandidateOnlyErrors();
 });
 
+test("popup duplicate close settings preserve and close matching tabs like the original extension", async ({
+  extensions,
+}) => {
+  const pinnedUrl = "https://example.com/popup-close-pinned-duplicate";
+  const groupedUrl = "https://example.org/popup-close-grouped-duplicate";
+  const excludedUrl = "https://excluded.example.com/popup-close-excluded-duplicate";
+  const freshUrl = "https://example.net/popup-close-fresh-tab";
+
+  await extensions.runBoth(async (extension) => {
+    await seedOneTabAttr(extension, "excludedDomains", ["excluded.example.com"]);
+    await seedOneTabAttr(extension, "popupIncludePinnedTabs", "true");
+    await seedOneTabAttr(extension, "popupIncludeGroupedTabs", "true");
+    await extension.createBrowserState({
+      tabs: [
+        {
+          pinned: true,
+          title: "Popup Close Pinned Duplicate",
+          url: pinnedUrl,
+        },
+        {
+          title: "Popup Close Grouped Duplicate",
+          url: groupedUrl,
+        },
+        {
+          active: true,
+          title: "Popup Close Excluded Duplicate",
+          url: excludedUrl,
+        },
+      ],
+    });
+    await groupBrowserTabs(extension, [groupedUrl], "Popup Close Group");
+    await extension.storeCurrentWindowTabs();
+
+    await extension.createBrowserState({
+      tabs: [
+        {
+          pinned: true,
+          title: "Popup Close Pinned Duplicate",
+          url: pinnedUrl,
+        },
+        {
+          title: "Popup Close Grouped Duplicate",
+          url: groupedUrl,
+        },
+        {
+          active: true,
+          title: "Popup Close Excluded Duplicate",
+          url: excludedUrl,
+        },
+        {
+          title: "Popup Close Fresh Tab",
+          url: freshUrl,
+        },
+      ],
+    });
+    await groupBrowserTabs(extension, [groupedUrl], "Popup Close Group");
+  });
+
+  const [original, candidate] = await extensions.runBoth(async (extension) => {
+    const popup = await extension.openPage("popup.html", {
+      viewport: { height: 800, width: 900 },
+    });
+    try {
+      await openDuplicateCloseDropdown(popup);
+      await popup.getByText("Don't close any pinned tabs", { exact: true }).click();
+      await popup
+        .getByText("Don't close any tabs within tab groups", { exact: true })
+        .click();
+      await popup
+        .getByText(/Don't close any tabs from .*excluded\.example\.com/)
+        .click();
+
+      const attrsAfterToggle = await attrValuesSnapshot(popup, [
+        "popupDontClosePinnedTabs",
+        "popupDontCloseGroupedTabs",
+        "popupDontCloseTabsFromExcludedDomains",
+      ]);
+
+      await clickDuplicateCloseAction(popup);
+      await popup.waitForTimeout(750).catch(() => {});
+
+      return {
+        attrsAfterToggle,
+        browserUrls: await browserTabUrlsSnapshot(extension),
+      };
+    } finally {
+      await popup.close().catch(() => {});
+    }
+  });
+
+  expect(candidate).toEqual(original);
+  expect(candidate.attrsAfterToggle).toEqual({
+    popupDontCloseGroupedTabs: "true",
+    popupDontClosePinnedTabs: "false",
+    popupDontCloseTabsFromExcludedDomains: "false",
+  });
+  expect(candidate.browserUrls.some((url) => url.startsWith(groupedUrl))).toBe(
+    true,
+  );
+  expect(candidate.browserUrls.some((url) => url.startsWith(freshUrl))).toBe(
+    true,
+  );
+  expect(candidate.browserUrls.some((url) => url.startsWith(pinnedUrl))).toBe(
+    false,
+  );
+  expect(candidate.browserUrls.some((url) => url.startsWith(excludedUrl))).toBe(
+    false,
+  );
+  extensions.assertNoCandidateOnlyErrors();
+});
+
+test("popup merge close setting preserves browser tabs like the original extension", async ({
+  extensions,
+}) => {
+  const duplicateUrl = "https://example.com/popup-merge-duplicate-tab";
+  const freshUrl = "https://example.org/popup-merge-fresh-tab";
+
+  await extensions.runBoth(async (extension) => {
+    await extension.createBrowserState({
+      tabs: [
+        {
+          active: true,
+          title: "Popup Merge Duplicate Tab",
+          url: duplicateUrl,
+        },
+      ],
+    });
+    await extension.storeCurrentWindowTabs();
+
+    await extension.createBrowserState({
+      tabs: [
+        {
+          title: "Popup Merge Duplicate Tab",
+          url: duplicateUrl,
+        },
+        {
+          active: true,
+          title: "Popup Merge Fresh Tab",
+          url: freshUrl,
+        },
+      ],
+    });
+  });
+
+  const [original, candidate] = await extensions.runBoth(async (extension) => {
+    const popup = await extension.openPage("popup.html", {
+      viewport: { height: 800, width: 900 },
+    });
+    try {
+      await openSuggestedMergeDropdown(popup);
+      await popup.getByText("Close tabs after merge", { exact: true }).click();
+      const attrsAfterToggle = await attrValuesSnapshot(popup, [
+        "popupMergeCloseTabsAfter",
+      ]);
+
+      await clickSuggestedMergeAction(popup);
+      await popup.waitForTimeout(750).catch(() => {});
+
+      const oneTabPage = await existingOrNewOneTabPage(extension, {
+        viewport: { height: 900, width: 1100 },
+      });
+      try {
+        await oneTabPage
+          .locator('.tab:has-text("Popup Merge Fresh Tab")')
+          .waitFor({ state: "visible" });
+
+        return {
+          attrsAfterToggle,
+          browserUrls: await browserTabUrlsSnapshot(extension),
+          storedUrls: await storedTabUrlsSnapshot(oneTabPage),
+          tabTexts: await visibleTabTexts(oneTabPage),
+        };
+      } finally {
+        await oneTabPage.close().catch(() => {});
+      }
+    } finally {
+      await popup.close().catch(() => {});
+    }
+  });
+
+  expect(candidate).toEqual(original);
+  expect(candidate.attrsAfterToggle).toEqual({
+    popupMergeCloseTabsAfter: "false",
+  });
+  expect(candidate.storedUrls).toEqual([duplicateUrl, freshUrl].sort());
+  expect(candidate.tabTexts).toEqual(
+    expect.arrayContaining(["Popup Merge Duplicate Tab", "Popup Merge Fresh Tab"]),
+  );
+  expect(candidate.browserUrls.some((url) => url.startsWith(duplicateUrl))).toBe(
+    true,
+  );
+  expect(candidate.browserUrls.some((url) => url.startsWith(freshUrl))).toBe(
+    true,
+  );
+  extensions.assertNoCandidateOnlyErrors();
+});
+
+test("popup this tab section stores only the active tab like the original extension", async ({
+  extensions,
+}) => {
+  const activeUrl = "https://example.com/popup-this-tab-active";
+  const otherUrl = "https://example.org/popup-this-tab-other";
+
+  await extensions.runBoth(async (extension) => {
+    await seedOneTabAttr(extension, "lastManualPopupSectionSelection", "tab");
+    await extension.createBrowserState({
+      tabs: [
+        {
+          title: "Popup This Tab Other",
+          url: otherUrl,
+        },
+        {
+          active: true,
+          title: "Popup This Tab Active",
+          url: activeUrl,
+        },
+      ],
+    });
+  });
+
+  await extensions.runBoth(async (extension) => {
+    const popup = await openInactivePopupPage(extension);
+    try {
+      await expect(popup.locator("body")).toContainText("This tab");
+      await popup
+        .locator(".button")
+        .filter({ hasText: /Close tab and store in/i })
+        .first()
+        .click();
+      await popup.waitForTimeout(750).catch(() => {});
+    } finally {
+      await popup.close().catch(() => {});
+    }
+  });
+
+  const [original, candidate] = await extensions.runBoth(async (extension) => {
+    const oneTabPage = await existingOrNewOneTabPage(extension, {
+      viewport: { height: 900, width: 1100 },
+    });
+    try {
+      await oneTabPage
+        .locator('.tab:has-text("Popup This Tab Active")')
+        .waitFor({ state: "visible" });
+
+      return {
+        browserUrls: await browserTabUrlsSnapshot(extension),
+        storedUrls: await storedTabUrlsSnapshot(oneTabPage),
+        tabTexts: await visibleTabTexts(oneTabPage),
+      };
+    } finally {
+      await oneTabPage.close().catch(() => {});
+    }
+  });
+
+  expect(candidate).toEqual(original);
+  expect(candidate.storedUrls).toEqual([activeUrl]);
+  expect(candidate.tabTexts).toEqual(["Popup This Tab Active"]);
+  expect(candidate.browserUrls.some((url) => url.startsWith(activeUrl))).toBe(
+    false,
+  );
+  expect(candidate.browserUrls.some((url) => url.startsWith(otherUrl))).toBe(
+    true,
+  );
+  extensions.assertNoCandidateOnlyErrors();
+});
+
+test("popup this tab group section stores only the active tab group like the original extension", async ({
+  extensions,
+}) => {
+  const groupedUrls = [
+    "https://example.com/popup-this-group-alpha",
+    "https://example.org/popup-this-group-beta",
+  ];
+  const ungroupedUrl = "https://example.net/popup-this-group-ungrouped";
+
+  await extensions.runBoth(async (extension) => {
+    await seedOneTabAttr(extension, "lastManualPopupSectionSelection", "tabGroup");
+    await extension.createBrowserState({
+      tabs: [
+        {
+          title: "Popup This Group Alpha",
+          url: groupedUrls[0],
+        },
+        {
+          active: true,
+          title: "Popup This Group Beta",
+          url: groupedUrls[1],
+        },
+        {
+          title: "Popup This Group Ungrouped",
+          url: ungroupedUrl,
+        },
+      ],
+    });
+    await groupBrowserTabs(extension, groupedUrls, "Popup This Group");
+  });
+
+  await extensions.runBoth(async (extension) => {
+    const popup = await openInactivePopupPage(extension);
+    try {
+      await expect(popup.locator("body")).toContainText("This tab group");
+      await popup
+        .locator(".button")
+        .filter({ hasText: /Close tabs and store in/i })
+        .first()
+        .click();
+      await popup.waitForTimeout(750).catch(() => {});
+    } finally {
+      await popup.close().catch(() => {});
+    }
+  });
+
+  const [original, candidate] = await extensions.runBoth(async (extension) => {
+    const oneTabPage = await existingOrNewOneTabPage(extension, {
+      viewport: { height: 900, width: 1100 },
+    });
+    try {
+      await oneTabPage
+        .locator('.tab:has-text("Popup This Group Alpha")')
+        .waitFor({ state: "visible" });
+      await oneTabPage
+        .locator('.tab:has-text("Popup This Group Beta")')
+        .waitFor({ state: "visible" });
+
+      return {
+        browserUrls: await browserTabUrlsSnapshot(extension),
+        groupLabels: await visibleGroupLabels(oneTabPage),
+        storedUrls: await storedTabUrlsSnapshot(oneTabPage),
+        tabTexts: await visibleTabTexts(oneTabPage),
+      };
+    } finally {
+      await oneTabPage.close().catch(() => {});
+    }
+  });
+
+  expect(candidate).toEqual(original);
+  expect(candidate.storedUrls).toEqual([...groupedUrls].sort());
+  expect(candidate.tabTexts).toEqual(
+    expect.arrayContaining(["Popup This Group Alpha", "Popup This Group Beta"]),
+  );
+  expect(candidate.groupLabels).toContain("Popup This Group");
+  for (const groupedUrl of groupedUrls) {
+    expect(candidate.browserUrls.some((url) => url.startsWith(groupedUrl))).toBe(
+      false,
+    );
+  }
+  expect(candidate.browserUrls.some((url) => url.startsWith(ungroupedUrl))).toBe(
+    true,
+  );
+  extensions.assertNoCandidateOnlyErrors();
+});
+
+test("popup quick list section renders stored quick-list items like the original extension", async ({
+  extensions,
+}) => {
+  await extensions.runBoth(async (extension) => {
+    await extension.seedStoredOneTabData(storedRegressionSeed);
+    await addTabToQuickList(extension, "test-tab-alpha");
+    await seedOneTabAttr(extension, "lastManualPopupSectionSelection", "quickList");
+    await extension.createBrowserState({
+      tabs: [
+        {
+          active: true,
+          title: "Popup Quick List Active Page",
+          url: "https://example.com/popup-quick-list-active-page",
+        },
+      ],
+    });
+  });
+
+  const [original, candidate] = await extensions.runBoth(async (extension) => {
+    const popup = await openInactivePopupPage(extension);
+    try {
+      await expect(popup.locator("body")).toContainText("Quick list");
+      await expect(popup.locator("body")).toContainText("Alpha Stored Tab");
+
+      return {
+        bodyText: documentText(await popup.locator("body").innerText()),
+        tabs: await visibleTabTexts(popup),
+      };
+    } finally {
+      await popup.close().catch(() => {});
+    }
+  });
+
+  expect(candidate).toEqual(original);
+  expect(candidate.bodyText).toContain("Quick list");
+  expect(candidate.tabs).toEqual(["Alpha Stored Tab"]);
+  extensions.assertNoCandidateOnlyErrors();
+});
+
 test("stored tabs restore into the browser like the original extension", async ({
   extensions,
 }) => {
@@ -2663,6 +3054,34 @@ async function groupBrowserTabs(
   );
 }
 
+async function openInactivePopupPage(extension: {
+  context: import("@playwright/test").BrowserContext;
+  extensionId: string;
+  serviceWorker: import("@playwright/test").Worker;
+}) {
+  const popupUrl = `chrome-extension://${extension.extensionId}/popup.html`;
+  const popupPromise = extension.context.waitForEvent("page", {
+    predicate: (candidate) => candidate.url().startsWith(popupUrl),
+    timeout: 5_000,
+  });
+  await extension.serviceWorker.evaluate(async (url) => {
+    const [activeTab] = await chrome.tabs.query({
+      active: true,
+      currentWindow: true,
+    });
+    await chrome.tabs.create({
+      active: false,
+      index: activeTab?.index === undefined ? undefined : activeTab.index + 1,
+      url,
+      windowId: activeTab?.windowId,
+    });
+  }, popupUrl);
+  const popup = await popupPromise;
+  await popup.setViewportSize({ height: 800, width: 900 });
+  await popup.waitForLoadState("domcontentloaded");
+  return popup;
+}
+
 async function browserTabUrlsSnapshot(extension: {
   serviceWorker: import("@playwright/test").Worker;
 }) {
@@ -2673,6 +3092,93 @@ async function browserTabUrlsSnapshot(extension: {
       .filter((url): url is string => !!url)
       .sort();
   });
+}
+
+async function openDuplicateCloseDropdown(
+  page: import("@playwright/test").Page,
+) {
+  const section = duplicateCloseSection(page);
+  await section.waitFor({ state: "visible", timeout: 3_000 }).catch(async () => {
+    throw new Error(
+      `Duplicate close section not found: ${JSON.stringify(
+        await popupSectionTexts(page),
+      )}`,
+    );
+  });
+  await section.locator(".dropdown").first().click();
+  await section
+    .locator(".dropdown-selection:visible")
+    .first()
+    .waitFor({ state: "visible" });
+}
+
+async function clickDuplicateCloseAction(
+  page: import("@playwright/test").Page,
+) {
+  const section = duplicateCloseSection(page);
+  await section
+    .locator(".dropdown-selection:visible .button")
+    .filter({ hasText: /Close \d+ tabs? already stored in OneTab/ })
+    .first()
+    .click();
+}
+
+async function openSuggestedMergeDropdown(
+  page: import("@playwright/test").Page,
+) {
+  const section = suggestedMergeSection(page);
+  await section.waitFor({ state: "visible", timeout: 3_000 }).catch(async () => {
+    throw new Error(
+      `Suggested merge section not found: ${JSON.stringify(
+        await popupSectionTexts(page),
+      )}`,
+    );
+  });
+  await section.locator(".dropdown").first().click();
+  await section
+    .locator(".dropdown-selection:visible")
+    .first()
+    .waitFor({ state: "visible" });
+}
+
+async function clickSuggestedMergeAction(
+  page: import("@playwright/test").Page,
+) {
+  const section = suggestedMergeSection(page);
+  await section
+    .locator(".dropdown-selection:visible .button")
+    .first()
+    .click({ timeout: 3_000 })
+    .catch(async () => {
+      throw new Error(
+        `Suggested merge action not found: ${JSON.stringify(
+          await popupSectionTexts(page),
+        )}`,
+      );
+    });
+}
+
+function duplicateCloseSection(page: import("@playwright/test").Page) {
+  return page
+    .locator(".subsection")
+    .filter({ hasText: /Close \d+ tabs? already stored in OneTab/ })
+    .first();
+}
+
+function suggestedMergeSection(page: import("@playwright/test").Page) {
+  return page
+    .locator(".subsection")
+    .filter({ hasText: /already stored here/i })
+    .first();
+}
+
+async function popupSectionTexts(page: import("@playwright/test").Page) {
+  return await page.evaluate(() => ({
+    bodyText: document.body.innerText.replace(/\s+/g, " ").trim(),
+    sections: Array.from(document.querySelectorAll<HTMLElement>(".subsection"))
+      .map((element) => element.innerText.replace(/\s+/g, " ").trim())
+      .filter(Boolean),
+  }));
 }
 
 async function storedTabUrlsSnapshot(page: import("@playwright/test").Page) {
@@ -2734,6 +3240,52 @@ async function seedOneTabAttr(
     },
     { id, value },
   );
+}
+
+async function addTabToQuickList(
+  extension: { serviceWorker: import("@playwright/test").Worker },
+  tabId: string,
+) {
+  await extension.serviceWorker.evaluate(async (id) => {
+    function requestResult<T>(request: IDBRequest<T>): Promise<T> {
+      return new Promise((resolve, reject) => {
+        request.onerror = () => reject(request.error);
+        request.onsuccess = () => resolve(request.result);
+      });
+    }
+
+    function transactionDone(transaction: IDBTransaction): Promise<void> {
+      return new Promise((resolve, reject) => {
+        transaction.onabort = () => reject(transaction.error);
+        transaction.onerror = () => reject(transaction.error);
+        transaction.oncomplete = () => resolve();
+      });
+    }
+
+    const database = await requestResult(indexedDB.open("onetab", 2));
+    try {
+      const transaction = database.transaction("item", "readwrite");
+      const store = transaction.objectStore("item");
+      const quickList = await requestResult<{
+        childIds?: string[];
+        id: string;
+      }>(store.get("quickList"));
+      const tab = await requestResult<{
+        id: string;
+        parentIds?: string[];
+      }>(store.get(id));
+      if (!quickList) throw new Error("quickList item not found");
+      if (!tab) throw new Error(`Tab item not found: ${id}`);
+
+      quickList.childIds = [...new Set([...(quickList.childIds ?? []), id])];
+      tab.parentIds = [...new Set([...(tab.parentIds ?? []), "quickList"])];
+      store.put(quickList);
+      store.put(tab);
+      await transactionDone(transaction);
+    } finally {
+      database.close();
+    }
+  }, tabId);
 }
 
 async function attrValuesSnapshot(
