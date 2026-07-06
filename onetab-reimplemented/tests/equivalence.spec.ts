@@ -1260,6 +1260,167 @@ test("stored groups restore all tabs like the original extension", async ({
   expectNoCandidateOnlyErrorsExceptRestoredResources(extensions);
 });
 
+test("folders open and restore nested groups like the original extension", async ({
+  extensions,
+}) => {
+  const restoredUrls = [
+    "https://example.com/folder-workflow-alpha",
+    "https://example.org/folder-workflow-beta",
+  ];
+
+  const [original, candidate] = await extensions.runBoth(async (extension) => {
+    await extension.context.route("**/*", async (route) => {
+      const url = new URL(route.request().url());
+      if (!new Set(["example.com", "example.org"]).has(url.hostname)) {
+        await route.continue();
+        return;
+      }
+
+      if (route.request().resourceType() !== "document") {
+        await route.fulfill({ status: 204 });
+        return;
+      }
+
+      await route.fulfill({
+        body: `<!doctype html><title>${url.href}</title><h1>${url.href}</h1>`,
+        contentType: "text/html",
+      });
+    });
+
+    await seedFolderWorkflowData(extension);
+    await seedOneTabAttr(extension, "autoActionOnOpenOptionChosen", true);
+
+    const page = await extension.openPage("onetab.html", {
+      viewport: { height: 900, width: 1100 },
+    });
+
+    try {
+      await centerGroup(page, "Workflow Folder").waitFor({ state: "visible" });
+      await openFolder(page, "Workflow Folder");
+      await page
+        .locator('.tabGroupLabelText:has-text("Nested Workflow Window")')
+        .waitFor({ state: "visible" });
+      await expect(page.locator("body")).toContainText("Open parent folder");
+
+      const folderViewBeforeRestore = {
+        folder: await itemStatusSnapshot(page, "workflow-folder"),
+        nestedWindow: await itemStatusSnapshot(page, "workflow-window"),
+        root: await itemStatusSnapshot(page, "root"),
+        tabTexts: await visibleTabTexts(page),
+      };
+
+      await centerGroup(page, "Nested Workflow Window")
+        .locator(".controlButton")
+        .filter({ hasText: /^Restore all$/ })
+        .first()
+        .click();
+
+      await expect
+        .poll(
+          async () =>
+            await extension.serviceWorker.evaluate(
+              async (urls) => {
+                const tabs: Array<{ url?: string }> = await chrome.tabs.query({});
+                return urls.every((url) =>
+                  tabs.some((tab) => tab.url?.startsWith(url)),
+                );
+              },
+              restoredUrls,
+            ),
+          { timeout: 5_000 },
+        )
+        .toBe(true);
+      await page.waitForTimeout(500);
+
+      return {
+        browserUrls: await browserTabUrlsSnapshot(extension),
+        folderViewBeforeRestore,
+      };
+    } finally {
+      await page.close().catch(() => {});
+    }
+  });
+
+  expect(candidate).toEqual(original);
+  expect(candidate.folderViewBeforeRestore.root.childIds).toEqual([
+    "workflow-folder",
+    "outside-window",
+  ]);
+  expect(candidate.folderViewBeforeRestore.folder.childIds).toEqual([
+    "workflow-window",
+  ]);
+  expect(candidate.folderViewBeforeRestore.nestedWindow.parentIds).toEqual([
+    "workflow-folder",
+  ]);
+  expect(candidate.folderViewBeforeRestore.tabTexts).toEqual([
+    "Folder Workflow Alpha",
+    "Folder Workflow Beta",
+  ]);
+  for (const restoredUrl of restoredUrls) {
+    expect(candidate.browserUrls.some((url) => url.startsWith(restoredUrl))).toBe(
+      true,
+    );
+  }
+  expectNoCandidateOnlyErrorsExceptRestoredResources(extensions);
+});
+
+test("folder creation from group menus matches the original extension", async ({
+  extensions,
+}) => {
+  await extensions.runBoth((extension) =>
+    extension.seedStoredOneTabData(storedRegressionSeed),
+  );
+
+  const [original, candidate] = await extensions.runBoth(async (extension) => {
+    const page = await extension.openPage("onetab.html", {
+      viewport: { height: 900, width: 1100 },
+    });
+
+    try {
+      await centerGroup(page, "Seeded Regression Window").waitFor({
+        state: "visible",
+      });
+      await chooseGroupMenuItem(
+        page,
+        "Seeded Regression Window",
+        /^Create folder above \/ below$/,
+      );
+      await page
+        .locator(".menuItem:visible")
+        .filter({ hasText: /^Create folder below$/ })
+        .first()
+        .click();
+
+      await expect
+        .poll(async () => await rootChildrenSemanticSnapshot(page), {
+          timeout: 5_000,
+        })
+        .toHaveLength(2);
+
+      return {
+        rootChildren: await rootChildrenSemanticSnapshot(page),
+      };
+    } finally {
+      await page.close().catch(() => {});
+    }
+  });
+
+  expect(candidate).toEqual(original);
+  expect(candidate.rootChildren).toEqual([
+    {
+      childTitles: ["Alpha Stored Tab", "Beta Stored Tab"],
+      groupType: "window",
+      label: "Seeded Regression Window",
+    },
+    {
+      childTitles: [],
+      groupType: "folder",
+      label: undefined,
+    },
+  ]);
+  extensions.assertNoCandidateOnlyErrors();
+});
+
 test("extension pages render matching user-facing text", async ({
   extensions,
 }) => {
@@ -2193,6 +2354,122 @@ test("sidebar drop targets reorder groups like the original extension", async ({
     "drag-target-window",
     "drag-source-window",
     "drag-folder",
+  ]);
+  extensions.assertNoCandidateOnlyErrors();
+});
+
+test("sidebar folder drop targets move groups into folders like the original extension", async ({
+  extensions,
+}) => {
+  await extensions.runBoth(async (extension) => {
+    await extension.seedStoredOneTabData(dragDropSeed);
+    await seedOneTabAttr(extension, "treeItemsOpen:navCol-root", [
+      "root",
+      "drag-folder",
+    ]);
+  });
+
+  const [original, candidate] = await extensions.runBoth(async (extension) => {
+    const page = await extension.openPage("onetab.html", {
+      viewport: { height: 900, width: 1200 },
+    });
+
+    try {
+      await page
+        .locator('.tabGroupLabelText:has-text("Drag Folder")')
+        .waitFor({ state: "visible" });
+
+      await dragItem(
+        page,
+        centerGroup(page, "Drag Target Window"),
+        sidebarItem(page, "drag-folder"),
+        "within",
+      );
+      await waitForItemStatus(page, "root", {
+        childIds: ["drag-source-window", "drag-folder"],
+      });
+      await waitForItemStatus(page, "drag-folder", {
+        childIds: ["drag-target-window"],
+      });
+      await waitForItemStatus(page, "drag-target-window", {
+        parentIds: ["drag-folder"],
+      });
+
+      return {
+        folder: await itemStatusSnapshot(page, "drag-folder"),
+        movedGroup: await itemStatusSnapshot(page, "drag-target-window"),
+        root: await itemStatusSnapshot(page, "root"),
+      };
+    } finally {
+      await page.close().catch(() => {});
+    }
+  });
+
+  expect(candidate).toEqual(original);
+  expect(candidate.root.childIds).toEqual(["drag-source-window", "drag-folder"]);
+  expect(candidate.folder.childIds).toEqual(["drag-target-window"]);
+  expect(candidate.movedGroup.parentIds).toEqual(["drag-folder"]);
+  extensions.assertNoCandidateOnlyErrors();
+});
+
+test("sidebar folder drop targets move tabs into new folder groups like the original extension", async ({
+  extensions,
+}) => {
+  await extensions.runBoth(async (extension) => {
+    await extension.seedStoredOneTabData(dragDropSeed);
+    await seedOneTabAttr(extension, "treeItemsOpen:navCol-root", [
+      "root",
+      "drag-folder",
+    ]);
+  });
+
+  const [original, candidate] = await extensions.runBoth(async (extension) => {
+    const page = await extension.openPage("onetab.html", {
+      viewport: { height: 900, width: 1200 },
+    });
+
+    try {
+      await sidebarItem(page, "drag-folder").waitFor({ state: "visible" });
+      await dragItem(
+        page,
+        centerTab(page, "Alpha Drag Tab"),
+        sidebarItem(page, "drag-folder"),
+        "within",
+      );
+
+      await expect
+        .poll(async () => await folderSemanticSnapshot(page, "drag-folder"), {
+          timeout: 5_000,
+        })
+        .toMatchObject({
+          childGroups: [
+            {
+              groupType: "window",
+              tabs: ["Alpha Drag Tab"],
+            },
+          ],
+        });
+      await waitForItemStatus(page, "drag-source-window", {
+        childIds: ["drag-tab-beta", "drag-tab-gamma"],
+      });
+
+      return {
+        folder: await folderSemanticSnapshot(page, "drag-folder"),
+        source: await itemStatusSnapshot(page, "drag-source-window"),
+      };
+    } finally {
+      await page.close().catch(() => {});
+    }
+  });
+
+  expect(candidate).toEqual(original);
+  expect(candidate.source.childIds).toEqual(["drag-tab-beta", "drag-tab-gamma"]);
+  expect(candidate.folder.childGroups).toEqual([
+    {
+      groupType: "window",
+      label: undefined,
+      tabs: ["Alpha Drag Tab"],
+    },
   ]);
   extensions.assertNoCandidateOnlyErrors();
 });
@@ -3288,6 +3565,132 @@ async function addTabToQuickList(
   }, tabId);
 }
 
+async function seedFolderWorkflowData(extension: {
+  serviceWorker: import("@playwright/test").Worker;
+}) {
+  await extension.serviceWorker.evaluate(async () => {
+    function requestResult<T>(request: IDBRequest<T>): Promise<T> {
+      return new Promise((resolve, reject) => {
+        request.onerror = () => reject(request.error);
+        request.onsuccess = () => resolve(request.result);
+      });
+    }
+
+    function transactionDone(transaction: IDBTransaction): Promise<void> {
+      return new Promise((resolve, reject) => {
+        transaction.onabort = () => reject(transaction.error);
+        transaction.onerror = () => reject(transaction.error);
+        transaction.oncomplete = () => resolve();
+      });
+    }
+
+    const now = 1_704_067_300_000;
+    const items = [
+      {
+        childIds: ["workflow-folder", "outside-window"],
+        createDate: now,
+        groupType: "folder",
+        id: "root",
+        modifyDate: now,
+        parentIds: [],
+        pinnedCount: 0,
+        type: "group",
+      },
+      {
+        childIds: [],
+        createDate: now,
+        groupType: "quickList",
+        id: "quickList",
+        modifyDate: now,
+        parentIds: [],
+        pinnedCount: 0,
+        type: "group",
+      },
+      {
+        childIds: [],
+        createDate: now,
+        groupType: "folder",
+        id: "trash",
+        modifyDate: now,
+        parentIds: [],
+        pinnedCount: 0,
+        type: "group",
+      },
+      {
+        childIds: ["workflow-window"],
+        createDate: now + 1,
+        groupType: "folder",
+        id: "workflow-folder",
+        label: "Workflow Folder",
+        modifyDate: now + 1,
+        parentIds: ["root"],
+        pinnedCount: 0,
+        type: "group",
+      },
+      {
+        childIds: ["workflow-tab-alpha", "workflow-tab-beta"],
+        createDate: now + 2,
+        groupType: "window",
+        id: "workflow-window",
+        label: "Nested Workflow Window",
+        modifyDate: now + 2,
+        parentIds: ["workflow-folder"],
+        pinnedCount: 0,
+        type: "group",
+      },
+      {
+        childIds: ["outside-tab"],
+        createDate: now + 3,
+        groupType: "window",
+        id: "outside-window",
+        label: "Outside Workflow Window",
+        modifyDate: now + 3,
+        parentIds: ["root"],
+        pinnedCount: 0,
+        type: "group",
+      },
+      {
+        createDate: now + 10,
+        id: "workflow-tab-alpha",
+        modifyDate: now + 10,
+        parentIds: ["workflow-window"],
+        title: "Folder Workflow Alpha",
+        type: "tab",
+        url: "https://example.com/folder-workflow-alpha",
+      },
+      {
+        createDate: now + 11,
+        id: "workflow-tab-beta",
+        modifyDate: now + 11,
+        parentIds: ["workflow-window"],
+        title: "Folder Workflow Beta",
+        type: "tab",
+        url: "https://example.org/folder-workflow-beta",
+      },
+      {
+        createDate: now + 12,
+        id: "outside-tab",
+        modifyDate: now + 12,
+        parentIds: ["outside-window"],
+        title: "Outside Folder Workflow Tab",
+        type: "tab",
+        url: "https://example.net/outside-folder-workflow-tab",
+      },
+    ];
+
+    const database = await requestResult(indexedDB.open("onetab", 2));
+    try {
+      const transaction = database.transaction("item", "readwrite");
+      const store = transaction.objectStore("item");
+      await requestResult(store.clear());
+      for (const item of items) store.put(item);
+      await transactionDone(transaction);
+    } finally {
+      database.close();
+    }
+  });
+}
+
 async function attrValuesSnapshot(
   page: import("@playwright/test").Page,
   ids: string[],
@@ -3538,6 +3941,20 @@ async function moveGroupToTrash(
   groupTitle: string,
 ) {
   await chooseGroupMenuItem(page, groupTitle, /^Move to trash$/);
+}
+
+async function openFolder(
+  page: import("@playwright/test").Page,
+  folderTitle: string,
+) {
+  const folder = centerGroup(page, folderTitle);
+  await folder.waitFor({ state: "visible" });
+  await folder.hover();
+  await folder
+    .locator(".controlButton")
+    .filter({ hasText: /^Open folder$/ })
+    .first()
+    .click();
 }
 
 async function restoreTabFromTrashToGroup(
@@ -3812,6 +4229,104 @@ async function groupChildTabsSnapshot(
       database.close();
     }
   }, groupId);
+}
+
+async function folderSemanticSnapshot(
+  page: import("@playwright/test").Page,
+  folderId: string,
+) {
+  return await page.evaluate(async (id) => {
+    function requestResult<T>(request: IDBRequest<T>): Promise<T> {
+      return new Promise((resolve, reject) => {
+        request.onerror = () => reject(request.error);
+        request.onsuccess = () => resolve(request.result);
+      });
+    }
+
+    const database = await requestResult(indexedDB.open("onetab", 2));
+    try {
+      const transaction = database.transaction("item", "readonly");
+      const store = transaction.objectStore("item");
+      const folder: { childIds?: string[] } | undefined = await requestResult(
+        store.get(id),
+      );
+      if (!folder) throw new Error(`Folder not found: ${id}`);
+
+      const childGroups = await Promise.all(
+        (folder.childIds ?? []).map(async (childId) => {
+          const group: {
+            childIds?: string[];
+            groupType?: string;
+            label?: string;
+          } = await requestResult(store.get(childId));
+          const tabs = await Promise.all(
+            (group.childIds ?? []).map(async (tabId) => {
+              const tab: { title?: string } = await requestResult(store.get(tabId));
+              return tab.title;
+            }),
+          );
+
+          return {
+            groupType: group.groupType,
+            label: group.label,
+            tabs,
+          };
+        }),
+      );
+
+      return { childGroups };
+    } finally {
+      database.close();
+    }
+  }, folderId);
+}
+
+async function rootChildrenSemanticSnapshot(
+  page: import("@playwright/test").Page,
+) {
+  return await page.evaluate(async () => {
+    function requestResult<T>(request: IDBRequest<T>): Promise<T> {
+      return new Promise((resolve, reject) => {
+        request.onerror = () => reject(request.error);
+        request.onsuccess = () => resolve(request.result);
+      });
+    }
+
+    const database = await requestResult(indexedDB.open("onetab", 2));
+    try {
+      const transaction = database.transaction("item", "readonly");
+      const store = transaction.objectStore("item");
+      const root: { childIds?: string[] } = await requestResult(
+        store.get("root"),
+      );
+
+      return await Promise.all(
+        (root.childIds ?? []).map(async (childId) => {
+          const child: {
+            childIds?: string[];
+            groupType?: string;
+            label?: string;
+          } = await requestResult(store.get(childId));
+          const childTitles = await Promise.all(
+            (child.childIds ?? []).map(async (nestedId) => {
+              const nested: { title?: string; type?: string } = await requestResult(
+                store.get(nestedId),
+              );
+              return nested.type === "tab" ? nested.title : undefined;
+            }),
+          );
+
+          return {
+            childTitles: childTitles.filter(Boolean),
+            groupType: child.groupType,
+            label: child.label,
+          };
+        }),
+      );
+    } finally {
+      database.close();
+    }
+  });
 }
 
 async function visibleTabTexts(page: import("@playwright/test").Page) {
