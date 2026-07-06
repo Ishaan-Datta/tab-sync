@@ -242,7 +242,9 @@ test("browser action stores only the focused window tabs like the original exten
       await page.waitForTimeout(1_000);
 
       return {
-        bodyText: documentText(await page.locator("body").innerText()),
+        bodyText: normalizeStoredTimestampText(
+          documentText(await page.locator("body").innerText()),
+        ),
         browserTabs: await extension.serviceWorker.evaluate(async () => {
           const extensionId = chrome.runtime.id;
           const tabs: Array<{ title?: string; url?: string }> =
@@ -617,6 +619,68 @@ test("popup already-stored tab setting follows the original duplicate behavior",
   expect(candidate.browserUrls.some((url) => url.startsWith(freshUrl))).toBe(
     false,
   );
+  extensions.assertNoCandidateOnlyErrors();
+});
+
+test("popup setting checkboxes persist like the original extension", async ({
+  extensions,
+}) => {
+  const pinnedUrl = "https://example.com/popup-settings-pinned-tab";
+  const groupedUrl = "https://example.org/popup-settings-grouped-tab";
+  const excludedUrl = "https://excluded.example.com/popup-settings-excluded-tab";
+
+  await extensions.runBoth(async (extension) => {
+    await seedOneTabAttr(extension, "excludedDomains", ["excluded.example.com"]);
+    await extension.createBrowserState({
+      tabs: [
+        {
+          pinned: true,
+          title: "Popup Settings Pinned Tab",
+          url: pinnedUrl,
+        },
+        {
+          title: "Popup Settings Grouped Tab",
+          url: groupedUrl,
+        },
+        {
+          active: true,
+          title: "Popup Settings Excluded Tab",
+          url: excludedUrl,
+        },
+      ],
+    });
+    await groupBrowserTabs(extension, [groupedUrl], "Popup Settings Group");
+  });
+
+  const [original, candidate] = await extensions.runBoth(async (extension) => {
+    const popup = await extension.openPage("popup.html", {
+      viewport: { height: 700, width: 900 },
+    });
+    try {
+      await popup.getByText("Include pinned tabs", { exact: true }).click();
+      await popup.getByText("Include grouped tabs", { exact: true }).click();
+      await popup
+        .getByText(/Include tabs from .*excluded\.example\.com/)
+        .click();
+
+      return {
+        attrs: await attrValuesSnapshot(popup, [
+          "popupIncludePinnedTabs",
+          "popupIncludeGroupedTabs",
+          "popupIncludeExcludedDomains",
+        ]),
+      };
+    } finally {
+      await popup.close().catch(() => {});
+    }
+  });
+
+  expect(candidate).toEqual(original);
+  expect(candidate.attrs).toEqual({
+    popupIncludeExcludedDomains: "true",
+    popupIncludeGroupedTabs: "false",
+    popupIncludePinnedTabs: "true",
+  });
   extensions.assertNoCandidateOnlyErrors();
 });
 
@@ -2207,6 +2271,107 @@ test("stored groups move to trash like the original extension", async ({
   extensions.assertNoCandidateOnlyErrors();
 });
 
+test("trashed tabs restore back to their group like the original extension", async ({
+  extensions,
+}) => {
+  await extensions.runBoth((extension) =>
+    extension.seedStoredOneTabData(storedRegressionSeed),
+  );
+
+  const [original, candidate] = await extensions.runBoth(async (extension) => {
+    const page = await extension.openPage("onetab.html", {
+      viewport: { height: 900, width: 1100 },
+    });
+
+    try {
+      await moveTabToTrash(page, "Alpha Stored Tab");
+      await openTrashView(page);
+      await page.locator('.tab:has-text("Alpha Stored Tab")').waitFor({
+        state: "visible",
+      });
+
+      await restoreTabFromTrashToGroup(page, "Alpha Stored Tab", "test-window-1");
+      await waitForItemStatus(page, "test-tab-alpha", {
+        parentIds: ["test-window-1"],
+      });
+      await waitForItemStatus(page, "trash", { childIds: [] });
+
+      await openAllView(page);
+      await page.locator('.tab:has-text("Alpha Stored Tab")').waitFor({
+        state: "visible",
+      });
+
+      return {
+        group: await itemStatusSnapshot(page, "test-window-1"),
+        tab: await itemStatusSnapshot(page, "test-tab-alpha"),
+        trash: await itemStatusSnapshot(page, "trash"),
+        visibleTabs: await visibleTabTexts(page),
+      };
+    } finally {
+      await page.close().catch(() => {});
+    }
+  });
+
+  expect(candidate).toEqual(original);
+  expect(candidate.group.childIds).toEqual(["test-tab-alpha", "test-tab-beta"]);
+  expect(candidate.tab.parentIds).toEqual(["test-window-1"]);
+  expect(candidate.trash.childIds).toEqual([]);
+  expect(candidate.visibleTabs).toHaveLength(2);
+  expect(candidate.visibleTabs[0]).toContain("Alpha Stored Tab");
+  expect(candidate.visibleTabs[1]).toContain("Beta Stored Tab");
+  extensions.assertNoCandidateOnlyErrors();
+});
+
+test("trashed groups restore back to all tabs like the original extension", async ({
+  extensions,
+}) => {
+  await extensions.runBoth((extension) =>
+    extension.seedStoredOneTabData(storedRegressionSeed),
+  );
+
+  const [original, candidate] = await extensions.runBoth(async (extension) => {
+    const page = await extension.openPage("onetab.html", {
+      viewport: { height: 900, width: 1100 },
+    });
+
+    try {
+      await moveGroupToTrash(page, "Seeded Regression Window");
+      await dismissMoveToTrashGroupHint(page);
+      await waitForItemStatus(page, "test-window-1", { parentIds: ["trash"] });
+      await openTrashView(page);
+      await page
+        .locator('.tabGroup:has-text("Seeded Regression Window")')
+        .waitFor({ state: "visible" });
+
+      await restoreGroupFromTrashToAll(page, "Seeded Regression Window");
+      await waitForItemStatus(page, "test-window-1", { parentIds: ["root"] });
+      await waitForItemStatus(page, "root", { childIds: ["test-window-1"] });
+      await waitForItemStatus(page, "trash", { childIds: [] });
+
+      await openAllView(page);
+      await page
+        .locator('.tabGroup:has-text("Seeded Regression Window")')
+        .waitFor({ state: "visible" });
+
+      return {
+        group: await itemStatusSnapshot(page, "test-window-1"),
+        root: await itemStatusSnapshot(page, "root"),
+        trash: await itemStatusSnapshot(page, "trash"),
+        visibleGroups: await visibleGroupLabels(page),
+      };
+    } finally {
+      await page.close().catch(() => {});
+    }
+  });
+
+  expect(candidate).toEqual(original);
+  expect(candidate.group.parentIds).toEqual(["root"]);
+  expect(candidate.root.childIds).toEqual(["test-window-1"]);
+  expect(candidate.trash.childIds).toEqual([]);
+  expect(candidate.visibleGroups).toContain("Seeded Regression Window");
+  extensions.assertNoCandidateOnlyErrors();
+});
+
 test("trashed groups delete all trash like the original extension", async ({
   extensions,
 }) => {
@@ -2370,6 +2535,13 @@ function normalizeErrors(errors: string[]) {
 
 function documentText(value: string) {
   return value.replace(/\s+/g, " ").trim();
+}
+
+function normalizeStoredTimestampText(value: string) {
+  return value.replace(
+    /\d{1,2}\/\d{1,2}\/\d{4} \d{1,2}:\d{2}:\d{2} [AP]M - just now/g,
+    "<stored-timestamp> - just now",
+  );
 }
 
 function isRestoredPageResourceError(error: string) {
@@ -2816,6 +2988,45 @@ async function moveGroupToTrash(
   await chooseGroupMenuItem(page, groupTitle, /^Move to trash$/);
 }
 
+async function restoreTabFromTrashToGroup(
+  page: import("@playwright/test").Page,
+  tabTitle: string,
+  groupId: string,
+) {
+  const tab = page.locator(".tab").filter({ hasText: tabTitle }).first();
+  await tab.waitFor({ state: "visible" });
+  await tab.hover();
+  await tab
+    .locator(".controlButton")
+    .filter({ hasText: /^Move back$/ })
+    .first()
+    .click();
+  await page
+    .locator(
+      `.treeItem[data-id="${groupId}-tree-treeBrowser"] .editInPlaceLabelSpan`,
+    )
+    .first()
+    .click();
+}
+
+async function restoreGroupFromTrashToAll(
+  page: import("@playwright/test").Page,
+  groupTitle: string,
+) {
+  const group = centerGroup(page, groupTitle);
+  await group.waitFor({ state: "visible" });
+  await group.hover();
+  await group
+    .locator(".controlButton")
+    .filter({ hasText: /^Move back$/ })
+    .first()
+    .click();
+  await page
+    .locator('.treeItem[data-id="root-tree-treeBrowser"] .editInPlaceLabelSpan')
+    .first()
+    .click();
+}
+
 async function sortGroupTabsByTitle(
   page: import("@playwright/test").Page,
   groupTitle: string,
@@ -3246,5 +3457,16 @@ async function openTrashView(page: import("@playwright/test").Page) {
 
     if (!trashLabel) throw new Error("Trash navigation label not found");
     trashLabel.click();
+  });
+}
+
+async function openAllView(page: import("@playwright/test").Page) {
+  await page.evaluate(() => {
+    const allLabel = Array.from(
+      document.querySelectorAll<HTMLElement>(".editInPlaceLabelSpan"),
+    ).find((element) => element.textContent?.trim() === "All");
+
+    if (!allLabel) throw new Error("All navigation label not found");
+    allLabel.click();
   });
 }
