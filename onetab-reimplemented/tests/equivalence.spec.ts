@@ -1075,6 +1075,114 @@ test("popup quick list section renders stored quick-list items like the original
   extensions.assertNoCandidateOnlyErrors();
 });
 
+test("popup quick list tab clicks restore stored tabs like the original extension", async ({
+  extensions,
+}) => {
+  const restoredUrl = "https://example.com/alpha-stored-tab";
+
+  const [original, candidate] = await extensions.runBoth(async (extension) => {
+    await routeExampleDocuments(extension);
+    await extension.seedStoredOneTabData(storedRegressionSeed);
+    await addItemToQuickList(extension, "test-tab-alpha");
+    await seedOneTabAttr(extension, "lastManualPopupSectionSelection", "quickList");
+    await extension.createBrowserState({
+      tabs: [
+        {
+          active: true,
+          title: "Popup Quick List Tab Restore Active",
+          url: "https://example.net/popup-quick-list-tab-restore-active",
+        },
+      ],
+    });
+
+    const popup = await openInactivePopupPage(extension);
+    try {
+      await popup.locator('.tab:has-text("Alpha Stored Tab")').waitFor({
+        state: "visible",
+      });
+      await popup
+        .locator('.tab:has-text("Alpha Stored Tab")')
+        .locator(".tabLinkTextStripesPossible")
+        .first()
+        .click();
+
+      await waitForBrowserUrls(extension, [restoredUrl]);
+      await popup.waitForTimeout(500).catch(() => {});
+
+      return {
+        browserUrls: await browserTabUrlsSnapshot(extension),
+        quickList: await itemStatusSnapshot(popup, "quickList"),
+        restoredTab: await itemStatusSnapshot(popup, "test-tab-alpha"),
+      };
+    } finally {
+      await popup.close().catch(() => {});
+    }
+  });
+
+  expect(candidate).toEqual(original);
+  expect(candidate.browserUrls.some((url) => url.startsWith(restoredUrl))).toBe(
+    true,
+  );
+  expectNoCandidateOnlyErrorsExceptRestoredResources(extensions);
+});
+
+test("popup quick list group restore opens group tabs like the original extension", async ({
+  extensions,
+}) => {
+  const restoredUrls = [
+    "https://example.com/alpha-stored-tab",
+    "https://example.org/beta-stored-tab?with=query",
+  ];
+
+  const [original, candidate] = await extensions.runBoth(async (extension) => {
+    await routeExampleDocuments(extension);
+    await extension.seedStoredOneTabData(storedRegressionSeed);
+    await addItemToQuickList(extension, "test-window-1");
+    await seedOneTabAttr(extension, "lastManualPopupSectionSelection", "quickList");
+    await extension.createBrowserState({
+      tabs: [
+        {
+          active: true,
+          title: "Popup Quick List Group Restore Active",
+          url: "https://example.net/popup-quick-list-group-restore-active",
+        },
+      ],
+    });
+
+    const popup = await openInactivePopupPage(extension);
+    try {
+      await popup.locator('.tabGroup:has-text("Seeded Regression Window")').waitFor({
+        state: "visible",
+      });
+      await popup
+        .locator('.tabGroup:has-text("Seeded Regression Window")')
+        .locator(".controlButton")
+        .filter({ hasText: /^Restore all$/ })
+        .first()
+        .click();
+
+      await waitForBrowserUrls(extension, restoredUrls);
+      await popup.waitForTimeout(500).catch(() => {});
+
+      return {
+        browserUrls: await browserTabUrlsSnapshot(extension),
+        group: await itemStatusSnapshot(popup, "test-window-1"),
+        quickList: await itemStatusSnapshot(popup, "quickList"),
+      };
+    } finally {
+      await popup.close().catch(() => {});
+    }
+  });
+
+  expect(candidate).toEqual(original);
+  for (const restoredUrl of restoredUrls) {
+    expect(
+      candidate.browserUrls.some((url) => url.startsWith(restoredUrl)),
+    ).toBe(true);
+  }
+  expectNoCandidateOnlyErrorsExceptRestoredResources(extensions);
+});
+
 test("stored tabs restore into the browser like the original extension", async ({
   extensions,
 }) => {
@@ -3025,6 +3133,142 @@ test("stored groups toggle star status like the original extension", async ({
   extensions.assertNoCandidateOnlyErrors();
 });
 
+test("stored folders toggle rating star status like the original extension", async ({
+  extensions,
+}) => {
+  await extensions.runBoth((extension) =>
+    extension.seedStoredOneTabData(dragDropSeed),
+  );
+
+  const [original, candidate] = await extensions.runBoth(async (extension) => {
+    const page = await extension.openPage("onetab.html", {
+      viewport: { height: 900, width: 1100 },
+    });
+
+    try {
+      await chooseGroupMenuItem(page, "Drag Folder", /^Star$/);
+      await waitForItemStatus(page, "drag-folder", { rating: 5 });
+      const starredSnapshot = await groupStatusSnapshot(page, "Drag Folder");
+      const starredRecord = await itemStatusSnapshot(page, "drag-folder");
+
+      await chooseGroupMenuItem(page, "Drag Folder", /^Remove star$/);
+      await waitForItemStatus(page, "drag-folder", { rating: 0 });
+      const unstarredSnapshot = await groupStatusSnapshot(page, "Drag Folder");
+      const unstarredRecord = await itemStatusSnapshot(page, "drag-folder");
+
+      return {
+        starredRecord,
+        starredSnapshot,
+        unstarredRecord,
+        unstarredSnapshot,
+      };
+    } finally {
+      await page.close().catch(() => {});
+    }
+  });
+
+  expect(candidate).toEqual(original);
+  expect(candidate.starredRecord.rating).toBe(5);
+  expect(candidate.starredSnapshot.starIconCount).toBe(1);
+  expect(candidate.unstarredRecord.rating).toBe(0);
+  expect(candidate.unstarredSnapshot.starIconCount).toBe(0);
+  extensions.assertNoCandidateOnlyErrors();
+});
+
+test("bulk-selected stored tabs archive and unarchive like the original extension", async ({
+  extensions,
+}) => {
+  await extensions.runBoth((extension) =>
+    extension.seedStoredOneTabData(storedRegressionSeed),
+  );
+
+  const [original, candidate] = await extensions.runBoth(async (extension) => {
+    const page = await extension.openPage("onetab.html", {
+      viewport: { height: 900, width: 1100 },
+    });
+
+    try {
+      await selectStoredTab(page, "Alpha Stored Tab");
+      await selectStoredTab(page, "Beta Stored Tab");
+      await expect(page.locator("body")).toContainText("Selection");
+      await chooseBulkAction(page, /^Mark as archived$/);
+      await waitForItemStatus(page, "test-tab-alpha", { archived: 1 });
+      await waitForItemStatus(page, "test-tab-beta", { archived: 1 });
+      const archived = {
+        alpha: await itemStatusSnapshot(page, "test-tab-alpha"),
+        beta: await itemStatusSnapshot(page, "test-tab-beta"),
+      };
+
+      await chooseBulkAction(page, /^Unmark as archived$/);
+      await waitForItemStatus(page, "test-tab-alpha", { archived: 0 });
+      await waitForItemStatus(page, "test-tab-beta", { archived: 0 });
+      const unarchived = {
+        alpha: await itemStatusSnapshot(page, "test-tab-alpha"),
+        beta: await itemStatusSnapshot(page, "test-tab-beta"),
+      };
+
+      return { archived, unarchived };
+    } finally {
+      await page.close().catch(() => {});
+    }
+  });
+
+  expect(candidate).toEqual(original);
+  expect(candidate.archived).toMatchObject({
+    alpha: { archived: 1 },
+    beta: { archived: 1 },
+  });
+  expect(candidate.unarchived).toMatchObject({
+    alpha: { archived: 0 },
+    beta: { archived: 0 },
+  });
+  extensions.assertNoCandidateOnlyErrors();
+});
+
+test("bulk-selected stored tabs move to trash like the original extension", async ({
+  extensions,
+}) => {
+  await extensions.runBoth((extension) =>
+    extension.seedStoredOneTabData(dragDropSeed),
+  );
+
+  const [original, candidate] = await extensions.runBoth(async (extension) => {
+    const page = await extension.openPage("onetab.html", {
+      viewport: { height: 900, width: 1100 },
+    });
+
+    try {
+      await selectStoredTab(page, "Alpha Drag Tab");
+      await selectStoredTab(page, "Beta Drag Tab");
+      await expect(page.locator("body")).toContainText("Selection");
+      await chooseBulkAction(page, /^Move to trash$/);
+
+      await waitForItemStatus(page, "drag-source-window", {
+        childIds: ["drag-tab-gamma"],
+      });
+      await waitForItemStatus(page, "trash", {
+        childIds: ["drag-tab-alpha", "drag-tab-beta"],
+      });
+
+      return {
+        alpha: await itemStatusSnapshot(page, "drag-tab-alpha"),
+        beta: await itemStatusSnapshot(page, "drag-tab-beta"),
+        sourceGroup: await itemStatusSnapshot(page, "drag-source-window"),
+        trash: await itemStatusSnapshot(page, "trash"),
+      };
+    } finally {
+      await page.close().catch(() => {});
+    }
+  });
+
+  expect(candidate).toEqual(original);
+  expect(candidate.sourceGroup.childIds).toEqual(["drag-tab-gamma"]);
+  expect(candidate.trash.childIds).toEqual(["drag-tab-alpha", "drag-tab-beta"]);
+  expect(candidate.alpha.parentIds).toEqual(["trash"]);
+  expect(candidate.beta.parentIds).toEqual(["trash"]);
+  extensions.assertNoCandidateOnlyErrors();
+});
+
 test("stored tabs move to trash like the original extension", async ({
   extensions,
 }) => {
@@ -3622,6 +3866,45 @@ async function browserTabUrlsSnapshot(extension: {
   });
 }
 
+async function routeExampleDocuments(extension: {
+  context: import("@playwright/test").BrowserContext;
+}) {
+  await extension.context.route("**/*", async (route) => {
+    const url = new URL(route.request().url());
+    if (!url.hostname.startsWith("example.")) {
+      await route.continue();
+      return;
+    }
+
+    if (route.request().resourceType() !== "document") {
+      await route.fulfill({ status: 204 });
+      return;
+    }
+
+    await route.fulfill({
+      body: `<!doctype html><title>${url.href}</title><h1>${url.href}</h1>`,
+      contentType: "text/html",
+    });
+  });
+}
+
+async function waitForBrowserUrls(
+  extension: { serviceWorker: import("@playwright/test").Worker },
+  urls: string[],
+) {
+  await expect
+    .poll(
+      async () => {
+        const browserUrls = await browserTabUrlsSnapshot(extension);
+        return urls.every((url) =>
+          browserUrls.some((browserUrl) => browserUrl.startsWith(url)),
+        );
+      },
+      { timeout: 5_000 },
+    )
+    .toBe(true);
+}
+
 async function openDuplicateCloseDropdown(
   page: import("@playwright/test").Page,
 ) {
@@ -3774,6 +4057,13 @@ async function addTabToQuickList(
   extension: { serviceWorker: import("@playwright/test").Worker },
   tabId: string,
 ) {
+  await addItemToQuickList(extension, tabId);
+}
+
+async function addItemToQuickList(
+  extension: { serviceWorker: import("@playwright/test").Worker },
+  itemId: string,
+) {
   await extension.serviceWorker.evaluate(async (id) => {
     function requestResult<T>(request: IDBRequest<T>): Promise<T> {
       return new Promise((resolve, reject) => {
@@ -3798,22 +4088,22 @@ async function addTabToQuickList(
         childIds?: string[];
         id: string;
       }>(store.get("quickList"));
-      const tab = await requestResult<{
+      const item = await requestResult<{
         id: string;
         parentIds?: string[];
       }>(store.get(id));
       if (!quickList) throw new Error("quickList item not found");
-      if (!tab) throw new Error(`Tab item not found: ${id}`);
+      if (!item) throw new Error(`OneTab item not found: ${id}`);
 
       quickList.childIds = [...new Set([...(quickList.childIds ?? []), id])];
-      tab.parentIds = [...new Set([...(tab.parentIds ?? []), "quickList"])];
+      item.parentIds = [...new Set([...(item.parentIds ?? []), "quickList"])];
       store.put(quickList);
-      store.put(tab);
+      store.put(item);
       await transactionDone(transaction);
     } finally {
       database.close();
     }
-  }, tabId);
+  }, itemId);
 }
 
 async function seedFolderWorkflowData(extension: {
@@ -4338,6 +4628,53 @@ async function chooseGroupMenuItem(
     .click();
 }
 
+async function selectStoredTab(
+  page: import("@playwright/test").Page,
+  tabTitle: string,
+) {
+  const tab = page.locator(".tab").filter({ hasText: tabTitle }).first();
+  await tab.waitFor({ state: "visible" });
+  await tab.hover();
+  await tab.locator(".tabTickImg").first().click({ force: true });
+}
+
+async function chooseBulkAction(
+  page: import("@playwright/test").Page,
+  actionText: RegExp,
+) {
+  const action = page.locator(".menuItem:visible").filter({ hasText: actionText });
+  await page.evaluate(() => {
+    const visible = (element: HTMLElement) => element.offsetParent !== null;
+    const selection = Array.from(document.querySelectorAll<HTMLElement>("div"))
+      .filter(visible)
+      .find((element) => element.innerText?.trim() === "Selection");
+    if (!selection?.parentElement) throw new Error("Selection label not found");
+
+    const siblings = Array.from(selection.parentElement.children).filter(
+      (element): element is HTMLElement => element instanceof HTMLElement,
+    );
+    const selectionIndex = siblings.indexOf(selection);
+    const trigger = siblings
+      .slice(selectionIndex + 1)
+      .find(
+        (element) =>
+          /\d+ items?/.test(element.innerText ?? "") ||
+          !!element.querySelector(".dropdown, .dropdown-twistie"),
+      );
+    if (!trigger) throw new Error("Selection action trigger not found");
+
+    const target =
+      trigger.querySelector<HTMLElement>(".dropdown") ??
+      trigger.querySelector<HTMLElement>(".dropdown-twistie") ??
+      trigger;
+    target.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
+    target.dispatchEvent(new MouseEvent("mouseup", { bubbles: true }));
+    target.click();
+  });
+  await action.first().waitFor({ state: "visible" });
+  await action.first().click();
+}
+
 async function waitForGroupLockIconCount(
   page: import("@playwright/test").Page,
   groupTitle: string,
@@ -4608,6 +4945,7 @@ async function waitForItemStatus(
     childIds?: string[];
     done?: number;
     parentIds?: string[];
+    rating?: number;
     task?: number;
   },
 ) {
@@ -4638,6 +4976,7 @@ async function itemStatusSnapshot(
     done: item.done ?? 0,
     id: item.id,
     parentIds: item.parentIds ?? [],
+    rating: item.rating ?? 0,
     task: item.task ?? 0,
     type: item.type,
   };
