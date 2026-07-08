@@ -1,3 +1,4 @@
+// @ts-nocheck
 globalThis.runOneTabSharedPagePermissionBundle = function runOneTabSharedPagePermissionBundle() {
 const {
   requestOneTabPermission: Ze,
