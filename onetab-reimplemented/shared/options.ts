@@ -1,3 +1,4 @@
+// @ts-nocheck
 globalThis.runOneTabOptionsBundle = function runOneTabOptionsBundle() {
 // Copyright 2026 OneTab Ltd.  All rights reserved.
 const {
