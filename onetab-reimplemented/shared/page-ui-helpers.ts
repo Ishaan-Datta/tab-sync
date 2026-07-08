@@ -1,12 +1,11 @@
-// @ts-nocheck
-globalThis.createOneTabPageUiHelpers = function createOneTabPageUiHelpers(deps) {
-  function createSpinner({ style = {}, uh = 7 }) {
+(globalThis as any).createOneTabPageUiHelpers = function createOneTabPageUiHelpers(deps: any) {
+  function createSpinner({ style = {}, uh = 7 }: any) {
     const { div, range } = deps;
     let spinner = div({
       className: "spinner",
       style: { opacity: "1", ...style },
       children: Object.fromEntries(
-        range(uh).map((index) => [index, document.createElement("div")]),
+        range(uh).map((index: any) => [index, document.createElement("div")]),
       ),
     }).i;
     return (spinner.animate([{ opacity: "0" }, { opacity: "1" }], 100), spinner);
@@ -19,7 +18,7 @@ globalThis.createOneTabPageUiHelpers = function createOneTabPageUiHelpers(deps) 
     Qo,
     jl = !0,
     prefix,
-  }) {
+  }: any) {
     const { core, element, getLocationText, intersperse, isRtl, translate } = deps;
     (prefix || (prefix = translate("locationColon")), await h.ke());
     let path = await h.Hn(itemId, Qo);
@@ -28,7 +27,7 @@ globalThis.createOneTabPageUiHelpers = function createOneTabPageUiHelpers(deps) 
       children: {
         ...(jl && { Gw: element("span", { textContent: `${prefix}  ` }) }),
         ...intersperse(
-          path.map((location, index) => ({
+          path.map((location: any, index: number) => ({
             [`loc${index}`]: element("span", {
               dir: "auto",
               style: { cursor: "pointer" },
@@ -47,7 +46,7 @@ globalThis.createOneTabPageUiHelpers = function createOneTabPageUiHelpers(deps) 
     });
   }
 
-  async function renderGroupPaths({ groups, h, he, oe }) {
+  async function renderGroupPaths({ groups, h, he, oe }: any) {
     const {
       createColorIndicator,
       createLightDarkPicture,
@@ -60,7 +59,7 @@ globalThis.createOneTabPageUiHelpers = function createOneTabPageUiHelpers(deps) 
       SelectableItem,
       translate,
     } = deps;
-    return (await Promise.all(groups.map(async (group) => [...(await h.Hn(group.id)), group]))).map((path) =>
+    return (await Promise.all(groups.map(async (group: any) => [...(await h.Hn(group.id)), group]))).map((path: any[]) =>
       div({
         className: "groupPath",
         children: path.map((location, index) =>
@@ -101,7 +100,7 @@ globalThis.createOneTabPageUiHelpers = function createOneTabPageUiHelpers(deps) 
                           top: "6px",
                         },
                       },
-                      (light) => `images/folder${light ? "" : "-dark"}.png`,
+                      (light: boolean) => `images/folder${light ? "" : "-dark"}.png`,
                     ),
                   }),
                 ),
@@ -139,7 +138,7 @@ globalThis.createOneTabPageUiHelpers = function createOneTabPageUiHelpers(deps) 
     );
   }
 
-  async function writeClipboard({ kf, Tf }) {
+  async function writeClipboard({ kf, Tf }: any) {
     return navigator.clipboard.write([
       new ClipboardItem({
         ...(kf && { "text/plain": kf() }),
@@ -148,7 +147,7 @@ globalThis.createOneTabPageUiHelpers = function createOneTabPageUiHelpers(deps) 
     ]);
   }
 
-  async function checkCoreReadyOrShowRestart(container) {
+  async function checkCoreReadyOrShowRestart(container: HTMLElement) {
     const { core, div, element, translate } = deps;
     try {
       return (await core.corePing(), !0);
@@ -190,14 +189,14 @@ globalThis.createOneTabPageUiHelpers = function createOneTabPageUiHelpers(deps) 
     Ew,
     bc,
     pf = 10,
-  }) {
+  }: any) {
     const { delay } = deps;
     let interrupted = !1,
       createdCount = 0;
     for (let index = 0; index < ea.length; index++) {
       let item = ea[index],
         existingIndex = views.findIndex(
-          (view, viewIndex) => viewIndex >= index && ia(view) === item.id,
+          (view: any, viewIndex: number) => viewIndex >= index && ia(view) === item.id,
         ),
         view = views[existingIndex],
         node = view && pn(view);
@@ -244,18 +243,18 @@ globalThis.createOneTabPageUiHelpers = function createOneTabPageUiHelpers(deps) 
         detached = !node || node.parentElement !== Me;
       (view.De({ pi: detached }), views.splice(views.length - 1, 1));
     }
-    let nodes = new Set(views.map((view) => pn(view)).filter(Boolean));
+    let nodes = new Set(views.map((view: any) => pn(view)).filter(Boolean));
     [...Me.children].forEach((node) => {
       nodes.has(node) || node.remove();
     });
   }
 
-  async function loadImages(urls) {
+  async function loadImages(urls: string[]) {
     return Object.fromEntries(
       await Promise.all(
         urls.map(
           (url) =>
-            new Promise((resolve) => {
+            new Promise<[string, HTMLImageElement]>((resolve) => {
               let image = new Image();
               ((image.onload = () => resolve([url, image])), (image.src = url));
             }),
@@ -284,14 +283,14 @@ globalThis.createOneTabPageUiHelpers = function createOneTabPageUiHelpers(deps) 
             dimension: "10px",
             style: { transform: `rotate(${isRtl() ? 90 : 270}deg)` },
           },
-          (light) => `images/down-arrow${light ? "" : "-dark"}.png`,
+          (light: boolean) => `images/down-arrow${light ? "" : "-dark"}.png`,
         ),
         div({ textContent: translate("returnToOneTab") }),
       ],
     });
   }
 
-  function isFullyInViewport(element, container) {
+  function isFullyInViewport(element: Element, container: Element) {
     const { top, bottom, height } = element.getBoundingClientRect(),
       containerRect = container.getBoundingClientRect();
     return top <= containerRect.top
@@ -299,18 +298,18 @@ globalThis.createOneTabPageUiHelpers = function createOneTabPageUiHelpers(deps) 
       : bottom - containerRect.bottom <= height;
   }
 
-  async function createExpandedItemCache(groupId) {
+  async function createExpandedItemCache(groupId: string) {
     const { isFolder, ItemCache } = deps;
     let cache = new ItemCache(),
       item = await cache.ht(groupId);
     return (isFolder(item) || (await cache.Te({ groupId })), cache);
   }
 
-  function isEscapeKey(event) {
+  function isEscapeKey(event: KeyboardEvent) {
     return !event.isComposing && (event.key === "Escape" || event.key === "Esc");
   }
 
-  function addEventListenerAttachment(target, type, listener, options = !1) {
+  function addEventListenerAttachment(target: EventTarget, type: string, listener: EventListener, options: boolean | AddEventListenerOptions = !1) {
     const { EventAttachment } = deps;
     return new EventAttachment({
       listener,
@@ -319,15 +318,15 @@ globalThis.createOneTabPageUiHelpers = function createOneTabPageUiHelpers(deps) 
     });
   }
 
-  function pointerOver(target, listener) {
+  function pointerOver(target: EventTarget, listener: EventListener) {
     return addEventListenerAttachment(target, "pointerover", listener);
   }
 
-  function pointerMove(target, listener) {
+  function pointerMove(target: EventTarget, listener: EventListener) {
     return addEventListenerAttachment(target, "pointermove", listener);
   }
 
-  function pointerLeave(target, listener) {
+  function pointerLeave(target: EventTarget, listener: EventListener) {
     return addEventListenerAttachment(target, "pointerleave", listener);
   }
 

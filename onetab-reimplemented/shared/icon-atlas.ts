@@ -1,5 +1,5 @@
 // @ts-nocheck
-globalThis.createOneTabIconAtlas = function createOneTabIconAtlas() {
+(globalThis as any).createOneTabIconAtlas = function createOneTabIconAtlas() {
 let zt = {};
 ((zt.hl = 32),
   (zt.imageWidth = 1024),

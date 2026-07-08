@@ -1,4 +1,3 @@
-// @ts-nocheck
 // Shared page-level helpers extracted from repeated OneTab page bundles.
 (function () {
   function createOneTabPageCommon({
@@ -9,7 +8,7 @@
     isTrash,
     isFolder,
     isMicrosoftEdge,
-  }) {
+  }: any) {
     const taskFieldNames = [
         "task",
         "done",
@@ -28,8 +27,8 @@
       ],
       sharedPageUrlPattern = /^https:\/\/(?:[A-Za-z0-9-]+\.)*one-tab\.com\/page\/.*$/;
 
-    function splitOversized({ Ep: maxLength = 1e3, Fp: entries, jp: readChunks, Bp: buildEntry }) {
-      return entries.flatMap((entry) => {
+    function splitOversized({ Ep: maxLength = 1e3, Fp: entries, jp: readChunks, Bp: buildEntry }: any) {
+      return entries.flatMap((entry: any) => {
         if (readChunks(entry).length <= maxLength) return [entry];
         const result = [];
         let length = readChunks(entry).length;
@@ -45,7 +44,7 @@
       });
     }
 
-    function isJson(value) {
+    function isJson(value: string) {
       try {
         return (JSON.parse(value), !0);
       } catch {
@@ -66,7 +65,7 @@
       return locale === "en" ? "" : `${locale}/`;
     }
 
-    function matchesOrUnset(value, expected) {
+    function matchesOrUnset(value: any, expected: any) {
       return value === expected || !value;
     }
 
@@ -89,42 +88,42 @@
       document.getElementsByTagName("html")[0].dir = direction;
     }
 
-    const pluralRulesByLocale = {};
+    const pluralRulesByLocale: Record<string, Intl.PluralRules> = {};
 
-    function pluralize(messagePrefix, count) {
+    function pluralize(messagePrefix: string, count: number) {
       let locale = localeId(),
         rules = pluralRulesByLocale[locale];
       rules || ((rules = new Intl.PluralRules(locale)), (pluralRulesByLocale[locale] = rules));
       const plural = rules.select(count);
       let message = chrome.i18n.getMessage(`${messagePrefix}_${plural}`);
       message || (message = chrome.i18n.getMessage(`${messagePrefix}_other`));
-      let renderedCount = count;
+      let renderedCount: any = count;
       return (
         typeof count == "number" && (renderedCount = Number(count).toLocaleString()),
         message ? message.replace("{COUNT}", renderedCount) : ""
       );
     }
 
-    async function groupPathLabel({ h: cache, itemId, Qo }) {
+    async function groupPathLabel({ h: cache, itemId, Qo }: any) {
       return (await cache.Hn(itemId, Qo))
         .slice(1)
-        .map((item) => groupDisplayLabel({ groupId: item.id, h: cache, l: item }))
+        .map((item: any) => groupDisplayLabel({ groupId: item.id, h: cache, l: item }))
         .join(`  ${isLtr() ? "➝" : "⭠"}  `);
     }
 
-    function groupLabelParts({ groupId, h: cache, l: item }) {
+    function groupLabelParts({ groupId, h: cache, l: item }: any) {
       groupId ??= item?.id;
       let resolved = item || cache.v(groupId);
       return [groupLabel({ h: cache, l: resolved }), groupFallbackLabel({ h: cache, l: resolved })];
     }
 
-    function groupDisplayLabel({ groupId, h: cache, l: item }) {
+    function groupDisplayLabel({ groupId, h: cache, l: item }: any) {
       groupId ??= item?.id;
       let resolved = item || cache.v(groupId);
       return groupLabel({ h: cache, l: resolved }) || groupFallbackLabel({ h: cache, l: resolved });
     }
 
-    function groupFallbackLabel({ groupId, h: cache, l: item }) {
+    function groupFallbackLabel({ groupId, h: cache, l: item }: any) {
       groupId ??= item?.id;
       let resolved = item || cache.v(groupId);
       if (isRoot(resolved)) return translate("all");
@@ -136,15 +135,15 @@
       }
     }
 
-    function groupLabel({ groupId, h: cache, l: item }) {
+    function groupLabel({ groupId, h: cache, l: item }: any) {
       groupId ??= item?.id;
       let resolved = item || cache.v(groupId);
       return isRoot(resolved) ? translate("all") : isTrash(resolved) ? translate("trash") : resolved.label;
     }
 
-    let debounceState = {};
+    let debounceState: Record<string, boolean> = {};
 
-    function debounceByType({ type, zu: delayMs, Xa: callback, Wu: fireNow }) {
+    function debounceByType({ type, zu: delayMs, Xa: callback, Wu: fireNow }: any) {
       fireNow
         ? (delete debounceState[type], callback())
         : debounceState[type] ||
@@ -158,20 +157,20 @@
 
     function isChrome145() {
       if (isMicrosoftEdge()) return !1;
-      const brands = navigator.userAgentData?.brands;
+      const brands = (navigator as any).userAgentData?.brands;
       if (brands) {
-        const chromium = brands.find((brand) => /Chrom(e|ium)/i.test(brand.brand));
+        const chromium = brands.find((brand: any) => /Chrom(e|ium)/i.test(brand.brand));
         return chromium ? Number(chromium.version) === 145 : !1;
       }
       const match = navigator.userAgent.match(/Chrom(e|ium)\/(\d+)/i);
       return match ? Number(match[2]) === 145 : !1;
     }
 
-    async function uncollapseChrome145TabGroup(groupId) {
+    async function uncollapseChrome145TabGroup(groupId: number) {
       if (!shouldApplyChrome145Workaround()) return;
       const tabs = await chrome.tabs.query({ groupId });
       if (!tabs.length) return;
-      tabs.sort((left, right) => left.index - right.index);
+      tabs.sort((left: any, right: any) => left.index - right.index);
       const windowId = tabs[0].windowId,
         index = tabs[0].index;
       let activeTab = (await chrome.tabs.query({ windowId, active: !0 }))[0],
@@ -223,5 +222,5 @@
     };
   }
 
-  globalThis.createOneTabPageCommon = createOneTabPageCommon;
+  (globalThis as any).createOneTabPageCommon = createOneTabPageCommon;
 })();

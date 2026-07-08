@@ -1,6 +1,5 @@
-// @ts-nocheck
-globalThis.createOneTabSmartMove = function createOneTabSmartMove(deps) {
-  return async function smartMove({ rt, O, N }) {
+(globalThis as any).createOneTabSmartMove = function createOneTabSmartMove(deps: any) {
+  return async function smartMove({ rt, O, N }: any) {
     const {
       core,
       createNewEmptyWindowGroup,
@@ -20,7 +19,7 @@ globalThis.createOneTabSmartMove = function createOneTabSmartMove(deps) {
       not,
       partition,
     } = deps;
-    let selectedItems = await getItems(rt.map((moveRef) => moveRef.itemId)),
+    let selectedItems = await getItems(rt.map((moveRef: any) => moveRef.itemId)),
       targetItem = await getItemById(O);
     if (selectedItems.some(isFolder) && !isFolder(targetItem))
       throw new Error(
@@ -38,30 +37,30 @@ globalThis.createOneTabSmartMove = function createOneTabSmartMove(deps) {
       await cache.ke();
       let [withoutSourceParent, withSourceParent] = partition(
           rt,
-          (moveRef) => moveRef.sourceParentId,
+          (moveRef: any) => moveRef.sourceParentId,
         ),
         tabIdsFromGroups = new Set(
-          (await cache.getItems([...new Set(withSourceParent.map((moveRef) => moveRef.itemId))]))
+          (await cache.getItems([...new Set(withSourceParent.map((moveRef: any) => moveRef.itemId))]))
             .filter(isTab)
             .map(getId),
         );
       withoutSourceParent = withoutSourceParent.filter(
-        (moveRef) => !tabIdsFromGroups.has(moveRef.itemId),
+        (moveRef: any) => !tabIdsFromGroups.has(moveRef.itemId),
       );
-      let [tabMoveRefs, groupedMoveRefs] = partition(withSourceParent, (moveRef) =>
+      let [tabMoveRefs, groupedMoveRefs] = partition(withSourceParent, (moveRef: any) =>
           tabIdsFromGroups.has(moveRef.itemId),
         ),
-        duplicateRefs = [];
+         duplicateRefs: any[] = [];
       for (let moveRef of tabMoveRefs) {
         let itemId = moveRef.itemId,
           item = cache.v(itemId),
-          parents = item.parentIds.map((parentId) => cache.v(parentId)),
-          refs = [];
+          parents = item.parentIds.map((parentId: any) => cache.v(parentId)),
+          refs: any[] = [];
         if (
-          (parents.forEach((parent) =>
+          (parents.forEach((parent: any) =>
             parent.childIds
-              .filter((childId) => childId === item.id)
-              .forEach((childId, index) =>
+              .filter((childId: any) => childId === item.id)
+              .forEach((childId: any, index: number) =>
                 refs.push(moveItemRef({ itemId: item.id, Fe: parent.id, zt: index })),
               ),
           ),
@@ -96,15 +95,15 @@ globalThis.createOneTabSmartMove = function createOneTabSmartMove(deps) {
         if (isWindowGroup(item)) {
           let childItems = await getItems(item.childIds);
           if (!0) {
-            let childRefs = [];
-            (childItems.forEach((childItem, index) => {
+            let childRefs: any[] = [];
+            (childItems.forEach((childItem: any, index: number) => {
               isTab(childItem)
                 ? childRefs.push(
                     moveItemRef({
                       itemId: childItem.id,
                       zt: item.childIds
                         .slice(0, index)
-                        .filter((childId) => childId === childItem.id).length,
+                        .filter((childId: any) => childId === childItem.id).length,
                       Fe: item.id,
                     }),
                   )
@@ -117,7 +116,7 @@ globalThis.createOneTabSmartMove = function createOneTabSmartMove(deps) {
             let [tabItems, nonTabItems] = partition(childItems, isTab);
             (nonTabItems.length &&
               (await core.move({
-                rt: nonTabItems.map((childItem) =>
+                rt: nonTabItems.map((childItem: any) =>
                   moveItemRef({ itemId: childItem.id }),
                 ),
                 O,
@@ -145,12 +144,12 @@ globalThis.createOneTabSmartMove = function createOneTabSmartMove(deps) {
       }
     } else if ((selectedItems.some(isTabGroup) || selectedItems.some(isWindowGroup)) && isTabGroup(targetItem)) {
       let cache = new ItemCache(),
-        tabRefs = [],
-        groupItems = [];
-      const collectRefs = (item, parent, index) => {
+        tabRefs: any[] = [],
+        groupItems: any[] = [];
+      const collectRefs = (item: any, parent: any, index?: number) => {
         if (isGroup(item)) {
           let groupItem = item;
-          (cache.ul(groupItem.childIds).forEach((childItem, childIndex) =>
+          (cache.ul(groupItem.childIds).forEach((childItem: any, childIndex: number) =>
             collectRefs(childItem, item, childIndex),
           ),
             groupItems.push(groupItem));
@@ -160,7 +159,7 @@ globalThis.createOneTabSmartMove = function createOneTabSmartMove(deps) {
               itemId: item.id,
               zt: parent.childIds
                 .slice(0, index)
-                .filter((childId) => childId === item.id).length,
+                .filter((childId: any) => childId === item.id).length,
               Fe: parent.id,
             }),
           );
