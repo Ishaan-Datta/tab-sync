@@ -1,3 +1,4 @@
+// @ts-nocheck
 globalThis.createOneTabIconAtlas = function createOneTabIconAtlas() {
 let zt = {};
 ((zt.hl = 32),

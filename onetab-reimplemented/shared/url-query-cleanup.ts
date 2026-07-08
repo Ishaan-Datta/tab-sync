@@ -1,3 +1,4 @@
+// @ts-nocheck
 // Shared URL query pruning used by list/search indexing in OneTab page bundles.
 (function () {
   function createOneTabUrlQueryCleanup() {

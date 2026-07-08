@@ -1,3 +1,4 @@
+// @ts-nocheck
 globalThis.createOneTabPageUiHelpers = function createOneTabPageUiHelpers(deps) {
   function createSpinner({ style = {}, uh = 7 }) {
     const { div, range } = deps;

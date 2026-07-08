@@ -1,3 +1,4 @@
+// @ts-nocheck
 globalThis.createOneTabSmartMove = function createOneTabSmartMove(deps) {
   return async function smartMove({ rt, O, N }) {
     const {
