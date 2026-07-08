@@ -70,6 +70,47 @@ const dragDropSeed = {
   ],
 };
 
+const centerBulkSeed = {
+  groups: [
+    {
+      groupType: "window" as const,
+      id: "bulk-window-alpha",
+      label: "Bulk Window Alpha",
+      tabs: [
+        {
+          id: "bulk-window-alpha-tab",
+          title: "Bulk Window Alpha Tab",
+          url: "https://example.com/bulk-window-alpha-tab",
+        },
+      ],
+    },
+    {
+      groupType: "window" as const,
+      id: "bulk-window-beta",
+      label: "Bulk Window Beta",
+      tabs: [
+        {
+          id: "bulk-window-beta-tab",
+          title: "Bulk Window Beta Tab",
+          url: "https://example.com/bulk-window-beta-tab",
+        },
+      ],
+    },
+    {
+      groupType: "folder" as const,
+      id: "bulk-folder-alpha",
+      label: "Bulk Folder Alpha",
+      tabs: [],
+    },
+    {
+      groupType: "folder" as const,
+      id: "bulk-folder-beta",
+      label: "Bulk Folder Beta",
+      tabs: [],
+    },
+  ],
+};
+
 const extensionPages = [
   "popup.html",
   "onetab.html",
@@ -365,6 +406,43 @@ test("browser action ignores pinned tabs by default like the original extension"
         tab.pinned && tab.url?.startsWith("https://example.com/pinned-action-tab"),
     ),
   ).toBe(true);
+  extensions.assertNoCandidateOnlyErrors();
+});
+
+test("content script extracts real-page link titles like the original extension", async ({
+  extensions,
+}) => {
+  const pageUrl = "https://www.one-tab.com/content-script-link-title";
+  const linkUrl = "https://www.one-tab.com/content-script-target";
+
+  const [original, candidate] = await extensions.runBoth(async (extension) => {
+    await extension.context.route(`${pageUrl}**`, async (route) => {
+      await route.fulfill({
+        body: `<!doctype html>
+          <title>Content Script Link Page</title>
+          <main>
+            <a href="${linkUrl}">Resolved Link Title From Page</a>
+            <a href="https://example.org/other-link">Other link</a>
+          </main>`,
+        contentType: "text/html",
+      });
+    });
+
+    const page = await extension.context.newPage();
+    try {
+      await page.goto(pageUrl, { waitUntil: "domcontentloaded" });
+      await page.bringToFront();
+      return await executeLinkTitleContentScript(extension, page, linkUrl);
+    } finally {
+      await page.close().catch(() => {});
+    }
+  });
+
+  expect(candidate).toEqual(original);
+  expect(candidate).toEqual({
+    title: "Resolved Link Title From Page",
+    url: linkUrl,
+  });
   extensions.assertNoCandidateOnlyErrors();
 });
 
@@ -1181,6 +1259,40 @@ test("popup quick list group restore opens group tabs like the original extensio
     ).toBe(true);
   }
   expectNoCandidateOnlyErrorsExceptRestoredResources(extensions);
+});
+
+test("placeholder pages render excluded source URLs like the original extension", async ({
+  extensions,
+}) => {
+  const sourceUrl = "chrome://extensions";
+
+  const [original, candidate] = await extensions.runBoth(async (extension) => {
+    const page = await extension.openPage(
+      `placeholder.html?url=${encodeURIComponent(sourceUrl)}`,
+      { viewport: { height: 700, width: 900 } },
+    );
+
+    try {
+      await page.locator("#urlInput").waitFor({ state: "visible" });
+
+      return await page.evaluate(() => ({
+        filename: document.getElementById("filename")?.textContent,
+        inputValue: (document.getElementById("urlInput") as HTMLInputElement)
+          .value,
+        title: document.title,
+      }));
+    } finally {
+      await page.close().catch(() => {});
+    }
+  });
+
+  expect(candidate).toEqual(original);
+  expect(candidate).toMatchObject({
+    filename: "extensions",
+    inputValue: sourceUrl,
+    title: "extensions",
+  });
+  extensions.assertNoCandidateOnlyErrors();
 });
 
 test("stored tabs restore into the browser like the original extension", async ({
@@ -3269,6 +3381,106 @@ test("bulk-selected stored tabs move to trash like the original extension", asyn
   extensions.assertNoCandidateOnlyErrors();
 });
 
+test("bulk-selected stored groups archive and unarchive like the original extension", async ({
+  extensions,
+}) => {
+  await extensions.runBoth((extension) =>
+    extension.seedStoredOneTabData(centerBulkSeed),
+  );
+
+  const [original, candidate] = await extensions.runBoth(async (extension) => {
+    const page = await extension.openPage("onetab.html", {
+      viewport: { height: 900, width: 1100 },
+    });
+
+    try {
+      await selectSidebarTreeItem(page, "bulk-window-alpha");
+      await selectSidebarTreeItem(page, "bulk-window-beta");
+      await expect(page.locator("body")).toContainText("Selection");
+      await chooseBulkAction(page, /^Mark as archived$/);
+      await waitForItemStatus(page, "bulk-window-alpha", { archived: 1 });
+      await waitForItemStatus(page, "bulk-window-beta", { archived: 1 });
+      const archived = {
+        alpha: await itemStatusSnapshot(page, "bulk-window-alpha"),
+        beta: await itemStatusSnapshot(page, "bulk-window-beta"),
+      };
+
+      await chooseBulkAction(page, /^Unmark as archived$/);
+      await waitForItemStatus(page, "bulk-window-alpha", { archived: 0 });
+      await waitForItemStatus(page, "bulk-window-beta", { archived: 0 });
+      const unarchived = {
+        alpha: await itemStatusSnapshot(page, "bulk-window-alpha"),
+        beta: await itemStatusSnapshot(page, "bulk-window-beta"),
+      };
+
+      return { archived, unarchived };
+    } finally {
+      await page.close().catch(() => {});
+    }
+  });
+
+  expect(candidate).toEqual(original);
+  expect(candidate.archived).toMatchObject({
+    alpha: { archived: 1 },
+    beta: { archived: 1 },
+  });
+  expect(candidate.unarchived).toMatchObject({
+    alpha: { archived: 0 },
+    beta: { archived: 0 },
+  });
+  extensions.assertNoCandidateOnlyErrors();
+});
+
+test("bulk-selected stored folders archive and unarchive like the original extension", async ({
+  extensions,
+}) => {
+  await extensions.runBoth((extension) =>
+    extension.seedStoredOneTabData(centerBulkSeed),
+  );
+
+  const [original, candidate] = await extensions.runBoth(async (extension) => {
+    const page = await extension.openPage("onetab.html", {
+      viewport: { height: 900, width: 1100 },
+    });
+
+    try {
+      await selectSidebarTreeItem(page, "bulk-folder-alpha");
+      await selectSidebarTreeItem(page, "bulk-folder-beta");
+      await expect(page.locator("body")).toContainText("Selection");
+      await chooseBulkAction(page, /^Mark as archived$/);
+      await waitForItemStatus(page, "bulk-folder-alpha", { archived: 1 });
+      await waitForItemStatus(page, "bulk-folder-beta", { archived: 1 });
+      const archived = {
+        alpha: await itemStatusSnapshot(page, "bulk-folder-alpha"),
+        beta: await itemStatusSnapshot(page, "bulk-folder-beta"),
+      };
+
+      await chooseBulkAction(page, /^Unmark as archived$/);
+      await waitForItemStatus(page, "bulk-folder-alpha", { archived: 0 });
+      await waitForItemStatus(page, "bulk-folder-beta", { archived: 0 });
+      const unarchived = {
+        alpha: await itemStatusSnapshot(page, "bulk-folder-alpha"),
+        beta: await itemStatusSnapshot(page, "bulk-folder-beta"),
+      };
+
+      return { archived, unarchived };
+    } finally {
+      await page.close().catch(() => {});
+    }
+  });
+
+  expect(candidate).toEqual(original);
+  expect(candidate.archived).toMatchObject({
+    alpha: { archived: 1 },
+    beta: { archived: 1 },
+  });
+  expect(candidate.unarchived).toMatchObject({
+    alpha: { archived: 0 },
+    beta: { archived: 0 },
+  });
+  extensions.assertNoCandidateOnlyErrors();
+});
+
 test("stored tabs move to trash like the original extension", async ({
   extensions,
 }) => {
@@ -3864,6 +4076,45 @@ async function browserTabUrlsSnapshot(extension: {
       .filter((url): url is string => !!url)
       .sort();
   });
+}
+
+async function executeLinkTitleContentScript(
+  extension: { extensionDir: string },
+  page: import("@playwright/test").Page,
+  linkUrl: string,
+) {
+  await page.evaluate(() => {
+    delete (window as any).t;
+    (window as any).chrome = {
+      runtime: {
+        onMessage: {
+          addListener(listener: unknown) {
+            (window as any).__oneTabContentScriptListener = listener;
+          },
+        },
+      },
+    };
+  });
+  await page.addScriptTag({
+    path: `${extension.extensionDir}/ext-onetab-concatenated-sources-contentscript.js`,
+  });
+  return await page.evaluate((targetUrl) => {
+    return new Promise((resolve, reject) => {
+      const listener = (window as any).__oneTabContentScriptListener;
+      if (!listener) {
+        reject(new Error("Content script listener was not registered"));
+        return;
+      }
+      listener(
+        {
+          type: "getLinkTitle",
+          url: targetUrl,
+        },
+        {},
+        (response: unknown) => resolve(response),
+      );
+    });
+  }, linkUrl);
 }
 
 async function routeExampleDocuments(extension: {
@@ -4638,6 +4889,18 @@ async function selectStoredTab(
   await tab.locator(".tabTickImg").first().click({ force: true });
 }
 
+async function selectSidebarTreeItem(
+  page: import("@playwright/test").Page,
+  itemId: string,
+) {
+  const item = sidebarItem(page, itemId);
+  await item.waitFor({ state: "visible" });
+  await item.scrollIntoViewIfNeeded();
+  const checkbox = item.locator(".checkbox").first();
+  await checkbox.evaluate((element: HTMLElement) => element.click());
+  await expect(checkbox).toHaveClass(/\bon\b/);
+}
+
 async function chooseBulkAction(
   page: import("@playwright/test").Page,
   actionText: RegExp,
@@ -4645,22 +4908,30 @@ async function chooseBulkAction(
   const action = page.locator(".menuItem:visible").filter({ hasText: actionText });
   await page.evaluate(() => {
     const visible = (element: HTMLElement) => element.offsetParent !== null;
-    const selection = Array.from(document.querySelectorAll<HTMLElement>("div"))
+    const visibleElements = Array.from(
+      document.querySelectorAll<HTMLElement>("*"),
+    ).filter(visible);
+    const selection = Array.from(document.querySelectorAll<HTMLElement>("*"))
       .filter(visible)
-      .find((element) => element.innerText?.trim() === "Selection");
-    if (!selection?.parentElement) throw new Error("Selection label not found");
-
-    const siblings = Array.from(selection.parentElement.children).filter(
-      (element): element is HTMLElement => element instanceof HTMLElement,
-    );
-    const selectionIndex = siblings.indexOf(selection);
-    const trigger = siblings
-      .slice(selectionIndex + 1)
-      .find(
-        (element) =>
-          /\d+ items?/.test(element.innerText ?? "") ||
-          !!element.querySelector(".dropdown, .dropdown-twistie"),
-      );
+      .filter((element) => element.innerText?.trim() === "Selection")
+      .sort((left, right) => left.children.length - right.children.length)[0];
+    const siblings = selection?.parentElement
+      ? Array.from(selection.parentElement.children).filter(
+          (element): element is HTMLElement => element instanceof HTMLElement,
+        )
+      : [];
+    const selectionIndex = selection ? siblings.indexOf(selection) : -1;
+    const trigger =
+      siblings
+        .slice(selectionIndex + 1)
+        .find(
+          (element) =>
+            /\d+ items?/.test(element.innerText ?? "") ||
+            !!element.querySelector(".dropdown, .dropdown-twistie"),
+        ) ??
+      visibleElements
+        .filter((element) => /\d+ items?/.test(element.innerText ?? ""))
+        .sort((left, right) => left.children.length - right.children.length)[0];
     if (!trigger) throw new Error("Selection action trigger not found");
 
     const target =
