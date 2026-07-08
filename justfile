@@ -9,6 +9,12 @@ default:
 ext-dev:
     bun run dev:chrome
 
+[group('dev')]
+[no-exit-message]
+[working-directory: "onetab-chrome-src"]
+og-ext-dev:
+    bun run dev:chrome
+
 # Run the server in dev mode
 [group('dev')]
 [no-exit-message]

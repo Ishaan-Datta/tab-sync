@@ -1,11 +1,11 @@
 // Shared runtime helpers extracted from the original bundles.
 (function () {
   function createOneTabRuntimeHelpers() {
-    async function delay(ms) {
+    async function delay(ms: number) {
       return new Promise((resolve) => setTimeout(resolve, ms));
     }
 
-    function replaceValueDeep(value, searchValue, replacementValue) {
+    function replaceValueDeep(value: any, searchValue: unknown, replacementValue: unknown): any {
       return Array.isArray(value)
         ? value.map((item) =>
             replaceValueDeep(item, searchValue, replacementValue),
@@ -23,36 +23,36 @@
     }
 
     function isOpera() {
-      return navigator.userAgentData?.brands.some(
-        ({ brand, version }) => brand === "Opera",
+      return (navigator as any).userAgentData?.brands.some(
+        ({ brand, version }: any) => brand === "Opera",
       );
     }
 
     function isBrave() {
-      return navigator.userAgentData?.brands.some(
-        ({ brand, version }) => brand === "Brave",
+      return (navigator as any).userAgentData?.brands.some(
+        ({ brand, version }: any) => brand === "Brave",
       );
     }
 
     function isMicrosoftEdge() {
-      return navigator.userAgentData?.brands.some(
-        ({ brand }) => brand === "Microsoft Edge",
+      return (navigator as any).userAgentData?.brands.some(
+        ({ brand }: any) => brand === "Microsoft Edge",
       );
     }
 
-    async function unsleepTab(tab) {
+    async function unsleepTab(tab: any) {
       const [activeTab] = await chrome.tabs.query({
         windowId: tab.windowId,
         active: true,
       });
       activeTab
         ? activeTab.id !== tab.id &&
-          (await chrome.tabs.update(tab.id, { active: true }),
-          await chrome.tabs.update(activeTab.id, { active: true }))
+          (await chrome.tabs.update(tab.id as number, { active: true }),
+          await chrome.tabs.update(activeTab.id as number, { active: true }))
         : console.log("unsleepTab: No active tab found");
     }
 
-    function mergeObjectsWithSeparators(items, createSeparator) {
+    function mergeObjectsWithSeparators(items: any[], createSeparator: () => any) {
       items = items.filter((item) => item);
       let result = {};
       for (let index = 0; index < items.length; index++) {
@@ -67,7 +67,7 @@
       return result;
     }
 
-    function intersperse(items, createSeparator) {
+    function intersperse(items: any[], createSeparator: () => any) {
       const result = [];
       for (let index = 0; index < items.length; index++) {
         result.push(items[index]);
@@ -76,25 +76,25 @@
       return result;
     }
 
-    function callIfOwnProperty(source, key, callback) {
+    function callIfOwnProperty(source: any, key: string, callback: (value: any) => void) {
       Object.hasOwn(source, key) && callback(source[key]);
     }
 
-    function callIfDefined(value, callback) {
+    function callIfDefined(value: any, callback: (value: any) => void) {
       value !== void 0 && callback(value);
     }
 
-    function applyValue(value, callback) {
+    function applyValue<T, R>(value: T, callback: (value: T) => R) {
       return callback(value);
     }
 
-    function applyIfTruthy(value, callback) {
+    function applyIfTruthy<T, R>(value: T, callback: (value: T) => R) {
       if (value) return applyValue(value, callback);
     }
 
-    function joinUniqueTrimmed(separator, ...values) {
-      const result = [];
-      const uniqueValues = new Set();
+    function joinUniqueTrimmed(separator: string, ...values: string[]) {
+      const result: string[] = [];
+      const uniqueValues = new Set<string>();
       return (
         values.forEach((value) => uniqueValues.add(value)),
         uniqueValues.forEach(
@@ -121,5 +121,5 @@
     };
   }
 
-  globalThis.createOneTabRuntimeHelpers = createOneTabRuntimeHelpers;
+  (globalThis as any).createOneTabRuntimeHelpers = createOneTabRuntimeHelpers;
 })();

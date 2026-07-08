@@ -1,7 +1,7 @@
 // Shared search text segmentation helpers extracted from the original bundles.
 (function () {
   function createOneTabSearchHelpers() {
-    function splitSearchText({ text, ti, ei, ii }) {
+    function splitSearchText({ text, ti, ei, ii }: { text: string; ti: string[]; ei: boolean; ii: boolean }) {
       let segments = [{ s: text, tt: 0 }];
       return (
         ti
@@ -15,7 +15,7 @@
       );
     }
 
-    function splitSearchTextWithTerm(text, term, ei, ii) {
+    function splitSearchTextWithTerm(text: string, term: string, ei: boolean, ii: boolean) {
       const parts = text.split(createSearchTermRegExp(term, ii, ei));
       let offset = 0;
       const segments = parts.map((part) => {
@@ -40,7 +40,7 @@
 
     const searchTermRegExpEscapePattern = /[.*+?^${}()|[\]\\]/g;
 
-    function createSearchTermRegExp(term, ii, ei) {
+    function createSearchTermRegExp(term: string, ii: boolean, ei: boolean) {
       const escapedTerm = term.replace(searchTermRegExpEscapePattern, "\\$&");
       return new RegExp(
         ii ? `(?<!\\p{L})${escapedTerm}(?!\\p{L})` : `${escapedTerm}`,
@@ -55,5 +55,5 @@
     };
   }
 
-  globalThis.createOneTabSearchHelpers = createOneTabSearchHelpers;
+  (globalThis as any).createOneTabSearchHelpers = createOneTabSearchHelpers;
 })();

@@ -1,8 +1,8 @@
 // Shared DOM transition helpers extracted from the original bundles.
 (function () {
   function createOneTabDomTransitionHelpers() {
-    async function fadeOut(element) {
-      return new Promise((resolve) => {
+    async function fadeOut(element: HTMLElement) {
+      return new Promise<void>((resolve) => {
         element.addEventListener("transitionend", () => resolve());
         element.style.removeProperty("opacity");
         element.classList.add("fadeOutTransition");
@@ -10,8 +10,8 @@
       });
     }
 
-    async function fadeIn(element) {
-      return new Promise((resolve) => {
+    async function fadeIn(element: HTMLElement) {
+      return new Promise<void>((resolve) => {
         element.addEventListener("transitionend", () => {
           element.classList.remove("fadedIn", "fadeInTransition");
           resolve();
@@ -26,6 +26,6 @@
     return { fadeIn, fadeOut };
   }
 
-  globalThis.createOneTabDomTransitionHelpers =
+  (globalThis as any).createOneTabDomTransitionHelpers =
     createOneTabDomTransitionHelpers;
 })();

@@ -1,7 +1,7 @@
 // Shared text normalization helpers extracted from the original bundles.
 (function () {
   function createOneTabTextHelpers() {
-    function normalizeImportedText(value) {
+    function normalizeImportedText(value: unknown) {
       if (value == null) return "";
       let text = String(value);
       typeof text.normalize == "function" && (text = text.normalize("NFKC"));
@@ -30,5 +30,5 @@
     return { normalizeImportedText };
   }
 
-  globalThis.createOneTabTextHelpers = createOneTabTextHelpers;
+  (globalThis as any).createOneTabTextHelpers = createOneTabTextHelpers;
 })();

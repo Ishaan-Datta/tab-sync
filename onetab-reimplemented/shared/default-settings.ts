@@ -43,7 +43,7 @@
     v2HelpShown: "false",
   };
 
-  globalThis.getOneTabDefaultSettings = function getOneTabDefaultSettings() {
+  (globalThis as any).getOneTabDefaultSettings = function getOneTabDefaultSettings() {
     return {
       ...defaults,
       navColTreeFilter: { ...defaults.navColTreeFilter },

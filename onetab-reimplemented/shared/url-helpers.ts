@@ -1,7 +1,7 @@
 // Shared URL comparison helpers extracted from the original bundles.
 (function () {
-  function createOneTabUrlHelpers({ normalizeText, normalizeUrl }) {
-    function trimTrailingDotOrComma(value) {
+  function createOneTabUrlHelpers({ normalizeText, normalizeUrl }: { normalizeText: (value: string) => string; normalizeUrl: (value: string) => string }) {
+    function trimTrailingDotOrComma(value: string) {
       return (
         [...".,"].some((suffix) => value.endsWith(suffix)) &&
           (value = value.substring(0, value.length - 1)),
@@ -9,7 +9,7 @@
       );
     }
 
-    function substringAfter(value, marker) {
+    function substringAfter(value: string, marker: string) {
       if (!value) return value;
       const index = value.indexOf(marker);
       return (
@@ -18,11 +18,11 @@
       );
     }
 
-    function stripProtocol(value) {
+    function stripProtocol(value: string) {
       return substringAfter(value, "://");
     }
 
-    function equalIgnoringProtocol(left, right) {
+    function equalIgnoringProtocol(left: string, right: string) {
       return (
         (left = stripProtocol(left)),
         (right = stripProtocol(right)),
@@ -30,7 +30,7 @@
       );
     }
 
-    function safeNormalizeText(value) {
+    function safeNormalizeText(value: unknown) {
       if (!value || typeof value != "string") return "";
       try {
         return normalizeText(value);
@@ -39,7 +39,7 @@
       }
     }
 
-    function canonicalizeTextAsUrl(value) {
+    function canonicalizeTextAsUrl(value: string) {
       const text = safeNormalizeText(value);
       if (!text) return "";
       const url = text.includes("://") ? text : `https://${text}`;
@@ -54,7 +54,7 @@
       );
     }
 
-    function areUrlLikeEqual(left, right) {
+    function areUrlLikeEqual(left: unknown, right: unknown) {
       const normalizedLeft = safeNormalizeText(left);
       const normalizedRight = safeNormalizeText(right);
       return !normalizedLeft || !normalizedRight
@@ -65,7 +65,7 @@
             canonicalizeTextAsUrl(normalizedRight);
     }
 
-    function isYouTubeUrl(value) {
+    function isYouTubeUrl(value: string) {
       try {
         const hostname = new URL(normalizeUrl(value)).hostname.toLowerCase();
         return (
@@ -79,7 +79,7 @@
       }
     }
 
-    function shouldUseCandidateUrl(current, target, candidate) {
+    function shouldUseCandidateUrl(current: unknown, target: string, candidate: unknown) {
       const normalizedCandidate = safeNormalizeText(candidate);
       if (!normalizedCandidate) return false;
       const normalizedCurrent = safeNormalizeText(current);
@@ -91,7 +91,7 @@
           : false;
     }
 
-    function safeNonJavascriptUrl(value) {
+    function safeNonJavascriptUrl(value: string) {
       const normalizedUrl = normalizeUrl(value);
       if (
         !["javascript:"].some((prefix) =>
@@ -116,5 +116,5 @@
     };
   }
 
-  globalThis.createOneTabUrlHelpers = createOneTabUrlHelpers;
+  (globalThis as any).createOneTabUrlHelpers = createOneTabUrlHelpers;
 })();
