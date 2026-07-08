@@ -1,3 +1,4 @@
+// @ts-nocheck
 globalThis.createOneTabBaseControls = function createOneTabBaseControls(deps) {
   const { h, G, vi, W, z, St, Ei, mi, bi, O, Si, J, Cs, Ni, Yt, Qt, Ji, He, Be, se, dn, spinner, getFt, getDnd, getP, getVt, getFe, getLt, getTooltip, getQs } = deps;
 class il {

@@ -1,3 +1,4 @@
+// @ts-nocheck
 // Large shared bundle prelude extracted from the repeated concatenated sources.
 (function () {
   function createOneTabBundlePrelude({

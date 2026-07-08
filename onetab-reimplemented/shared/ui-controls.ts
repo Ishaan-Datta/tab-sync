@@ -1,3 +1,4 @@
+// @ts-nocheck
 globalThis.createOneTabUiControls = function createOneTabUiControls(deps) {
   const { h, G, W, Xt, O, ws, co, xe, z, ti, Kr, x, Gs, J, Yr, Bs, Ve, Qt, Zi, ze, oi, St, getSettings, getModal, getTheme, getTooltip } = deps;
 function gr({ fontSize: i, label: t, isSelected: e, St: s }) {

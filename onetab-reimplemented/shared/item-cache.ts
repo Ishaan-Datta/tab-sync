@@ -1,3 +1,4 @@
+// @ts-nocheck
 globalThis.createOneTabItemCache = function createOneTabItemCache(deps) {
   deps ||= {};
   with (deps) {

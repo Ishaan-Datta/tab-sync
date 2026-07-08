@@ -1,3 +1,4 @@
+// @ts-nocheck
 globalThis.createOneTabTreeInteractions = function createOneTabTreeInteractions(deps) {
   with (deps) {
 function vt() {

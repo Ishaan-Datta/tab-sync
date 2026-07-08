@@ -1,3 +1,4 @@
+// @ts-nocheck
 globalThis.createOneTabViewControls = function createOneTabViewControls(deps) {
   with (deps) {
 class bs {

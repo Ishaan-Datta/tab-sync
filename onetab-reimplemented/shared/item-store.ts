@@ -1,3 +1,4 @@
+// @ts-nocheck
 globalThis.createOneTabItemStore = function createOneTabItemStore(deps) {
   deps ||= {};
   with (deps) {

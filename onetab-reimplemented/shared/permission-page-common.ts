@@ -1,3 +1,4 @@
+// @ts-nocheck
 globalThis.createOneTabPermissionPageCommon = function createOneTabPermissionPageCommon(deps) {
   deps ||= {};
   with (deps) {

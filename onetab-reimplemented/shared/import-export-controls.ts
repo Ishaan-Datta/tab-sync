@@ -1,3 +1,4 @@
+// @ts-nocheck
 globalThis.createOneTabImportExportControls = function createOneTabImportExportControls(deps) {
   with (deps) {
 async function Ks({ mode: i = "text", O: t, Gs: e, gu: s, Bf: n }) {

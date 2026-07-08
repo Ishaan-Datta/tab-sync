@@ -1,3 +1,4 @@
+// @ts-nocheck
 globalThis.createOneTabTreeRenderer = function createOneTabTreeRenderer(deps) {
   with (deps) {
   class X {

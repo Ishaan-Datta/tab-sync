@@ -1,3 +1,4 @@
+// @ts-nocheck
 globalThis.createOneTabTreeActions = function createOneTabTreeActions(deps) {
   with (deps) {
   async function pi({ parentId: i, we: t, N: e, Ri: s }) {

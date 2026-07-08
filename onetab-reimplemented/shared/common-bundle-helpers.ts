@@ -1,3 +1,4 @@
+// @ts-nocheck
 globalThis.createOneTabCommonBundleHelpers = function createOneTabCommonBundleHelpers({
   extensionRootUrl,
   getCoreProxy,

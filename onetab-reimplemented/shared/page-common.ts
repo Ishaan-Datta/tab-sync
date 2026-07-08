@@ -1,3 +1,4 @@
+// @ts-nocheck
 // Shared page-level helpers extracted from repeated OneTab page bundles.
 (function () {
   function createOneTabPageCommon({
