@@ -709,7 +709,7 @@ function candidateOnlyErrors(
 ) {
   const original = new Set(normalizeErrors(originalErrors));
   return normalizeErrors(candidateErrors).filter(
-    (error) => !original.has(error),
+    (error) => !original.has(error) && !isTransientExternalResourceError(error),
   );
 }
 
@@ -717,6 +717,12 @@ function normalizeErrors(errors: string[]) {
   return errors
     .map((error) => error.replace(/^(candidate|original) /, ""))
     .sort();
+}
+
+function isTransientExternalResourceError(error: string) {
+  return /^https:\/\/www\.one-tab\.com\/help console: Failed to load resource: net::ERR_NETWORK_CHANGED$/.test(
+    error,
+  );
 }
 
 function extensionUrl(extensionId: string, pathname: string) {

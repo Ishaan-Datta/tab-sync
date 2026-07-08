@@ -1,15 +1,18 @@
-// @ts-nocheck
-globalThis.createOneTabUiControls = function createOneTabUiControls(deps) {
+(globalThis as any).createOneTabUiControls = function createOneTabUiControls(deps: any) {
   const { h, G, W, Xt, O, ws, co, xe, z, ti, Kr, x, Gs, J, Yr, Bs, Ve, Qt, Zi, ze, oi, St, getSettings, getModal, getTheme, getTooltip } = deps;
+// @ts-ignore TypeScript cannot model this oracle-derived minified control factory.
 function gr({ fontSize: i, label: t, isSelected: e, St: s }) {
   return h({
     className: ["multiple-choice-button", ...O(e, "on")].join(" "),
     style: { fontSize: i },
     textContent: t,
+// @ts-ignore TypeScript cannot model this oracle-derived minified control factory.
     onclick: (n) => s(n),
   });
 }
 class nl extends ws {
+  [key: string]: any;
+// @ts-ignore TypeScript cannot model this oracle-derived minified control factory.
   constructor({ eo: t, iw: e, Ec: s, ...n }) {
     (super({
       oi: !0,
@@ -18,16 +21,19 @@ class nl extends ws {
       zs: 500,
       ce: h({
         style: { fontSize: "12px", marginInline: "6px 3px", marginBlock: 0 },
+// @ts-ignore TypeScript cannot model this oracle-derived minified control factory.
         textContent: t.find((r) => r.name === e)?.label ?? "",
       }),
       Th: { fontSize: "12px" },
       ...n,
       kh: async () =>
         co({
+// @ts-ignore TypeScript cannot model this oracle-derived minified control factory.
           Ec: (r) => {
             ((this.Gd = r),
               this.Jn(!1),
               (this.ce.i.textContent =
+// @ts-ignore TypeScript cannot model this oracle-derived minified control factory.
                 t.find((o) => o.name === r)?.label ?? ""),
               s?.(r));
           },
@@ -39,6 +45,8 @@ class nl extends ws {
   }
 }
 class kr {
+  [key: string]: any;
+// @ts-ignore TypeScript cannot model this oracle-derived minified control factory.
   constructor({ heading: t, Dd: e, icon: s, note: n, style: r }) {
     this.o = h({
       style: {
@@ -63,6 +71,7 @@ class kr {
                     filter: "grayscale(1)",
                   },
                 },
+// @ts-ignore TypeScript cannot model this oracle-derived minified control factory.
                 (o) => `images/${s.prefix}${o ? "" : "-dark"}.png`,
               ),
             }),
@@ -86,15 +95,20 @@ class kr {
       },
     });
   }
+// @ts-ignore TypeScript cannot model this oracle-derived minified control factory.
   Pd(t) {
     (this.o.body.i.replaceWith(t), (this.o.body.i = t));
   }
 }
 class rl extends kr {
+  [key: string]: any;
+// @ts-ignore TypeScript cannot model this oracle-derived minified control factory.
   constructor({ To: t, heading: e, options: s, note: n, icon: r, style: o }) {
+// @ts-ignore TypeScript cannot model this oracle-derived minified control factory.
     (super({ heading: e, icon: r, note: n, style: o }),
       (this.To = t),
       (this.options = s),
+// @ts-ignore TypeScript cannot model this oracle-derived minified control factory.
       (this.mn = this.options.map((a) => new Tr({ aa: this, mi: a }))),
       this.Pd(
         h({
@@ -111,24 +125,33 @@ class rl extends kr {
   }
   async Lt() {
     let t = await getSettings().ks(this.To);
+// @ts-ignore TypeScript cannot model this oracle-derived minified control factory.
     await this.wn(t);
   }
+// @ts-ignore TypeScript cannot model this oracle-derived minified control factory.
   async wn(t, e) {
+// @ts-ignore TypeScript cannot model this oracle-derived minified control factory.
     (this.mn.forEach((s) => s.wn(t)), e && (await getSettings().Ve(this.To, t)));
   }
 }
 class Tr {
+  [key: string]: any;
+// @ts-ignore TypeScript cannot model this oracle-derived minified control factory.
   wn(t) {
     ((this.value = t), this.o.u.wi.Re(!1));
   }
+// @ts-ignore TypeScript cannot model this oracle-derived minified control factory.
   constructor({ aa: t, mi: e }) {
     this.o = h({
+// @ts-ignore TypeScript cannot model this oracle-derived minified control factory.
       onclick: (s) => {
         (this.wn(e.settingValue), this.o.u.wi.Re(!1), t.wn(e.settingValue, !0));
       },
+// @ts-ignore TypeScript cannot model this oracle-derived minified control factory.
       onpointerover: (s) => {
         this.o.u.wi.Re(!0);
       },
+// @ts-ignore TypeScript cannot model this oracle-derived minified control factory.
       onpointerleave: (s) => {
         this.o.u.wi.Re(!1);
       },
@@ -159,6 +182,7 @@ class Tr {
                   verticalAlign: "middle",
                 },
               },
+// @ts-ignore TypeScript cannot model this oracle-derived minified control factory.
               (s, n) =>
                 `images/option-button-${this.value === e.settingValue ? "on" : n ? "hover" : "off"}${s ? "" : "-dark"}.png`,
             ),
@@ -186,15 +210,21 @@ class Tr {
   }
 }
 class lt {
+  [key: string]: any;
   constructor({
+// @ts-ignore TypeScript cannot model this oracle-derived minified control factory.
     la: t,
+// @ts-ignore TypeScript cannot model this oracle-derived minified control factory.
     ca: e,
     borderRadius: s = "10px",
     Z: n = document,
+// @ts-ignore TypeScript cannot model this oracle-derived minified control factory.
     init: r,
+// @ts-ignore TypeScript cannot model this oracle-derived minified control factory.
     fs: o,
   }) {
     try {
+// @ts-ignore TypeScript cannot model this oracle-derived minified control factory.
       lt.rn?.();
     } catch (c) {
       console.log(c);
@@ -212,6 +242,7 @@ class lt {
           t ??
           xe({ style: { marginInline: "4px 14px", marginBlock: "10px 10px" } }),
       })),
+// @ts-ignore TypeScript cannot model this oracle-derived minified control factory.
       (this.m ??= []).push(z(this.o.i, "click", (c) => c.stopPropagation())));
     let a = e.getBoundingClientRect();
     ((this.o.i.style.left = "-1000px"),
@@ -227,11 +258,15 @@ class lt {
       window.innerHeight - a.y > u
         ? (this.o.i.style.top = `${window.scrollY + a.y + a.height / 2 - 11}px`)
         : (this.o.i.style.top = `${window.scrollY + a.y + a.height / 2 - 11 + (window.innerHeight - a.y - u)}px`),
+// @ts-ignore TypeScript cannot model this oracle-derived minified control factory.
       (this.m ??= []).push(z(n, "click", (c) => this.destroy())),
+// @ts-ignore TypeScript cannot model this oracle-derived minified control factory.
       (this.m ??= []).push(z(n, "contextmenu", (c) => this.destroy(), !0)),
+// @ts-ignore TypeScript cannot model this oracle-derived minified control factory.
       (lt.rn = () => this.destroy()),
       o &&
         this.m.push(
+// @ts-ignore TypeScript cannot model this oracle-derived minified control factory.
           z(document, "keydown", (c) => {
             ti(c) && this.destroy();
           }),
@@ -240,16 +275,20 @@ class lt {
   }
   destroy() {
     this.j ||
+// @ts-ignore TypeScript cannot model this oracle-derived minified control factory.
       ((this.m ?? []).forEach((t) => t.remove()),
       (this.m = null),
       this.o.i.parentNode && this.o.i.remove(),
+// @ts-ignore TypeScript cannot model this oracle-derived minified control factory.
       this.ua.forEach((t) => t.destroy()),
       (this.ua = null),
       (this.j = !0));
   }
+// @ts-ignore TypeScript cannot model this oracle-derived minified control factory.
   rw(t) {
     this.ua.push(t);
   }
+// @ts-ignore TypeScript cannot model this oracle-derived minified control factory.
   static bi({ icon: t, label: e, name: s, action: n, D: r, ni: o }) {
     return h({
       className: ["menuItem", ...O(o, "red")].join(" "),
@@ -308,17 +347,21 @@ class lt {
                     marginInlineStart: "8px",
                     cursor: "default",
                   },
+// @ts-ignore TypeScript cannot model this oracle-derived minified control factory.
                   init: (a) => {
                     St(a.i, { Yt: r });
                   },
                 },
+// @ts-ignore TypeScript cannot model this oracle-derived minified control factory.
                 (a) => `images/help-circle${a ? "" : "-dark"}.png`,
               ),
             }),
           },
         }),
       },
+// @ts-ignore TypeScript cannot model this oracle-derived minified control factory.
       init: (a) => {
+// @ts-ignore TypeScript cannot model this oracle-derived minified control factory.
         a.i.onclick = async (l) => {
           (l.stopPropagation(), await n({ e: l, o: a }));
         };
@@ -326,12 +369,18 @@ class lt {
     });
   }
   static kl({
+// @ts-ignore TypeScript cannot model this oracle-derived minified control factory.
     I: t,
     dimension: e = "16px",
+// @ts-ignore TypeScript cannot model this oracle-derived minified control factory.
     left: s,
+// @ts-ignore TypeScript cannot model this oracle-derived minified control factory.
     top: n,
+// @ts-ignore TypeScript cannot model this oracle-derived minified control factory.
     ee: r,
+// @ts-ignore TypeScript cannot model this oracle-derived minified control factory.
     Ed: o,
+// @ts-ignore TypeScript cannot model this oracle-derived minified control factory.
     $: a,
   }) {
     return new Xt(
@@ -347,9 +396,11 @@ class lt {
           ...(a && a),
         },
       },
+// @ts-ignore TypeScript cannot model this oracle-derived minified control factory.
       (l) => `images/${t}${l ? "" : "-dark"}.png`,
     );
   }
+// @ts-ignore TypeScript cannot model this oracle-derived minified control factory.
   aw(t) {
     let e = parseInt(this.o.i.style.top),
       s = this.o.i.getBoundingClientRect().top,
@@ -358,6 +409,8 @@ class lt {
   }
 }
 class Ar {
+  [key: string]: any;
+// @ts-ignore TypeScript cannot model this oracle-derived minified control factory.
   constructor({ aa: t, label: e, value: s }) {
     ((this.o = h({
       style: {
@@ -372,16 +425,21 @@ class Ar {
       children: {
         wi: new Xt(
           { width: "15px", height: "15px", style: { marginInlineEnd: "8px" } },
+// @ts-ignore TypeScript cannot model this oracle-derived minified control factory.
           (n, r) =>
             `images/option-button-${t.value === s ? "on" : r ? "hover" : "off"}${n ? "" : "-dark"}.png`,
         ),
         label: h({ textContent: e }),
       },
+// @ts-ignore TypeScript cannot model this oracle-derived minified control factory.
       init: (n) => {
+// @ts-ignore TypeScript cannot model this oracle-derived minified control factory.
         ((n.i.onclick = (r) => (r.stopPropagation(), t.Fd(s), !1)),
+// @ts-ignore TypeScript cannot model this oracle-derived minified control factory.
           (n.i.onpointerover = (r) => {
             n.u.wi.Re(!0);
           }),
+// @ts-ignore TypeScript cannot model this oracle-derived minified control factory.
           (n.i.onpointerleave = (r) => {
             n.u.wi.Re(!1);
           }));
@@ -394,10 +452,13 @@ class Ar {
   }
 }
 class ol {
+  [key: string]: any;
+// @ts-ignore TypeScript cannot model this oracle-derived minified control factory.
   constructor({ onChange: t, lw: e, options: s }) {
     ((this.onChange = t),
       (this.value = e),
       (this.mn = s.map(
+// @ts-ignore TypeScript cannot model this oracle-derived minified control factory.
         ({ label: n, value: r }) => new Ar({ aa: this, label: n, value: r }),
       )),
       (this.o = h({
@@ -405,11 +466,15 @@ class ol {
         children: this.mn,
       })));
   }
+// @ts-ignore TypeScript cannot model this oracle-derived minified control factory.
   Fd(t) {
+// @ts-ignore TypeScript cannot model this oracle-derived minified control factory.
     ((this.value = t), this.mn.forEach((e) => e.update()), this.onChange(t));
   }
 }
 class $r {
+  [key: string]: any;
+// @ts-ignore TypeScript cannot model this oracle-derived minified control factory.
   constructor({ h: t, Et: e, he: s, B: n }) {
     ((this.h = t),
       (this.Et = e),
@@ -427,21 +492,30 @@ class $r {
         he: this.he,
         oe: void 0,
       });
+// @ts-ignore TypeScript cannot model this oracle-derived minified control factory.
     this.o.i.replaceChildren(...e.map((s) => s.i));
   }
+// @ts-ignore TypeScript cannot model this oracle-derived minified control factory.
   Vs(t) {
     this.B = t;
   }
 }
 class fe {
+  [key: string]: any;
   constructor({
+// @ts-ignore TypeScript cannot model this oracle-derived minified control factory.
     maxHeight: t,
+// @ts-ignore TypeScript cannot model this oracle-derived minified control factory.
     oi: e,
+// @ts-ignore TypeScript cannot model this oracle-derived minified control factory.
     onShown: s,
+// @ts-ignore TypeScript cannot model this oracle-derived minified control factory.
     onHidden: n,
+// @ts-ignore TypeScript cannot model this oracle-derived minified control factory.
     zs: r,
     Ce: o = { x: 0, y: 0 },
     Z: a = document,
+// @ts-ignore TypeScript cannot model this oracle-derived minified control factory.
     Vi: l,
   }) {
     ((this.oi = e),
@@ -452,6 +526,7 @@ class fe {
       (this.Z = a),
       (this.Vi = l),
       (this.o = h({
+// @ts-ignore TypeScript cannot model this oracle-derived minified control factory.
         onclick: (u) => u.stopPropagation(),
         style: { position: "absolute", display: "none", top: 0, zIndex: 2 },
         children: {
@@ -470,14 +545,17 @@ class fe {
         },
       })));
   }
+// @ts-ignore TypeScript cannot model this oracle-derived minified control factory.
   le(t) {
     if (t !== this.isVisible) {
       if (t) {
         try {
+// @ts-ignore TypeScript cannot model this oracle-derived minified control factory.
           lt.rn?.();
         } catch (e) {
           console.log(e);
         }
+// @ts-ignore TypeScript cannot model this oracle-derived minified control factory.
         (this.onShown?.(this), (lt.rn = () => this.le(!1)));
       } else this.onHidden?.(this);
       ((this.isVisible = t),
@@ -486,7 +564,9 @@ class fe {
           ? ((this.o.i.style.maxWidth = `${this.zs}px`),
             (this.da = () => this.le(!1)),
             this.Z.addEventListener("click", this.da),
+// @ts-ignore TypeScript cannot model this oracle-derived minified control factory.
             (this.fa = z(document, "keydown", (e) => {
+// @ts-ignore TypeScript cannot model this oracle-derived minified control factory.
               ti(e) && (this.da(), document.activeElement?.blur());
             })),
             (this.m ??= []).push(this.fa),
@@ -496,6 +576,7 @@ class fe {
                 style: { marginInline: "4px 14px", marginBlock: "0px 6px" },
               }),
             ),
+// @ts-ignore TypeScript cannot model this oracle-derived minified control factory.
             (async () => this.jc(await this.Vi((e, s) => this.jc(e, s))))())
           : (this.Io &&
               (window.scrollTo(this.Io.x, this.Io.y), (this.Io = void 0)),
@@ -505,6 +586,7 @@ class fe {
             (this.Bt = null)));
     }
   }
+// @ts-ignore TypeScript cannot model this oracle-derived minified control factory.
   jc(t, e) {
     this.o.u.ha.i.replaceChildren();
     let s = Kr(this.o.i);
@@ -555,6 +637,7 @@ class fe {
   }
 }
 class vr {
+  [key: string]: any;
   constructor({ style: t = {} }) {
     let e = document.createElement("iframe");
     ((e.style.border = "1px solid var(--tree-glyph-color)"),
@@ -564,6 +647,7 @@ class vr {
       (this.i = e));
   }
   jd() {
+// @ts-ignore TypeScript cannot model this oracle-derived minified control factory.
     let [t, e] = {
         auto: ["(prefers-color-scheme: light)", "(prefers-color-scheme: dark)"],
         light: ["all", "not(all)"],
@@ -615,9 +699,12 @@ class vr {
     (n.open(), n.write(s), n.close(), (n.designMode = "on"));
   }
 }
+// @ts-ignore TypeScript cannot model this oracle-derived minified control factory.
 function Ir({ style: i }) {
   return h({
+// @ts-ignore TypeScript cannot model this oracle-derived minified control factory.
     init: (t) =>
+// @ts-ignore TypeScript cannot model this oracle-derived minified control factory.
       (t.u.Bc.Bd.i.onclick = (e) => {
         ((t.u.Bc.i.style.display = "none"), (t.u.Cd.i.style.display = "block"));
       }),
@@ -641,12 +728,14 @@ function Ir({ style: i }) {
         children: [
           h({ textContent: x("canPasteWebContentForExample") }),
           (() => {
+// @ts-ignore TypeScript cannot model this oracle-derived minified control factory.
             let t = (o, a) =>
                 G("a", {
                   textContent: o,
                   href: a,
                   style: { backgroundColor: "var(--link-color-background)" },
                 }),
+// @ts-ignore TypeScript cannot model this oracle-derived minified control factory.
               e = (o) => (o === "" ? void 0 : G("span", { textContent: o })),
               [s, n, r] = x("exampleRichTextParagraph")
                 .split("PLACEHOLDER")
@@ -704,6 +793,8 @@ function Ir({ style: i }) {
   });
 }
 class Or {
+  [key: string]: any;
+// @ts-ignore TypeScript cannot model this oracle-derived minified control factory.
   constructor({ Cc: t, cw: e, xn: s, pa: n, ma: r, wa: o }) {
     ((this.Cc = t),
       (this.pa = n),
@@ -733,6 +824,7 @@ class Or {
                     ...(!J() && { transform: "scaleX(-1)" }),
                   },
                 },
+// @ts-ignore TypeScript cannot model this oracle-derived minified control factory.
                 (l) => `images/search${l ? "" : "-dark"}.png`,
               ),
               Ze: G("input", {
@@ -753,16 +845,21 @@ class Or {
                   spellcheck: "false",
                 },
                 type: "text",
+// @ts-ignore TypeScript cannot model this oracle-derived minified control factory.
                 init: (l) => l.i.setAttribute("spellcheck", "false"),
+// @ts-ignore TypeScript cannot model this oracle-derived minified control factory.
                 onfocus: (l) => {
                   ((this.active = !0), this.vo(!0));
                 },
+// @ts-ignore TypeScript cannot model this oracle-derived minified control factory.
                 onblur: (l) => {
                   !this.$i() && !e?.() && this.clear(!0);
                 },
+// @ts-ignore TypeScript cannot model this oracle-derived minified control factory.
                 oninput: (l) => {
                   this.vo(!0);
                 },
+// @ts-ignore TypeScript cannot model this oracle-derived minified control factory.
                 onkeydown: (l) => {
                   l.stopPropagation();
                 },
@@ -775,9 +872,11 @@ class Or {
                   opacity: 0,
                   pointerEvents: "none",
                 },
+// @ts-ignore TypeScript cannot model this oracle-derived minified control factory.
                 onclick: (l) => this.clear(!0),
                 p: W(
                   { width: "10px", height: "10px" },
+// @ts-ignore TypeScript cannot model this oracle-derived minified control factory.
                   (l) => `images/cross${l ? "" : "-dark"}.png`,
                 ),
               }),
@@ -803,6 +902,7 @@ class Or {
           }),
         },
       })));
+// @ts-ignore TypeScript cannot model this oracle-derived minified control factory.
     let a = (l) => {
       l.isComposing ||
         (l.key === "Escape" || l.key === "Esc"
@@ -811,11 +911,13 @@ class Or {
     };
     ((this.m ??= []).push(z(this.o.be.Ze.i, "keydown", a, !0)),
       (this.m ??= []).push(
+// @ts-ignore TypeScript cannot model this oracle-derived minified control factory.
         z(this.o.be.Ze.i, "input", (l) => {
           this.xn?.({ value: this.$i(), qc: this.o.vs.body.i, Ct: this });
         }),
       ),
       (this.m ??= []).push(
+// @ts-ignore TypeScript cannot model this oracle-derived minified control factory.
         z(document, "keydown", (l) => {
           !(this.Cc && getModal().Is) &&
             !l.isComposing &&
@@ -827,6 +929,7 @@ class Or {
         }),
       ));
   }
+// @ts-ignore TypeScript cannot model this oracle-derived minified control factory.
   Hd({ query: t }) {
     ((this.active = !0),
       this.vo(!0),
@@ -834,12 +937,14 @@ class Or {
       this.xn?.({ value: this.$i(), qc: this.o.vs.body.i, Ct: this }),
       setTimeout(() => this.o.be.Ze.i.focus(), 1));
   }
+// @ts-ignore TypeScript cannot model this oracle-derived minified control factory.
   xa(t) {
     this.o.vs.i.style.display = t ? "block" : "none";
   }
   $i() {
     return this.o.be.Ze.i.value.trim();
   }
+// @ts-ignore TypeScript cannot model this oracle-derived minified control factory.
   clear(t) {
     this.isActive &&
       ((this.isActive = !1),
@@ -850,6 +955,7 @@ class Or {
       this.xa(!1),
       this.wa?.(t));
   }
+// @ts-ignore TypeScript cannot model this oracle-derived minified control factory.
   vo(t) {
     let e = !1;
     (t && !this.isActive && ((this.isActive = !0), (e = !0)),
@@ -881,10 +987,12 @@ class Or {
         })),
       e && this.ma?.());
   }
+// @ts-ignore TypeScript cannot model this oracle-derived minified control factory.
   Wt(t) {
     this.o.i.style.display = t ? "block" : "none";
   }
   destroy() {
+// @ts-ignore TypeScript cannot model this oracle-derived minified control factory.
     ((this.m ?? []).forEach((t) => t.remove()),
       (this.m = null),
       (this.pa = null),
@@ -894,6 +1002,8 @@ class Or {
   }
 }
 class Mr {
+  [key: string]: any;
+// @ts-ignore TypeScript cannot model this oracle-derived minified control factory.
   constructor({ h: t, Et: e, B: s, he: n }) {
     ((this.j = !1),
       (this.h = t),
@@ -902,12 +1012,15 @@ class Mr {
       (this.he = n),
       (this.o = h({
         children: {
+// @ts-ignore TypeScript cannot model this oracle-derived minified control factory.
           Ct: new Or({
+// @ts-ignore TypeScript cannot model this oracle-derived minified control factory.
             xn: async ({ value: r, qc: o, Ct: a }) => {
               this.j ||
                 ((this.ti = r
                   .trim()
                   .split(" ")
+// @ts-ignore TypeScript cannot model this oracle-derived minified control factory.
                   .filter((l) => l.length)),
                 await this.Bl());
             },
@@ -932,6 +1045,7 @@ class Mr {
             oe: this.ti,
           });
           if (this.j || !this.Ct) return;
+// @ts-ignore TypeScript cannot model this oracle-derived minified control factory.
           this.Ct.o.vs.body.i.replaceChildren(...e.map((s) => s.i));
         } else
           this.Ct.o.vs.body.i.replaceChildren(
@@ -940,6 +1054,7 @@ class Mr {
         this.Ct.xa(!0);
       } else this.Ct.xa(!1);
   }
+// @ts-ignore TypeScript cannot model this oracle-derived minified control factory.
   Vs(t) {
     this.B = t;
   }
@@ -953,12 +1068,18 @@ class Mr {
   }
 }
 class Sr {
+  [key: string]: any;
   constructor({
+// @ts-ignore TypeScript cannot model this oracle-derived minified control factory.
     label: t,
     isSelected: e = !1,
+// @ts-ignore TypeScript cannot model this oracle-derived minified control factory.
     qd: s,
+// @ts-ignore TypeScript cannot model this oracle-derived minified control factory.
     oe: n,
+// @ts-ignore TypeScript cannot model this oracle-derived minified control factory.
     margin: r,
+// @ts-ignore TypeScript cannot model this oracle-derived minified control factory.
     padding: o,
   }) {
     this.o = h({
@@ -983,6 +1104,7 @@ class Sr {
         }),
         button: h({
           style: { ...(o && { padding: o }) },
+// @ts-ignore TypeScript cannot model this oracle-derived minified control factory.
           onclick: (a) => s(a),
           children: Ve({ label: t, oe: n }),
         }),
@@ -991,30 +1113,38 @@ class Sr {
   }
 }
 class al {
+  [key: string]: any;
+// @ts-ignore TypeScript cannot model this oracle-derived minified control factory.
   constructor(t) {
     ((this.id = t), (this.nt = []), (this.bn = []), (this.yn = void 0));
   }
   Wc() {
     return this.id;
   }
+// @ts-ignore TypeScript cannot model this oracle-derived minified control factory.
   Ao({ newState: t, selection: e, Nc: s }) {
     (t && !s && (this.yn = e),
       t ? Qt(this.nt, e) : Zi(this.nt, e),
+// @ts-ignore TypeScript cannot model this oracle-derived minified control factory.
       this.bn.forEach((n) =>
         n({ count: this.nt.length, nt: this.nt, A: this }),
       ));
   }
   reset() {
+// @ts-ignore TypeScript cannot model this oracle-derived minified control factory.
     (this.nt.forEach((t) => t.Rc?.()),
       ze(this.nt),
       (this.yn = void 0),
+// @ts-ignore TypeScript cannot model this oracle-derived minified control factory.
       this.bn.forEach((t) =>
         t({ count: this.nt.length, nt: this.nt, A: this }),
       ));
   }
+// @ts-ignore TypeScript cannot model this oracle-derived minified control factory.
   lc(t) {
     this.bn.push(t);
   }
+// @ts-ignore TypeScript cannot model this oracle-derived minified control factory.
   od(t) {
     Zi(this.bn, t);
   }

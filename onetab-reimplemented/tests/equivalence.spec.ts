@@ -3822,8 +3822,15 @@ test("extension pages do not emit unique runtime errors", async ({
 
 function normalizeErrors(errors: string[]) {
   return errors
+    .filter((error) => !isTransientExternalResourceError(error))
     .map((error) => error.replace(/^(candidate|original) /, ""))
     .sort();
+}
+
+function isTransientExternalResourceError(error: string) {
+  return /^(candidate|original) https:\/\/www\.one-tab\.com\/help console: Failed to load resource: net::ERR_NETWORK_CHANGED$/.test(
+    error,
+  );
 }
 
 function documentText(value: string) {
@@ -5308,6 +5315,12 @@ async function editTabTitleAndNotes(
   await notesInput.waitFor({ state: "visible" });
   await notesInput.fill(values.notes);
   await page.mouse.click(5, 5);
+  await expect
+    .poll(
+      async () => (await tabStatusSnapshot(page, values.title)).stripedTexts,
+      { timeout: 5_000 },
+    )
+    .toContain(values.notes);
 }
 
 async function editGroupTitleAndNotes(

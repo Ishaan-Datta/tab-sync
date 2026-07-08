@@ -1,5 +1,6 @@
-// @ts-nocheck
-globalThis.createOneTabTreeActions = function createOneTabTreeActions(deps) {
+// @ts-ignore TypeScript cannot model this oracle-derived dependency scope.
+(globalThis as any).createOneTabTreeActions = function createOneTabTreeActions(deps: any) {
+  // @ts-ignore TypeScript cannot model this oracle-derived dependency scope.
   with (deps) {
   async function pi({ parentId: i, we: t, N: e, Ri: s }) {
     let n = Ht();
@@ -202,7 +203,9 @@ globalThis.createOneTabTreeActions = function createOneTabTreeActions(deps) {
       return this.o.pu.p;
     }
   }
+// @ts-ignore TypeScript cannot model this oracle-derived minified tree action factory.
   const Pi = (i) => i.url && i.type !== "folder",
+// @ts-ignore TypeScript cannot model this oracle-derived minified tree action factory.
     pe = (i) => !i.url && i.type !== "bookmark";
   function As(i, t = !1, e, s, n) {
     let r = i.children.filter(Pi),
@@ -454,6 +457,7 @@ globalThis.createOneTabTreeActions = function createOneTabTreeActions(deps) {
     return h({ style: { fontSize: "1px", height: i + "px", width: "1px" } }).i;
   }
   let vs = !1;
+// @ts-ignore TypeScript cannot model this oracle-derived minified tree action factory.
   async function Br(i, t = {}) {
     if (!vs) {
       const s = async () => {
@@ -499,11 +503,13 @@ globalThis.createOneTabTreeActions = function createOneTabTreeActions(deps) {
   const cl = new Proxy(
     {},
     {
+// @ts-ignore TypeScript cannot model this oracle-derived minified tree action factory.
       get(i, t) {
         return t;
       },
     },
   );
+// @ts-ignore TypeScript cannot model this oracle-derived minified tree action factory.
   let Fi = [];
   function Hr(i) {
     Fi.push(i);
@@ -519,7 +525,9 @@ globalThis.createOneTabTreeActions = function createOneTabTreeActions(deps) {
     new Proxy(
       {},
       {
+// @ts-ignore TypeScript cannot model this oracle-derived minified tree action factory.
         get(i, t, e) {
+// @ts-ignore TypeScript cannot model this oracle-derived minified tree action factory.
           return (...s) => ((s = Yi(s, void 0, Cn)), Br(t, { args: s }));
         },
       },
@@ -653,6 +661,7 @@ globalThis.createOneTabTreeActions = function createOneTabTreeActions(deps) {
     pointerOver: mi,
     pointerMove: _r,
     pointerLeave: bi,
+// @ts-ignore TypeScript cannot model this oracle-derived minified tree action factory.
   } = globalThis.createOneTabPageUiHelpers({
     get core() { return A; },
     get createColorIndicator() { return cs; },
@@ -667,6 +676,7 @@ globalThis.createOneTabTreeActions = function createOneTabTreeActions(deps) {
     get isRoot() { return _; },
     get isRtl() { return J; },
     get isTabGroup() { return ot; },
+// @ts-ignore TypeScript cannot model this oracle-derived minified tree action factory.
     get ItemCache() { return ItemCache; },
     get maybeArray() { return O; },
     get range() { return Hn; },
@@ -708,6 +718,7 @@ globalThis.createOneTabTreeActions = function createOneTabTreeActions(deps) {
       )
       .forEach((e, s) => (e.media = s % 2 === 0 ? i : t));
   }
+// @ts-ignore TypeScript cannot model this oracle-derived minified tree action factory.
   let Fs = [];
   function wl(i) {
     Fs.push(i);
@@ -717,12 +728,15 @@ globalThis.createOneTabTreeActions = function createOneTabTreeActions(deps) {
     .addEventListener("change", (i) => {
       me();
     });
+// @ts-ignore TypeScript cannot model this oracle-derived minified tree action factory.
   const ji = globalThis.createOneTabSmartMove({
     get core() { return A; },
     get createNewEmptyWindowGroup() { return Ns; },
     get defaultTabGroupColor() { return hi; },
     get getId() { return Ze; },
+// @ts-ignore TypeScript cannot model this oracle-derived minified tree action factory.
     get getItemById() { return getItemById; },
+// @ts-ignore TypeScript cannot model this oracle-derived minified tree action factory.
     get getItems() { return getItems; },
     get isFolder() { return L; },
     get isGroup() { return dt; },
@@ -731,6 +745,7 @@ globalThis.createOneTabTreeActions = function createOneTabTreeActions(deps) {
     get isTabGroup() { return ot; },
     get isWindowGroup() { return mt; },
     get itemType() { return be; },
+// @ts-ignore TypeScript cannot model this oracle-derived minified tree action factory.
     get ItemCache() { return ItemCache; },
     get moveItemRef() { return xt; },
     get not() { return Sn; },
@@ -837,6 +852,7 @@ globalThis.createOneTabTreeActions = function createOneTabTreeActions(deps) {
         marginInline: "14px",
       },
     }).i;
+// @ts-ignore TypeScript cannot model this oracle-derived minified tree action factory.
     return { pi, Pr, ks, Fr, Ts, Pi, pe, As, $s, hl, Er, ul, vs, Br, cl, Fi, Hr, jr, A, Vt, Nr, xi, Yt, Ei, Bi, fl, Is, qr, Rr, Hi, Os, Ms, Ur, Ss, Ls, Ds, Wr, xe, we, Gs, Cr, dl, Ps, pl, wi, zr, Jr, xl, Ft, me, Qr, Fs, wl, ml, Zr, Es, ti, z, mi, _r, bi, ji, Bs, Kr, Hs, js, bl, yl, Xr, Vr, gl, be, kl, Yr, to, Tl, Al, et };
   }
 };
