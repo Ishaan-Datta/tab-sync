@@ -38,10 +38,13 @@ export default defineConfig({
         ),
       );
 
-      for (const file of globSync("shared/**/*.ts", {
-        cwd: root,
-        expandDirectories: false,
-      })) {
+      for (const file of globSync(
+        ["shared/**/*.ts", "ext-onetab-concatenated-sources-*.ts"],
+        {
+          cwd: root,
+          expandDirectories: false,
+        },
+      )) {
         const source = readFileSync(resolve(root, file), "utf8");
         const output = ts.transpileModule(source, {
           compilerOptions: {
