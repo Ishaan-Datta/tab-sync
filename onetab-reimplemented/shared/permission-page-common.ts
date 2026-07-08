@@ -1,6 +1,6 @@
-// @ts-nocheck
-globalThis.createOneTabPermissionPageCommon = function createOneTabPermissionPageCommon(deps) {
+(globalThis as any).createOneTabPermissionPageCommon = function createOneTabPermissionPageCommon(deps: any) {
   deps ||= {};
+  // @ts-ignore TypeScript cannot model this oracle-derived dependency scope.
   with (deps) {
 const nn = !1,
   rn = !1,

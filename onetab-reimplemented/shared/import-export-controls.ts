@@ -1,5 +1,5 @@
-// @ts-nocheck
-globalThis.createOneTabImportExportControls = function createOneTabImportExportControls(deps) {
+(globalThis as any).createOneTabImportExportControls = function createOneTabImportExportControls(deps: any) {
+  // @ts-ignore TypeScript cannot model this oracle-derived dependency scope.
   with (deps) {
 async function Ks({ mode: i = "text", O: t, Gs: e, gu: s, Bf: n }) {
   let r = i === "readingList" && (await chrome.readingList.query({}));

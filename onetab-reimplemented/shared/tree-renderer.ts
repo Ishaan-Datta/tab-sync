@@ -1,5 +1,5 @@
-// @ts-nocheck
-globalThis.createOneTabTreeRenderer = function createOneTabTreeRenderer(deps) {
+(globalThis as any).createOneTabTreeRenderer = function createOneTabTreeRenderer(deps: any) {
+  // @ts-ignore TypeScript cannot model this oracle-derived dependency scope.
   with (deps) {
   class X {
     constructor({

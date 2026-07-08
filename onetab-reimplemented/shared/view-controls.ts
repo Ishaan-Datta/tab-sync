@@ -1,5 +1,5 @@
-// @ts-nocheck
-globalThis.createOneTabViewControls = function createOneTabViewControls(deps) {
+(globalThis as any).createOneTabViewControls = function createOneTabViewControls(deps: any) {
+  // @ts-ignore TypeScript cannot model this oracle-derived dependency scope.
   with (deps) {
 class bs {
   constructor({ view: t, style: e }) {

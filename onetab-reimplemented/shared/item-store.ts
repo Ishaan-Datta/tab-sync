@@ -1,6 +1,6 @@
-// @ts-nocheck
-globalThis.createOneTabItemStore = function createOneTabItemStore(deps) {
+(globalThis as any).createOneTabItemStore = function createOneTabItemStore(deps: any) {
   deps ||= {};
+  // @ts-ignore TypeScript cannot model this oracle-derived dependency scope.
   with (deps) {
 class S {
   constructor(t) {

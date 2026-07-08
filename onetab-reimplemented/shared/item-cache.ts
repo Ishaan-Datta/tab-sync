@@ -1,6 +1,6 @@
-// @ts-nocheck
-globalThis.createOneTabItemCache = function createOneTabItemCache(deps) {
+(globalThis as any).createOneTabItemCache = function createOneTabItemCache(deps: any) {
   deps ||= {};
+  // @ts-ignore TypeScript cannot model this oracle-derived dependency scope.
   with (deps) {
 class kt {
   constructor(t = []) {
