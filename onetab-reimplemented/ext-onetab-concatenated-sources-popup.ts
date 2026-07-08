@@ -1,3 +1,2 @@
-// @ts-nocheck
 // Copyright 2026 OneTab Ltd.  All rights reserved.
-globalThis.runOneTabPopupBundle();
+(globalThis as any).runOneTabPopupBundle();

@@ -1,5 +1,5 @@
 // Copyright 2026 OneTab Ltd.  All rights reserved.
-window.addEventListener("message", async (event) => {
+window.addEventListener("message", async (event: MessageEvent) => {
   if (
     event.source !== window ||
     event.origin !== window.location.origin ||
@@ -16,13 +16,13 @@ window.addEventListener("message", async (event) => {
       request,
     });
 
-    event.source.postMessage(
+    (event.source as Window).postMessage(
       { direction: "extension-to-page", id, response },
       event.origin,
     );
-  } catch (error) {
+  } catch (error: any) {
     console.error(error);
-    event.source.postMessage(
+    (event.source as Window).postMessage(
       { direction: "extension-to-page", id, error: error.message },
       event.origin,
     );

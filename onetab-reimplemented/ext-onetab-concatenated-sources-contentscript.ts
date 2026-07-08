@@ -1,9 +1,17 @@
 // Copyright 2026 OneTab Ltd.  All rights reserved.
-function hasNonBlankText(value) {
+interface Window {
+  t?: boolean;
+}
+
+function hasNonBlankText(value: unknown) {
   return !(value == null || !value || !(value + "").trim());
 }
 
-function findMatchingAnchorText(targetUrl, node, direction) {
+function findMatchingAnchorText(
+  targetUrl: string,
+  node: any,
+  direction: "up" | "down" | "both",
+): string | null | undefined {
   if (!node) return null;
 
   try {
@@ -38,16 +46,16 @@ function findMatchingAnchorText(targetUrl, node, direction) {
   }
 }
 
-function normalizeText(value) {
+function normalizeText(value: string | null | undefined) {
   return value && value.replace(/\s\s+/g, " ").trim();
 }
 
-function getLinkTitle(targetUrl) {
+function getLinkTitle(targetUrl: string) {
   try {
     let selectedLinkText;
 
     try {
-      const selectedNode = window.getSelection().extentNode;
+      const selectedNode = (window.getSelection() as any).extentNode;
       selectedLinkText = findMatchingAnchorText(
         targetUrl,
         selectedNode,
@@ -62,9 +70,9 @@ function getLinkTitle(targetUrl) {
 
     const links = document.links;
     for (let index = 0; index < links.length; index++) {
-      const linkUrl = links[index].href;
+      const linkUrl = links[index]!.href;
       if (new URL(linkUrl, document.baseURI).href === targetUrl) {
-        const linkText = normalizeText(links[index].textContent);
+        const linkText = normalizeText(links[index]!.textContent);
         if (!linkText) continue;
         return linkText;
       }
@@ -79,7 +87,7 @@ function getLinkTitle(targetUrl) {
 if (!window.t) {
   window.t = true;
 
-  chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  chrome.runtime.onMessage.addListener((message: any, sender: any, sendResponse: any) => {
     if (message.type === "getLinkTitle") {
       const url = message.url;
       const title = getLinkTitle(url);
