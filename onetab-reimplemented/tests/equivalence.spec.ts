@@ -2128,7 +2128,13 @@ test("imported text links become stored tabs like the original extension", async
     }
   });
 
-  expect(candidate).toEqual(original);
+  expect({
+    ...candidate,
+    bodyText: normalizeStoredTimestampText(candidate.bodyText),
+  }).toEqual({
+    ...original,
+    bodyText: normalizeStoredTimestampText(original.bodyText),
+  });
   expect(candidate.bodyText).toContain("Imported Alpha");
   expect(candidate.bodyText).toContain("Imported Beta");
   expect(candidate.hrefs).toContain("https://example.net/imported-alpha");

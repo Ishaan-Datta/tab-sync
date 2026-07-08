@@ -1,4 +1,3 @@
-// @ts-nocheck
-globalThis.runOneTabLocalisationBundle = function runOneTabLocalisationBundle() {
-globalThis.createOneTabPermissionPageCommon();
+(globalThis as any).runOneTabLocalisationBundle = function runOneTabLocalisationBundle() {
+(globalThis as any).createOneTabPermissionPageCommon();
 };

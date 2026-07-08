@@ -1,8 +1,7 @@
-// @ts-nocheck
 // Shared URL query pruning used by list/search indexing in OneTab page bundles.
 (function () {
   function createOneTabUrlQueryCleanup() {
-    function cleanUrlForSearch(url) {
+    function cleanUrlForSearch(url: string) {
       if (url.startsWith("data:")) {
         let slashIndex = url.indexOf("/");
         return slashIndex ? url.substring(0, slashIndex + 1) : "data:";
@@ -15,7 +14,7 @@
       hashIndex !== -1 && ((hash = base.slice(hashIndex)), (base = base.slice(0, hashIndex)));
       const queryIndex = base.indexOf("?");
       queryIndex !== -1 && ((query = base.slice(queryIndex + 1)), (base = base.slice(0, queryIndex)));
-      let parsed;
+      let parsed: URL | null;
       try {
         parsed = new URL(original);
       } catch {
@@ -90,7 +89,7 @@
       return kept.length ? base + "?" + kept.join("&") + hash : base + hash;
     }
 
-    function decodeQueryComponent(value) {
+    function decodeQueryComponent(value: string | null | undefined) {
       if (value == null) return "";
       const withSpaces = String(value).replace(/\+/g, " ");
       try {
@@ -100,7 +99,7 @@
       }
     }
 
-    function importantSearchParams(url) {
+    function importantSearchParams(url: URL | null) {
       if (!url) return null;
       const hostname = (url.hostname || "").toLowerCase(),
         pathname = (url.pathname || "").toLowerCase();
@@ -119,13 +118,13 @@
                 : null;
     }
 
-    function isSohuTrackingParam(url, key) {
+    function isSohuTrackingParam(url: URL | null, key: string) {
       if (!url) return !1;
       const hostname = (url.hostname || "").toLowerCase();
       return !!(key === "spm" && (hostname === "sohu.com" || hostname.endsWith(".sohu.com")));
     }
 
-    function looksLikeTrackingToken(value, key, noisyKeys) {
+    function looksLikeTrackingToken(value: string, key: string, noisyKeys: Set<string>) {
       if (value.length <= 12 || /[^\x00-\x7F]/.test(value) || /^\d+$/.test(value)) return !1;
       const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value),
         hex = /^[0-9a-f]{16,}$/i.test(value),
@@ -158,5 +157,5 @@
     return { cleanUrlForSearch };
   }
 
-  globalThis.createOneTabUrlQueryCleanup = createOneTabUrlQueryCleanup;
+  (globalThis as any).createOneTabUrlQueryCleanup = createOneTabUrlQueryCleanup;
 })();
