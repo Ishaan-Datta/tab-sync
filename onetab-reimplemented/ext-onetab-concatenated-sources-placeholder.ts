@@ -1,4 +1,3 @@
-// @ts-nocheck
 // Copyright 2026 OneTab Ltd.  All rights reserved.
 const {
   version: en,
@@ -158,11 +157,12 @@ const {
   urlHelpers: { trimTrailingDotOrComma: Kn, substringAfter: Xn, stripProtocol: Gt, equalIgnoringProtocol: Li, safeNormalizeText: li, canonicalizeTextAsUrl: Ye, areUrlLikeEqual: ts, isYouTubeUrl: Vn, shouldUseCandidateUrl: Na, safeNonJavascriptUrl: _t },
   textHelpers: { normalizeImportedText: Yn },
   importHelpers: { parseImportedTabGroups: is }
+// @ts-ignore TypeScript cannot model this oracle-derived minified placeholder bundle.
 } = globalThis.createOneTabBundlePrelude({
   getCoreProxy: () => A,
-  isNewOrBlankTabPageUrl: url => globalThis.isNewOrBlankTabPageUrl(url),
-  pluralize: (key, count) => Mt(key, count),
-  trimToLengthWithEllipsis: (...args) => js(...args),
+  isNewOrBlankTabPageUrl: (url: any) => (globalThis as any).isNewOrBlankTabPageUrl(url),
+  pluralize: (key: any, count: any) => Mt(key, count),
+  trimToLengthWithEllipsis: (...args: any[]) => js(...args),
 });
 const {
   taskFieldNames: ui,
@@ -187,6 +187,7 @@ const {
   shouldApplyChrome145Workaround: lr,
   isChrome145: hr,
   uncollapseChrome145TabGroup: tl,
+// @ts-ignore TypeScript cannot model this oracle-derived minified placeholder bundle.
 } = globalThis.createOneTabPageCommon({
   websiteUrl: Ai,
   translate: x,
@@ -196,7 +197,9 @@ const {
   isFolder: L,
   isMicrosoftEdge: Jn,
 });
+// @ts-ignore TypeScript cannot model this oracle-derived minified placeholder bundle.
 const { il, Di, le, ur, cr, fi, he, cs, $t, el, ue, ce, xs, fr, dr, ws, ms, Kt } = globalThis.createOneTabBaseControls({ h: (...a) => h(...a), G: (...a) => G(...a), vi: (...a) => vi(...a), W: (...a) => W(...a), z: (...a) => z(...a), St: (...a) => St(...a), Ei: (...a) => Ei(...a), mi: (...a) => mi(...a), bi: (...a) => bi(...a), O: (...a) => O(...a), Si: (...a) => Si(...a), J: () => J(), Cs: (...a) => Cs(...a), Ni: (...a) => Ni(...a), Yt: (...a) => Yt(...a), Qt: (...a) => Qt(...a), Ji: (...a) => Ji(...a), He: (...a) => He(...a), Be: (...a) => Be(...a), se: (...a) => se(...a), dn: (...a) => dn(...a), spinner: (...a) => xe(...a), getFt: () => Ft, getDnd: () => dnd, getP: () => P, getVt: () => { try { return vt; } catch { return; } }, getFe: () => fe, getLt: () => lt, getTooltip: () => nt, getQs: () => qs });
+// @ts-ignore TypeScript cannot model this oracle-derived minified placeholder bundle.
 const { bs, Gi, kt, Pt, ys, Xt, W, yr } = globalThis.createOneTabViewControls({
   get $r() { return $r; },
   get $t() { return $t; },
@@ -294,7 +297,8 @@ const { bs, Gi, kt, Pt, ys, Xt, W, yr } = globalThis.createOneTabViewControls({
   get z() { return z; },
   get ze() { return ze; },
 });
-let wi, Ft;
+let wi: any, Ft: any;
+// @ts-ignore TypeScript cannot model this oracle-derived minified placeholder bundle.
 const { gr, nl, kr, rl, Tr, lt, Ar, ol, $r, fe, vr, Ir, Or, Mr, Sr, al } = createOneTabUiControls({ h: (...a) => h(...a), G: (...a) => G(...a), W: (...a) => W(...a), Xt, O: (...a) => O(...a), ws, co: (...a) => co(...a), xe: (...a) => xe(...a), z: (...a) => z(...a), ti: (...a) => ti(...a), Kr: (...a) => Kr(...a), x: (...a) => x(...a), Gs: (...a) => Gs(...a), J: () => J(), Yr: (...a) => Yr(...a), Bs: (...a) => Bs(...a), Ve: (...a) => Ve(...a), Qt: (...a) => Qt(...a), Zi: (...a) => Zi(...a), ze: (...a) => ze(...a), oi: (...a) => oi(...a), St: (...a) => St(...a), getSettings: () => A, getModal: () => bt, getTheme: () => wi, getTooltip: () => nt });
 const {
   X,
@@ -309,6 +313,7 @@ const {
   Se,
   ft,
   Rt,
+// @ts-ignore TypeScript cannot model this oracle-derived minified placeholder bundle.
 } = globalThis.createOneTabTreeRenderer({
   get $t() { return $t; },
   get A() { return A; },
@@ -335,8 +340,8 @@ const {
   get Oe() { return Oe; },
   get Oi() { return Oi; },
   get P() { return P; },
-  get Pr() { return (...a) => Pr(...a); },
-  get Ps() { return (...a) => Ps(...a); },
+  get Pr() { return (...a: any[]) => Pr(...a); },
+  get Ps() { return (...a: any[]) => Ps(...a); },
   get Qe() { return Qe; },
   get Qi() { return Qi; },
   get Si() { return Si; },
@@ -364,9 +369,9 @@ const {
   get h() { return h; },
   get he() { return he; },
   get hi() { return hi; },
-  get js() { return (...a) => js(...a); },
+  get js() { return (...a: any[]) => js(...a); },
   get jt() { return jt; },
-  get ks() { return (...a) => ks(...a); },
+  get ks() { return (...a: any[]) => ks(...a); },
   get lt() { return lt; },
   get mi() { return mi; },
   get ms() { return ms; },
@@ -469,6 +474,7 @@ const {
   Tl,
   Al,
   et,
+// @ts-ignore TypeScript cannot model this oracle-derived minified placeholder bundle.
 } = globalThis.createOneTabTreeActions({
   get $i() { return $i; },
   get Ai() { return Ai; },
@@ -518,25 +524,27 @@ const {
   get yt() { return yt; },
   get zi() { return zi; },
   get zt() { return zt; },
-  setThemeState({ wi: i, Ft: t }) { wi = i; Ft = t; },
+  setThemeState({ wi: i, Ft: t }: any) { wi = i; Ft = t; },
 });
 let P = {};
+// @ts-ignore TypeScript cannot model this oracle-derived minified placeholder bundle.
 const { vt, ye, Ni, ge, Ns, qi, io, qs, $l, eo, Rs, vl, ke, so, no, Il, Te, ro, Us, Ae, at, Ws, Cs, Ol, Ml, zs, Js, $e, Sl, oo, Qs, ve, Ie, Zs, _s, Oe } = globalThis.createOneTabTreeInteractions({get _(){return _},get _e(){return _e},get _t(){return _t},get A(){return A},get Ai(){return Ai},get ao(){return ao},get B(){return B},get Bi(){return Bi},get ce(){return ce},get Cr(){return Cr},get Ct(){return Ct},get displayAutoActionOnOpenOptionModal(){return displayAutoActionOnOpenOptionModal},get dnd(){return dnd},get dt(){return dt},get Dt(){return Dt},get er(){return er},get es(){return es},get et(){return et},get fi(){return fi},get ft(){return ft},get G(){return G},get getItemById(){return getItemById},get getItems(){return getItems},get Gi(){return Gi},get go(){return go},get gt(){return gt},get Gt(){return Gt},get h(){return h},get he(){return he},get hi(){return hi},get ho(){return ho},get Ht(){return Ht},get iconGrid(){return iconGrid},get is(){return is},get ItemCache(){return ItemCache},get J(){return J},get ji(){return ji},get Ki(){return Ki},get Ks(){return Ks},get kt(){return kt},get L(){return L},get Ls(){return Ls},get lt(){return lt},get mt(){return mt},get Mt(){return Mt},get navigateToItem(){return navigateToItem},get Nr(){return Nr},get ns(){return ns},get Nt(){return Nt},get O(){return O},get oi(){return oi},get oneTabPage(){return oneTabPage},get ot(){return ot},get P(){return P},set P(value){P = value},get pi(){return pi},get pt(){return pt},get Pt(){return Pt},get qr(){return qr},get qt(){return qt},get rn(){return rn},get Rr(){return Rr},get rs(){return rs},get Rt(){return Rt},get showSharingModal(){return showSharingModal},get Ss(){return Ss},get te(){return te},get ti(){return ti},get ut(){return ut},get Vt(){return Vt},get W(){return W},get x(){return x},get X(){return X},get xi(){return xi},get xs(){return xs},get xt(){return xt},get ys(){return ys},get Yt(){return Yt},get zt(){return zt}});
-let nt, gi;
+let nt: any, gi: any;
+// @ts-ignore TypeScript cannot model this oracle-derived minified placeholder bundle.
 const { Ks, ao, lo, Ll, yi, Dl, zt, Gl, Xs, ho, uo, bt, co, fo, po, xo, Me, wo, Vs, mo, bo, yo, go, Ys, tn, St, ko } = globalThis.createOneTabImportExportControls({get _(){return _},get _r(){return _r},get $s(){return $s},get A(){return A},get ai(){return ai},get As(){return As},get at(){return at},get B(){return B},get bi(){return bi},get ci(){return ci},get Cs(){return Cs},get Di(){return Di},get dt(){return dt},get es(){return es},get G(){return G},get Ge(){return Ge},get gi(){return gi},set gi(value){gi=value},get h(){return h},get He(){return He},get In(){return In},get ir(){return ir},get Ir(){return Ir},get is(){return is},get ItemCache(){return ItemCache},get J(){return J},get jt(){return jt},get Ke(){return Ke},get L(){return L},get lt(){return lt},get mi(){return mi},get Mt(){return Mt},get nt(){return nt},set nt(value){nt=value},get O(){return O},get oe(){return oe},get Oi(){return Oi},get pt(){return pt},get ti(){return ti},get vr(){return vr},get Vt(){return Vt},get W(){return W},get Ws(){return Ws},get x(){return x},get yr(){return yr},get yt(){return yt},get z(){return z}});
 setTimeout(async () => {
   (await zr(), await Vt());
-  const i = document.getElementById("copyButton");
-  let e = new URLSearchParams(window.location.search).get("url"),
-    s = document.getElementById("urlInput");
+  const i = document.getElementById("copyButton") as any;
+  let e = new URLSearchParams(window.location.search).get("url") as any,
+    s = document.getElementById("urlInput") as any;
   s.value = e;
   let n = decodeURIComponent(e);
   (["/", "\\"].forEach((r) => {
     n.includes(r) && (n = n.substring(n.lastIndexOf(r) + 1));
   }),
     (document.title = n),
-    (document.getElementById("filename").textContent = n),
-    (i.onclick = (r) => {
+    ((document.getElementById("filename") as any).textContent = n),
+    (i.onclick = (r: any) => {
       (s.select(), navigator.clipboard.writeText(s.value));
     }));
 }, 1);
