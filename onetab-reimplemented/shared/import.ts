@@ -1,5 +1,5 @@
-// @ts-nocheck
-globalThis.runOneTabImportBundle = function runOneTabImportBundle() {
+// @ts-ignore TypeScript cannot model this oracle-derived minified page bundle.
+(globalThis as any).runOneTabImportBundle = function runOneTabImportBundle() {
 // Copyright 2026 OneTab Ltd.  All rights reserved.
 const {
   version: pn,
@@ -159,11 +159,12 @@ const {
   urlHelpers: { trimTrailingDotOrComma: lr, substringAfter: hr, stripProtocol: jt, equalIgnoringProtocol: Re, safeNormalizeText: Yt, canonicalizeTextAsUrl: hs, areUrlLikeEqual: us, isYouTubeUrl: ur, shouldUseCandidateUrl: cr, safeNonJavascriptUrl: se },
   textHelpers: { normalizeImportedText: fr },
   importHelpers: { parseImportedTabGroups: xi }
+// @ts-ignore TypeScript cannot model this oracle-derived minified page bundle.
 } = globalThis.createOneTabBundlePrelude({
   getCoreProxy: () => A,
-  isNewOrBlankTabPageUrl: url => globalThis.isNewOrBlankTabPageUrl(url),
-  pluralize: (key, count) => Ft(key, count),
-  trimToLengthWithEllipsis: (...args) => Ks(...args),
+  isNewOrBlankTabPageUrl: (url: any) => (globalThis as any).isNewOrBlankTabPageUrl(url),
+  pluralize: (key: any, count: any) => Ft(key, count),
+  trimToLengthWithEllipsis: (...args: any[]) => Ks(...args),
 });
 const {
   taskFieldNames: ye,
@@ -188,6 +189,7 @@ const {
   shouldApplyChrome145Workaround: Tr,
   isChrome145: Ar,
   uncollapseChrome145TabGroup: yl,
+// @ts-ignore TypeScript cannot model this oracle-derived minified page bundle.
 } = globalThis.createOneTabPageCommon({
   websiteUrl: De,
   translate: w,
@@ -197,7 +199,9 @@ const {
   isFolder: G,
   isMicrosoftEdge: nr,
 });
+// @ts-ignore TypeScript cannot model this oracle-derived minified page bundle.
 const { cleanUrlForSearch: $r } = globalThis.createOneTabUrlQueryCleanup();
+// @ts-ignore TypeScript cannot model this oracle-derived minified page bundle.
 const { ItemCache: kt } = globalThis.createOneTabItemCache(
   {
     get kt() { return kt; },
@@ -227,6 +231,7 @@ const { ItemCache: kt } = globalThis.createOneTabItemCache(
     get O() { return O; },
   }
 );
+// @ts-ignore TypeScript cannot model this oracle-derived minified page bundle.
 const { S, bl, ge, rt, Ir, vr, Or, Mr, Lr, gl, Gr } = globalThis.createOneTabItemStore({
   hi,
   jn,
@@ -243,7 +248,9 @@ const { S, bl, ge, rt, Ir, vr, Or, Mr, Lr, gl, Gr } = globalThis.createOneTabIte
   _,
   G,
 });
+// @ts-ignore TypeScript cannot model this oracle-derived minified page bundle.
 const { il: kl, Di: ne, le: gi, ur: Sr, cr: Pr, fi: ke, he: ki, cs: gs, $t: Mt, el: Tl, ue: Ti, ce: Ai, xs: $s, fr: Fr, dr: Dr, ws: Is, ms: vs, Kt: re } = globalThis.createOneTabBaseControls({ h: (...a) => f(...a), G: (...a) => F(...a), vi: (...a) => pe(...a), W: (...a) => C(...a), z: (...a) => J(...a), St: (...a) => Dt(...a), Ei: (...a) => Ze(...a), mi: (...a) => Oe(...a), bi: (...a) => Me(...a), O: (...a) => O(...a), Si: (...a) => Ue(...a), J: () => K(), Cs: (...a) => en(...a), Ni: (...a) => Xe(...a), Yt: (...a) => ae(...a), Qt: (...a) => ee(...a), Ji: (...a) => ii(...a), He: (...a) => Ki(...a), Be: (...a) => Qi(...a), se: (...a) => pi(...a), dn: (...a) => In(...a), spinner: (...a) => Mi(...a), getFt: () => Ut, getDnd: () => dnd, getP: () => D, getVt: () => { try { return Lt; } catch { return; } }, getFe: () => Ii, getLt: () => dt, getTooltip: () => ut, getQs: () => Vs });
+// @ts-ignore TypeScript cannot model this oracle-derived minified page bundle.
 const { bs: Os, pr: $i, Gi: We, kt: Ot, Pt: qt, ys: Ms, Xt: oe, W: C, yr: qr } = globalThis.createOneTabViewControls({
   get $r() { return Cr; },
   get $t() { return Mt; },
@@ -341,7 +348,8 @@ const { bs: Os, pr: $i, Gi: We, kt: Ot, Pt: qt, ys: Ms, Xt: oe, W: C, yr: qr } =
   get z() { return J; },
   get ze() { return ss; },
 });
-let ve, Ut;
+let ve: any, Ut: any;
+// @ts-ignore TypeScript cannot model this oracle-derived minified page bundle.
 const { gr: Ur, nl: $l, kr: Rr, rl: Il, Tr: Nr, lt: dt, Ar: Wr, ol: vl, $r: Cr, fe: Ii, vr: Ls, Ir: Gs, Or: zr, Mr: Zr, Sr: Jr, al: Ol } = createOneTabUiControls({ h: (...a) => f(...a), G: (...a) => F(...a), W: (...a) => C(...a), Xt: oe, O: (...a) => O(...a), ws: Is, co: (...a) => Do(...a), xe: (...a) => Mi(...a), z: (...a) => J(...a), ti: (...a) => le(...a), Kr: (...a) => yo(...a), x: (...a) => w(...a), Gs: (...a) => Ws(...a), J: () => K(), Yr: (...a) => ko(...a), Bs: (...a) => Js(...a), Ve: (...a) => ls(...a), Qt: (...a) => ee(...a), Zi: (...a) => ni(...a), ze: (...a) => ss(...a), oi: (...a) => xe(...a), St: (...a) => Dt(...a), getSettings: () => A, getModal: () => It, getTheme: () => ve, getTooltip: () => ut });
 const {
   X: Y,
@@ -356,6 +364,7 @@ const {
   Se: Ri,
   ft: xt,
   Rt: Jt,
+// @ts-ignore TypeScript cannot model this oracle-derived minified page bundle.
 } = globalThis.createOneTabTreeRenderer({
   get $t() { return Mt; },
   get A() { return A; },
@@ -382,8 +391,8 @@ const {
   get Oe() { return qi; },
   get Oi() { return we; },
   get P() { return D; },
-  get Pr() { return (...a) => Vr(...a); },
-  get Ps() { return (...a) => Cs(...a); },
+  get Pr() { return (...a: any[]) => Vr(...a); },
+  get Ps() { return (...a: any[]) => Cs(...a); },
   get Qe() { return rs; },
   get Qi() { return si; },
   get Si() { return Ue; },
@@ -411,9 +420,9 @@ const {
   get h() { return f; },
   get he() { return ki; },
   get hi() { return me; },
-  get js() { return (...a) => Ks(...a); },
+  get js() { return (...a: any[]) => Ks(...a); },
   get jt() { return Wt; },
-  get ks() { return (...a) => Ps(...a); },
+  get ks() { return (...a: any[]) => Ps(...a); },
   get lt() { return dt; },
   get mi() { return Oe; },
   get ms() { return vs; },
@@ -516,6 +525,7 @@ const {
   Tl: ql,
   Al: Ul,
   et: ot,
+// @ts-ignore TypeScript cannot model this oracle-derived minified page bundle.
 } = globalThis.createOneTabTreeActions({
   get $i() { return Ee; },
   get Ai() { return De; },
@@ -565,11 +575,13 @@ const {
   get yt() { return At; },
   get zi() { return ei; },
   get zt() { return Qt; },
-  setThemeState({ wi: i, Ft: t }) { ve = i; Ut = t; },
+  setThemeState({ wi: i, Ft: t }: any) { ve = i; Ut = t; },
 });
 let D = {};
+// @ts-ignore TypeScript cannot model this oracle-derived minified page bundle.
 const { vt: Lt, ye: Pi, Ni: Xe, ge: Fi, Ns: Xs, qi: Ve, io: Ao, qs: Vs, $l: Rl, eo: $o, Rs: _s, vl: Nl, ke: Di, so: Io, no: vo, Il: Wl, Te: Le, ro: Oo, Us: Ys, Ae: Ei, at: ft, Ws: tn, Cs: en, Ol: Mo, Ml: sn, zs: nn, Js: rn, $e: Bi, Sl: Cl, oo: Lo, Qs: on, ve: Hi, Ie: ji, Zs: an, _s: ln, Oe: qi } = globalThis.createOneTabTreeInteractions({get _(){return V},get _e(){return je},get _t(){return se},get A(){return A},get Ai(){return De},get ao(){return Go},get B(){return j},get Bi(){return Je},get ce(){return Ai},get Cr(){return uo},get Ct(){return Xt},get displayAutoActionOnOpenOptionModal(){return displayAutoActionOnOpenOptionModal},get dnd(){return dnd},get dt(){return _},get Dt(){return Ht},get er(){return wr},get es(){return cs},get et(){return ot},get fi(){return ke},get ft(){return xt},get G(){return F},get getItemById(){return rt},get getItems(){return ge},get Gi(){return We},get go(){return No},get gt(){return vt},get Gt(){return jt},get h(){return f},get he(){return ki},get hi(){return me},get ho(){return Po},get Ht(){return Bt},get iconGrid(){return iconGrid},get is(){return xi},get ItemCache(){return kt},get J(){return K},get ji(){return Ke},get Ki(){return oi},get Ks(){return hn},get kt(){return Ot},get L(){return G},get Ls(){return Rs},get lt(){return dt},get mt(){return $t},get Mt(){return Ft},get navigateToItem(){return navigateToItem},get Nr(){return ro},get ns(){return ds},get Nt(){return zt},get O(){return O},get oi(){return xe},get oneTabPage(){return oneTabPage},get ot(){return ct},get P(){return D},set P(value){D = value},get pi(){return Ae},get pt(){return mt},get Pt(){return qt},get qr(){return oo},get qt(){return Zt},get rn(){return mn},get Rr(){return ao},get rs(){return ps},get Rt(){return Jt},get showSharingModal(){return showSharingModal},get Ss(){return Us},get te(){return ci},get ti(){return le},get ut(){return at},get Vt(){return $e},get W(){return C},get x(){return w},get X(){return Y},get xi(){return Ie},get xs(){return $s},get xt(){return gt},get ys(){return Ms},get Yt(){return ae},get zt(){return Qt}});
-let ut, Se;
+let ut: any, Se: any;
+// @ts-ignore TypeScript cannot model this oracle-derived minified page bundle.
 const { Ks: hn, ao: Go, lo: So, Ll: zl, yi: Ge, Dl: Zl, zt: Qt, Gl: Jl, Xs: un, ho: Po, uo: Fo, bt: It, co: Do, fo: Eo, po: Bo, xo: Ho, Me: Ui, wo: jo, Vs: cn, mo: qo, bo: Uo, yo: Ro, go: No, Ys: fn, tn: dn, St: Dt, ko: Wo } = globalThis.createOneTabImportExportControls({get _(){return V},get _r(){return mo},get $s(){return Es},get A(){return A},get ai(){return _t},get As(){return Ds},get at(){return ft},get B(){return j},get bi(){return Me},get ci(){return be},get Cs(){return en},get Di(){return ne},get dt(){return _},get es(){return cs},get G(){return F},get Ge(){return Ci},get gi(){return Se},set gi(value){Se=value},get h(){return f},get He(){return Ki},get In(){return qn},get ir(){return xr},get Ir(){return Gs},get is(){return xi},get ItemCache(){return kt},get J(){return K},get jt(){return Wt},get Ke(){return os},get L(){return G},get lt(){return dt},get mi(){return Oe},get Mt(){return Ft},get nt(){return ut},set nt(value){ut=value},get O(){return O},get oe(){return yi},get Oi(){return we},get pt(){return mt},get ti(){return le},get vr(){return Ls},get Vt(){return $e},get W(){return C},get Ws(){return tn},get x(){return w},get yr(){return qr},get yt(){return At},get z(){return J}});
 setTimeout(async () => {
   (await co(), await Yr(), await Co());
@@ -711,7 +723,7 @@ async function zo() {
                               marginInlineEnd: "8px",
                             },
                             Eh: await rt("root"),
-                            Js: async (e) =>
+                            Js: async (e: any) =>
                               (t.u.Jx.i.value = (
                                 await Le({ groupId: e.id, ge: "urlAndTitle" })
                               ).Xe),
@@ -756,7 +768,7 @@ async function zo() {
   (i.jd(),
     (t.u.Jx.i.value = (await Le({ groupId: "root", ge: "urlAndTitle" })).Xe));
 }
-function Ql(i, t, e) {
+function Ql(i: any, t: any, e: any) {
   const s = document.createElement("a"),
     n = new Blob([i], { type: t }),
     r = URL.createObjectURL(n);
