@@ -1,5 +1,6 @@
-// @ts-nocheck
-globalThis.createOneTabTreeInteractions = function createOneTabTreeInteractions(deps) {
+// @ts-ignore TypeScript cannot model this oracle-derived minified interaction factory.
+(globalThis as any).createOneTabTreeInteractions = function createOneTabTreeInteractions(deps: any) {
+  // @ts-ignore TypeScript cannot model this oracle-derived dependency scope.
   with (deps) {
 function vt() {
   (et.remove(),
@@ -437,40 +438,40 @@ function Ae({ Er: i, Fr: t, jr: e, Br: s, Cr: n }) {
 let at = !1,
   Ws = 0;
 const Cs = (() => {
-  let t,
-    e,
-    s,
-    n,
-    r,
-    o,
-    a,
+  let t: any,
+    e: any,
+    s: any,
+    n: any,
+    r: any,
+    o: any,
+    a: any,
     l = 0,
     u = 0,
-    c,
-    d,
-    m,
-    y,
-    w,
-    b,
-    g,
-    p,
-    k,
+    c: any,
+    d: any,
+    m: any,
+    y: any,
+    w: any,
+    b: any,
+    g: any,
+    p: any,
+    k: any,
     f = !1,
-    T = null,
+    T: any = null,
     $ = !1,
-    M = null,
-    S = null,
-    H = null,
-    Q = null,
+    M: any = null,
+    S: any = null,
+    H: any = null,
+    Q: any = null,
     ht = 0,
     q = 0,
     C = 0,
-    Z = null,
-    Tt = null,
-    R = null;
+    Z: any = null,
+    Tt: any = null,
+    R: any = null;
   (document.addEventListener(
     "pointerdown",
-    (v) => {
+    (v: any) => {
       at &&
         v.pointerId !== o &&
         (n?.({
@@ -489,7 +490,7 @@ const Cs = (() => {
   ),
     document.addEventListener(
       "keydown",
-      (v) => {
+      (v: any) => {
         !ti(v) ||
           (!at && !$) ||
           (v.cancelable && v.preventDefault(),
@@ -500,7 +501,7 @@ const Cs = (() => {
     ),
     document.addEventListener(
       "pointercancel",
-      (v) => {
+      (v: any) => {
         (at || $) && v.pointerId === o && Wt(v);
       },
       !0,
@@ -514,7 +515,7 @@ const Cs = (() => {
     xh: V,
     mh: it = 0,
     ph: Ot = null,
-  }) {
+  }: any) {
     at ||
       $ ||
       ((t = F),
@@ -539,7 +540,7 @@ const Cs = (() => {
       v.preventDefault(),
       ($ = !0));
   }
-  function At(v) {
+  function At(v: any) {
     v.isTrusted !== !1 &&
       ((!at && !$) ||
         v.pointerId !== o ||
@@ -555,7 +556,7 @@ const Cs = (() => {
   function Ut() {
     ((T = null), f && ((f = !1), K(w, b, g, p, k)));
   }
-  function K(v, F, j, N, Y) {
+  function K(v: any, F: any, j: any, N: any, Y: any) {
     if (!at && !$) return;
     let V, it;
     ((V = v - c), (it = F - d));
@@ -585,13 +586,13 @@ const Cs = (() => {
       Lt(Y, N, j),
       D(j, N));
   }
-  function Ri(v) {
+  function Ri(v: any) {
     v.isTrusted !== !1 &&
       ((v?.pointerId !== void 0 && o !== void 0 && v.pointerId !== o) ||
         (!at && !$) ||
         (Ti(v), Wt(v)));
   }
-  function Wt(v, { If: F = !1 } = {}) {
+  function Wt(v: any, { If: F = !1 }: any = {}) {
     if (!at && !$) return;
     const j = at;
     (j && f && (K(w, b, g, p, k), (f = !1)),
@@ -628,7 +629,7 @@ const Cs = (() => {
         document.addEventListener("pointercancel", R, !0),
         document.addEventListener("mouseup", R, !0)));
   }
-  function Lt(v, F, j) {
+  function Lt(v: any, F: any, j: any) {
     if (!at) return;
     const N = a || "mouse";
     if (
@@ -645,7 +646,7 @@ const Cs = (() => {
       return;
     const V = document.elementsFromPoint(F, j);
     if (!V?.length) return;
-    const it = V.find((Ot) => !ct(Ot)) || V[0];
+    const it = V.find((Ot: any) => !ct(Ot)) || V[0];
     !it ||
       !(it instanceof Element) ||
       (v instanceof Element && v === it) ||
@@ -664,7 +665,7 @@ const Cs = (() => {
         }),
       );
   }
-  function Ti(v) {
+  function Ti(v: any) {
     if (!at) return;
     const F = a || "mouse";
     if (
@@ -686,7 +687,7 @@ const Cs = (() => {
       return;
     const V = document.elementsFromPoint(N, Y);
     if (!V?.length) return;
-    const it = V.find((Ot) => !ct(Ot)) || V[0];
+    const it = V.find((Ot: any) => !ct(Ot)) || V[0];
     !it ||
       !(it instanceof Element) ||
       (v?.target instanceof Element && v.target === it) ||
@@ -705,7 +706,7 @@ const Cs = (() => {
         }),
       );
   }
-  function Et(v) {
+  function Et(v: any) {
     if ((v === !0 && (v = { enabled: !0 }), !v || v.enabled !== !0))
       return null;
     const F = Number.isFinite(v.Da) ? v.Da : 48,
@@ -715,7 +716,7 @@ const Cs = (() => {
       V = v.target || "hover";
     return { enabled: !0, Da: F, Fo: j, Pa: N, jo: Y, target: V };
   }
-  function Bt(v) {
+  function Bt(v: any) {
     let F = v;
     for (; F && F !== document.body && F !== document.documentElement; ) {
       const j = window.getComputedStyle(F),
@@ -739,7 +740,7 @@ const Cs = (() => {
   function I() {
     (Q !== null && (cancelAnimationFrame(Q), (Q = null)), (ht = 0));
   }
-  function D(v, F) {
+  function D(v: any, F: any) {
     !at ||
       !M ||
       ((q = v),
@@ -749,7 +750,7 @@ const Cs = (() => {
         Q === null &&
         ((ht = performance.now()), (Q = requestAnimationFrame(E))));
   }
-  function E(v) {
+  function E(v: any) {
     if (((Q = null), !at || !M)) return;
     const F = Math.max(0, (v - ht) / 1e3);
     if (((ht = v), (H = tt(C, q)), !H)) return;
@@ -760,7 +761,7 @@ const Cs = (() => {
         (Q = requestAnimationFrame(E)));
     }
   }
-  function U(v) {
+  function U(v: any) {
     const F = M;
     if (!F) return 0;
     let j = 0,
@@ -792,7 +793,7 @@ const Cs = (() => {
       (F.Fo + (F.Pa - F.Fo) * Jt) * ni
     );
   }
-  function tt(v, F) {
+  function tt(v: any, F: any) {
     if (M?.target === "origin")
       return S && S !== window && !S.isConnected ? null : S;
     if (v < 0 || F < 0 || v > window.innerWidth || F > window.innerHeight)
@@ -808,7 +809,7 @@ const Cs = (() => {
     }
     return It() || S || window;
   }
-  function ct(v) {
+  function ct(v: any) {
     return v ? !!(t && (v === t || t.contains(v))) : !1;
   }
   function It() {
