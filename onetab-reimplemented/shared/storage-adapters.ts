@@ -1,6 +1,24 @@
 // Shared Chrome storage adapters extracted from the original bundles.
 (function () {
-  class OneTabLocalStorageAdapter {
+  interface OneTabLocalStorageAdapterLike {
+    remove(key: string): Promise<void>;
+    put(key: string, value: unknown): Promise<void>;
+    Wo(values: Record<string, unknown>): Promise<void>;
+    get(key: string): Promise<unknown>;
+    getAll(keys: string[] | null): Promise<Record<string, unknown>>;
+    clearAll(): Promise<void>;
+  }
+
+  interface OneTabSessionStorageAdapterLike {
+    put(key: string, value: unknown): Promise<void>;
+    get(key: string): Promise<unknown>;
+    Lp(key: string): Promise<unknown>;
+    getAll(): Promise<Record<string, unknown>>;
+    remove(key: string): Promise<void>;
+    clearAll(): Promise<void>;
+  }
+
+  class OneTabLocalStorageAdapter implements OneTabLocalStorageAdapterLike {
     async remove(key: string) {
       await chrome.storage.local.remove(key);
     }
@@ -17,7 +35,7 @@
       return (await chrome.storage.local.get([key]))[key];
     }
 
-    async getAll(keys: string[]) {
+    async getAll(keys: string[] | null) {
       return await chrome.storage.local.get(keys);
     }
 
@@ -26,7 +44,7 @@
     }
   }
 
-  class OneTabSessionStorageAdapter {
+  class OneTabSessionStorageAdapter implements OneTabSessionStorageAdapterLike {
     async put(key: string, value: unknown) {
       await chrome.storage.session.set({ [key]: value });
     }

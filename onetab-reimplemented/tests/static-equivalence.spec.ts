@@ -6,6 +6,10 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { glob } from "tinyglobby";
 import { getOneTabDefaultSettings } from "../src/shared/default-settings";
+import {
+  createOneTabLocalStorageAdapter,
+  createOneTabSessionStorageAdapter,
+} from "../src/shared/storage-adapters";
 
 const testDir = dirname(fileURLToPath(import.meta.url));
 const candidateRoot = resolve(testDir, "..");
@@ -323,6 +327,24 @@ test("typed default settings module returns isolated defaults", () => {
     foldersOnly: false,
     hideArchived: false,
   });
+});
+
+test("typed storage adapter module preserves legacy method names", () => {
+  const local = createOneTabLocalStorageAdapter();
+  const session = createOneTabSessionStorageAdapter();
+
+  expect(typeof local.remove).toBe("function");
+  expect(typeof local.put).toBe("function");
+  expect(typeof local.Wo).toBe("function");
+  expect(typeof local.get).toBe("function");
+  expect(typeof local.getAll).toBe("function");
+  expect(typeof local.clearAll).toBe("function");
+  expect(typeof session.put).toBe("function");
+  expect(typeof session.get).toBe("function");
+  expect(typeof session.Lp).toBe("function");
+  expect(typeof session.getAll).toBe("function");
+  expect(typeof session.remove).toBe("function");
+  expect(typeof session.clearAll).toBe("function");
 });
 
 test("migration legacy marker counts do not regress", async () => {
