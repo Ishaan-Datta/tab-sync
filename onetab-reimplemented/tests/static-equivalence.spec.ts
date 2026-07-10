@@ -6,6 +6,7 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { glob } from "tinyglobby";
 import { getOneTabDefaultSettings } from "../src/shared/default-settings";
+import { createOneTabModelPredicates } from "../src/shared/model-predicates";
 import {
   createOneTabLocalStorageAdapter,
   createOneTabSessionStorageAdapter,
@@ -345,6 +346,26 @@ test("typed storage adapter module preserves legacy method names", () => {
   expect(typeof session.getAll).toBe("function");
   expect(typeof session.remove).toBe("function");
   expect(typeof session.clearAll).toBe("function");
+});
+
+test("typed model predicates module preserves legacy predicate behavior", () => {
+  const predicates = createOneTabModelPredicates();
+  const tab = { id: "tab-1", type: "tab" };
+  const folder = { id: "folder-1", type: "group", groupType: "folder" };
+  const windowGroup = { id: "window-1", type: "group", groupType: "window" };
+
+  expect(predicates.hasId("tab-1")(tab)).toBe(true);
+  expect(predicates.doesNotHaveId("tab-2")(tab)).toBe(true);
+  expect(predicates.sameIdAs(tab)({ id: "tab-1" })).toBe(true);
+  expect(predicates.getId(tab)).toBe("tab-1");
+  expect(predicates.isTab(tab)).toBe(true);
+  expect(predicates.isGroup(folder)).toBe(true);
+  expect(predicates.isFolder(folder)).toBe(true);
+  expect(predicates.isFolderOrWindowGroup(windowGroup)).toBe(true);
+  expect(predicates.isBrowserGroup(windowGroup)).toBe(true);
+  expect(predicates.isNotQuickList("window")).toBe(true);
+  expect(predicates.isUndefined(undefined)).toBe(true);
+  expect(predicates.isDefined("value")).toBe(true);
 });
 
 test("migration legacy marker counts do not regress", async () => {
