@@ -18,6 +18,7 @@ import {
 } from "../src/shared/storage-adapters";
 import { createOneTabTextHelpers } from "../src/shared/text-helpers";
 import { createOneTabUrlHelpers } from "../src/shared/url-helpers";
+import { createOneTabUrlQueryCleanup } from "../src/shared/url-query-cleanup";
 
 const testDir = dirname(fileURLToPath(import.meta.url));
 const candidateRoot = resolve(testDir, "..");
@@ -649,6 +650,25 @@ test("typed import helpers module preserves plain URL import behavior", async ()
     (globalThis as any).chrome = originalChrome;
     (globalThis as any).DOMParser = originalDOMParser;
   }
+});
+
+test("typed URL query cleanup module preserves pruning behavior", () => {
+  const { cleanUrlForSearch } = createOneTabUrlQueryCleanup();
+
+  expect(
+    cleanUrlForSearch(
+      "https://www.google.com/search?q=one&utm_source=noisy&tbm=isch&ved=abc#top",
+    ),
+  ).toBe("https://www.google.com/search?q=one&tbm=isch#top");
+  expect(
+    cleanUrlForSearch(
+      "https://example.com/page?title=Useful&gclid=abc&token=0123456789abcdef0123456789abcdef",
+    ),
+  ).toBe("https://example.com/page?title=Useful");
+  expect(cleanUrlForSearch("https://sohu.com/news?spm=track&q=keep")).toBe(
+    "https://sohu.com/news?q=keep",
+  );
+  expect(cleanUrlForSearch("data:text/html;base64,abc")).toBe("data:text/");
 });
 
 test("migration legacy marker counts do not regress", async () => {
