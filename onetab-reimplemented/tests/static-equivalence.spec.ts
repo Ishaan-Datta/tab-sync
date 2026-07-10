@@ -5,6 +5,7 @@ import { Script } from "node:vm";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { glob } from "tinyglobby";
+import { createOneTabCollectionHelpers } from "../src/shared/collection-helpers";
 import { getOneTabDefaultSettings } from "../src/shared/default-settings";
 import { createOneTabModelPredicates } from "../src/shared/model-predicates";
 import {
@@ -366,6 +367,34 @@ test("typed model predicates module preserves legacy predicate behavior", () => 
   expect(predicates.isNotQuickList("window")).toBe(true);
   expect(predicates.isUndefined(undefined)).toBe(true);
   expect(predicates.isDefined("value")).toBe(true);
+});
+
+test("typed collection helpers module preserves helper behavior", () => {
+  const helpers = createOneTabCollectionHelpers();
+  const items = [
+    { group: "b", order: 2 },
+    { group: "a", order: 3 },
+    { group: "a", order: 1 },
+  ];
+
+  expect(
+    [...items].sort(helpers.compareAscendingBy((item) => item.order)),
+  ).toEqual([
+    { group: "a", order: 1 },
+    { group: "b", order: 2 },
+    { group: "a", order: 3 },
+  ]);
+  expect(helpers.range(4)).toEqual([0, 1, 2, 3]);
+  expect(helpers.nthIndexOf(["a", "b", "a"], "a", 1)).toBe(2);
+  expect(helpers.mapBy(items, (item) => item.group).get("b")).toEqual({
+    group: "b",
+    order: 2,
+  });
+  expect(helpers.groupBy(items, (item) => item.group).get("a")).toEqual([
+    { group: "a", order: 3 },
+    { group: "a", order: 1 },
+  ]);
+  expect(helpers.mergeDefined(2, 3, (left, right) => left + right)).toBe(5);
 });
 
 test("migration legacy marker counts do not regress", async () => {

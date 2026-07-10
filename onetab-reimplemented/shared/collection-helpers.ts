@@ -1,7 +1,41 @@
 // Shared collection/comparison helpers extracted from the original bundles.
 (function () {
-  function createOneTabCollectionHelpers() {
-    function combineComparators<T>(...comparators: Array<(left: T, right: T) => number>) {
+  type Comparator<T> = (left: T, right: T) => number;
+
+  interface OneTabCollectionHelpers {
+    combineComparators<T>(...comparators: Array<Comparator<T>>): Comparator<T>;
+    compareAscendingBy<T>(readValue: (item: T) => number): Comparator<T>;
+    compareDescendingBy<T>(readValue: (item: T) => number): Comparator<T>;
+    compareLocaleBy<T>(readValue: (item: T) => string): Comparator<T>;
+    compareLocaleNumericBy<T>(readValue: (item: T) => string): Comparator<T>;
+    groupBy<T, K>(items: T[], readKey: (item: T) => K): Map<K, T[]>;
+    KeyedObjectMap: new (
+      key: string,
+      items?: unknown[],
+    ) => {
+      add(item: any): void;
+      addAll(items: unknown[]): void;
+      readonly list: unknown[];
+      readonly keys: string[];
+    };
+    mapBy<T, K>(items: T[], readKey: (item: T) => K): Map<K, T>;
+    mergeDefined<T>(
+      left: T | undefined,
+      right: T | undefined,
+      merge: (left: T, right: T) => T,
+    ): T | undefined;
+    mergeOwnProperty(
+      source: Record<string, unknown>,
+      target: Record<string, unknown>,
+      key: string,
+      merge: (left: unknown, right: unknown) => unknown,
+    ): void;
+    nthIndexOf<T>(items: T[], item: T, occurrence: number): number;
+    range(length: number): number[];
+  }
+
+  function createOneTabCollectionHelpers(): OneTabCollectionHelpers {
+    function combineComparators<T>(...comparators: Array<Comparator<T>>) {
       return (left: T, right: T) =>
         comparators.reduce(
           (result, comparator) => result || comparator(left, right),
@@ -19,7 +53,9 @@
 
     function compareLocaleBy<T>(readValue: (item: T) => string) {
       return (left: T, right: T) =>
-        readValue(left).localeCompare(readValue(right), void 0, { Cu: "base" } as any);
+        readValue(left).localeCompare(readValue(right), void 0, {
+          Cu: "base",
+        } as any);
     }
 
     function compareLocaleNumericBy<T>(readValue: (item: T) => string) {
@@ -30,14 +66,23 @@
         } as any);
     }
 
-    function mergeOwnProperty(source: any, target: any, key: string, merge: (left: any, right: any) => any) {
+    function mergeOwnProperty(
+      source: Record<string, unknown>,
+      target: Record<string, unknown>,
+      key: string,
+      merge: (left: unknown, right: unknown) => unknown,
+    ) {
       Object.hasOwn(source, key) &&
         (Object.hasOwn(target, key)
           ? (target[key] = merge(source[key], target[key]))
           : (target[key] = source[key]));
     }
 
-    function mergeDefined(left: any, right: any, merge: (left: any, right: any) => any) {
+    function mergeDefined<T>(
+      left: T | undefined,
+      right: T | undefined,
+      merge: (left: T, right: T) => T,
+    ) {
       return left !== void 0 && right !== void 0
         ? merge(left, right)
         : (left ?? right);
@@ -77,9 +122,9 @@
 
     class KeyedObjectMap {
       key: string;
-      map: Record<string, any>;
+      map: Record<string, unknown>;
 
-      constructor(key: string, items: any[] = []) {
+      constructor(key: string, items: unknown[] = []) {
         this.key = key;
         this.map = {};
         this.addAll(items);
@@ -94,7 +139,7 @@
         (this.map as any)(item[this.key]) || (this.map[item[this.key]] = item);
       }
 
-      addAll(items: any[]) {
+      addAll(items: unknown[]) {
         items.forEach((item) => this.add(item));
       }
 
@@ -123,5 +168,6 @@
     };
   }
 
-  (globalThis as any).createOneTabCollectionHelpers = createOneTabCollectionHelpers;
+  (globalThis as any).createOneTabCollectionHelpers =
+    createOneTabCollectionHelpers;
 })();
