@@ -1,5 +1,35 @@
 // Shared import parsing helpers extracted from the original bundles.
 (function () {
+  interface OneTabImportHelperDependencies {
+    combineComparators<T>(
+      ...comparators: Array<(left: T, right: T) => number>
+    ): (left: T, right: T) => number;
+    compareAscendingBy<T>(
+      callback: (item: T) => unknown,
+    ): (left: T, right: T) => number;
+    compareDescendingBy<T>(
+      callback: (item: T) => unknown,
+    ): (left: T, right: T) => number;
+    equalIgnoringProtocol(left: string, right: string | undefined): boolean;
+    normalizeImportedText(value: unknown): string;
+    normalizeText(value: string | null | undefined): string;
+    safeNonJavascriptUrl(value: string): string | undefined;
+    stripProtocol(value: string | undefined): string;
+    trimTrailingDotOrComma(value: string): string;
+  }
+
+  interface OneTabImportedTabItem {
+    kt: string | undefined;
+    title?: string;
+    url?: string;
+    Zo?: string[];
+    Ja?: string;
+  }
+
+  interface OneTabImportHelpers {
+    parseImportedTabGroups(source: string): Promise<OneTabImportedTabItem[][]>;
+  }
+
   const blockTextElements = [
     "address",
     "article",
@@ -64,10 +94,10 @@
     safeNonJavascriptUrl,
     stripProtocol,
     trimTrailingDotOrComma,
-  }: any) {
+  }: OneTabImportHelperDependencies): OneTabImportHelpers {
     async function parseImportedTabGroups(source: string) {
       const parsed = new DOMParser().parseFromString(source, "text/html");
-      let titlesByUrl = new Map(
+      let titlesByUrl = new Map<string | undefined, string | undefined>(
           (await chrome.tabs.query({})).map((tab: any) => [tab.url, tab.title]),
         ),
         linkItems: any[];
@@ -132,7 +162,7 @@ ${flattenText(child)}`
             .map((line) => normalizeText(line))
             .filter((line) => line.trim());
         if (lines.every((line) => urlWithOptionalTitle.test(line))) {
-        let groups: any[][] = [[]];
+          let groups: any[][] = [[]];
           if (
             (text
               .split(
@@ -146,11 +176,11 @@ ${flattenText(child)}`
                 else {
                   let match = line.match(urlWithOptionalTitle);
                   if (match) {
-                    let url = safeNonJavascriptUrl(match.groups.url);
+                    let url = safeNonJavascriptUrl(match.groups!.url);
                     if (url) {
                       let title =
-                          match.groups.title ||
-                          titlesByUrl.get(match.groups.url) ||
+                          match.groups!.title ||
+                          titlesByUrl.get(match.groups!.url) ||
                           stripProtocol(url),
                         item = { kt: url, title };
                       groups[groups.length - 1].push(item);
@@ -188,10 +218,10 @@ ${flattenText(child)}`
           urls = lines
             .flatMap((line) =>
               [...line.matchAll(urlInText)].map((match) =>
-                safeNonJavascriptUrl(trimTrailingDotOrComma(match.groups.url)),
+                safeNonJavascriptUrl(trimTrailingDotOrComma(match.groups!.url)),
               ),
             )
-            .filter((url) => url);
+            .filter((url): url is string => !!url);
         return (
           (urls = [...new Set(urls)]),
           urls.length > items.length

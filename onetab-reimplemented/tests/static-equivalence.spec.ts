@@ -8,6 +8,7 @@ import { glob } from "tinyglobby";
 import { createOneTabCollectionHelpers } from "../src/shared/collection-helpers";
 import { getOneTabDefaultSettings } from "../src/shared/default-settings";
 import { createOneTabDomTransitionHelpers } from "../src/shared/dom-transition-helpers";
+import { createOneTabImportHelpers } from "../src/shared/import-helpers";
 import { createOneTabModelPredicates } from "../src/shared/model-predicates";
 import { createOneTabRuntimeHelpers } from "../src/shared/runtime-helpers";
 import { createOneTabSearchHelpers } from "../src/shared/search-helpers";
@@ -593,6 +594,61 @@ test("typed URL helpers module preserves comparison and safety behavior", () => 
     "https://example.com/a",
   );
   expect(helpers.safeNonJavascriptUrl("javascript:alert(1)")).toBeUndefined();
+});
+
+test("typed import helpers module preserves plain URL import behavior", async () => {
+  const originalChrome = (globalThis as any).chrome;
+  const originalDOMParser = (globalThis as any).DOMParser;
+  (globalThis as any).chrome = { tabs: { query: async () => [] } };
+  (globalThis as any).DOMParser = class {
+    parseFromString(source: string) {
+      return {
+        querySelectorAll: () => [],
+        documentElement: {
+          childNodes: [{ nodeType: 3, textContent: source }],
+        },
+      };
+    }
+  };
+
+  try {
+    const helpers = createOneTabImportHelpers({
+      combineComparators:
+        (...comparators) =>
+        (left, right) =>
+          comparators.reduce(
+            (result, comparator) => result || comparator(left, right),
+            0,
+          ),
+      compareAscendingBy: (callback) => (left, right) =>
+        Number(String(callback(left)) > String(callback(right))) -
+        Number(String(callback(left)) < String(callback(right))),
+      compareDescendingBy: (callback) => (left, right) =>
+        Number(String(callback(left)) < String(callback(right))) -
+        Number(String(callback(left)) > String(callback(right))),
+      equalIgnoringProtocol: (left, right) =>
+        left.replace(/^\w+:\/\//, "") ===
+        (right ?? "").replace(/^\w+:\/\//, ""),
+      normalizeImportedText: (value) => String(value).replace(/\r\n?/g, "\n"),
+      normalizeText: (value) => String(value ?? "").trim(),
+      safeNonJavascriptUrl: (value) =>
+        value.toLowerCase().startsWith("javascript:") ? undefined : value,
+      stripProtocol: (value) => (value ?? "").replace(/^\w+:\/\//, ""),
+      trimTrailingDotOrComma: (value) => value.replace(/[.,]$/, ""),
+    });
+
+    await expect(
+      helpers.parseImportedTabGroups(
+        "https://example.com | Example\n\nhttps://example.org",
+      ),
+    ).resolves.toEqual([
+      [{ kt: "https://example.com", title: "Example" }],
+      [{ kt: "https://example.org", title: "example.org" }],
+    ]);
+  } finally {
+    (globalThis as any).chrome = originalChrome;
+    (globalThis as any).DOMParser = originalDOMParser;
+  }
 });
 
 test("migration legacy marker counts do not regress", async () => {
