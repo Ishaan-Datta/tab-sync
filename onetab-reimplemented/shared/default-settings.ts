@@ -1,6 +1,49 @@
 // Shared OneTab settings defaults extracted from the original bundles.
 (function () {
-  const defaults = {
+  interface OneTabDefaultSettings {
+    startupLaunch: string;
+    browserAction: string;
+    pinnedTabs: string;
+    duplicates: string;
+    lastManualPopupSectionSelection: string;
+    popupIncludePinnedTabs: string;
+    popupIncludeGroupedTabs: string;
+    popupIncludeAlreadyStoredTabs: string;
+    popupOpenOneTabAfterStoringTabs: string;
+    popupDontClosePinnedTabs: string;
+    popupDontCloseGroupedTabs: string;
+    popupDontCloseTabsFromExcludedDomains: string;
+    popupMergeCloseTabsAfter: string;
+    navColWidth: string;
+    navColExpanded: string;
+    quickAccessColWidth: string;
+    quickAccessColExpanded: string;
+    quickAccessColSection: string;
+    oneTabTabPinned: string;
+    "popupCreateNewGroupInside-tab": string;
+    "popupCreateNewGroupInside-tabGroup": string;
+    "popupCreateNewGroupInside-window": string;
+    urlDisplay: string;
+    theme: string;
+    defaultWindowGroupOpenType: string;
+    autoActionOnOpen: string;
+    switchToOpenedTab: string;
+    displayContextMenu: string;
+    discardNonActiveTabOnOpen: string;
+    navColTreeFilter: {
+      namedOnly: boolean;
+      foldersOnly: boolean;
+      hideArchived: boolean;
+    };
+    copyToClipboardFormat: string;
+    moveOneTabToCurrentWindowOnOpen: string;
+    shareExpiryPeriod: string;
+    shareIncludeNotes: string;
+    shareIncludeRatings: string;
+    v2HelpShown: string;
+  }
+
+  const defaults: OneTabDefaultSettings = {
     startupLaunch: "displayOneTab",
     browserAction: "sendTabsInWindow",
     pinnedTabs: "ignore",
@@ -43,10 +86,11 @@
     v2HelpShown: "false",
   };
 
-  (globalThis as any).getOneTabDefaultSettings = function getOneTabDefaultSettings() {
-    return {
-      ...defaults,
-      navColTreeFilter: { ...defaults.navColTreeFilter },
+  (globalThis as any).getOneTabDefaultSettings =
+    function getOneTabDefaultSettings(): OneTabDefaultSettings {
+      return {
+        ...defaults,
+        navColTreeFilter: { ...defaults.navColTreeFilter },
+      };
     };
-  };
 })();

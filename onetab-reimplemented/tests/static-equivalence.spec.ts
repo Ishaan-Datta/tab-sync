@@ -5,6 +5,7 @@ import { Script } from "node:vm";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { glob } from "tinyglobby";
+import { getOneTabDefaultSettings } from "../src/shared/default-settings";
 
 const testDir = dirname(fileURLToPath(import.meta.url));
 const candidateRoot = resolve(testDir, "..");
@@ -312,6 +313,17 @@ const sharedIconAtlasConsumers = new Set([
   "ext-onetab-concatenated-sources-onetab.js",
   "ext-onetab-concatenated-sources-popup.js",
 ]);
+
+test("typed default settings module returns isolated defaults", () => {
+  const settings = getOneTabDefaultSettings();
+  settings.navColTreeFilter.namedOnly = false;
+
+  expect(getOneTabDefaultSettings().navColTreeFilter).toEqual({
+    namedOnly: true,
+    foldersOnly: false,
+    hideArchived: false,
+  });
+});
 
 test("migration legacy marker counts do not regress", async () => {
   const sourceFiles = await glob(migrationSourceGlobs, {
