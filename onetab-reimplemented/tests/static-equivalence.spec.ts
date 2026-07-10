@@ -13,6 +13,23 @@ const candidateArtifactRoot = resolve(
   process.env.ONETAB_CANDIDATE_EXTENSION_PATH ?? ".output/chrome-mv3",
 );
 
+const migrationMarkerBaselines = {
+  tsNocheck: 4,
+  tsIgnore: 370,
+  withDeps: 8,
+  globalBundleHooks: 129,
+  concatenatedSourceReferences: 15,
+};
+
+const migrationSourceGlobs = [
+  "*.html",
+  "*.json",
+  "*.ts",
+  "ext-onetab-concatenated-sources-*.ts",
+  "shared/**/*.ts",
+  "src/**/*.ts",
+];
+
 const extensionPages = [
   "popup.html",
   "onetab.html",
@@ -295,6 +312,39 @@ const sharedIconAtlasConsumers = new Set([
   "ext-onetab-concatenated-sources-onetab.js",
   "ext-onetab-concatenated-sources-popup.js",
 ]);
+
+test("migration legacy marker counts do not regress", async () => {
+  const sourceFiles = await glob(migrationSourceGlobs, {
+    cwd: candidateRoot,
+    expandDirectories: false,
+  });
+
+  const sources = await Promise.all(
+    sourceFiles.map(async (file) =>
+      readFile(resolve(candidateRoot, file), "utf8"),
+    ),
+  );
+  const source = sources.join("\n");
+
+  expect(countMatches(source, /@ts-nocheck/g)).toBeLessThanOrEqual(
+    migrationMarkerBaselines.tsNocheck,
+  );
+  expect(countMatches(source, /@ts-ignore/g)).toBeLessThanOrEqual(
+    migrationMarkerBaselines.tsIgnore,
+  );
+  expect(countMatches(source, /\bwith\s*\(\s*deps\s*\)/g)).toBeLessThanOrEqual(
+    migrationMarkerBaselines.withDeps,
+  );
+  expect(
+    countMatches(
+      source,
+      /(?:globalThis|\(globalThis as any\))\.(?:runOneTab[A-Za-z]+Bundle|createOneTab[A-Za-z]+)/g,
+    ),
+  ).toBeLessThanOrEqual(migrationMarkerBaselines.globalBundleHooks);
+  expect(
+    countMatches(source, /ext-onetab-concatenated-sources/g),
+  ).toBeLessThanOrEqual(migrationMarkerBaselines.concatenatedSourceReferences);
+});
 
 for (const file of concatenatedFiles) {
   test(`${file} preserves syntax and runtime literals`, async () => {
@@ -598,6 +648,10 @@ function extractStringLiterals(source: string) {
         literal !== "shared/popup.js",
     )
     .sort();
+}
+
+function countMatches(source: string, pattern: RegExp) {
+  return [...source.matchAll(pattern)].length;
 }
 
 function collectAstValues(
