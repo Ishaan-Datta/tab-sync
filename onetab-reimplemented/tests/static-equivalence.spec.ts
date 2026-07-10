@@ -2,6 +2,7 @@ import { expect, test } from "@playwright/test";
 import { parse } from "@babel/parser";
 import { access, readFile } from "node:fs/promises";
 import { Script } from "node:vm";
+import { createOneTabCommonBundleHelpers } from "../src/shared/common-bundle-helpers";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { glob } from "tinyglobby";
@@ -650,6 +651,57 @@ test("typed import helpers module preserves plain URL import behavior", async ()
     (globalThis as any).chrome = originalChrome;
     (globalThis as any).DOMParser = originalDOMParser;
   }
+});
+
+test("typed common bundle helpers module preserves collection and URL behavior", async () => {
+  const store: Record<string, any> = {};
+  const helpers = createOneTabCommonBundleHelpers({
+    extensionRootUrl: "chrome-extension://abc/",
+    getCoreProxy: () => ({
+      _e: async (key) => store[key],
+      Ve: async (key, value) => {
+        store[key] = value;
+      },
+      Bu: async (key) => {
+        delete store[key];
+      },
+    }),
+    isNewOrBlankTabPageUrl: (url) => url === "chrome://newtab/",
+    isPlaceholderUrl: (url) =>
+      url === "chrome-extension://abc/placeholder.html",
+  });
+
+  expect(helpers.filterToSet(["a", "b", "c"], ["b", "c"])).toEqual(["b", "c"]);
+  expect(
+    helpers.filterNested([1, [2, 3], [4]], (value) => value % 2 === 1),
+  ).toEqual([1, [3]]);
+  expect(helpers.not((value: number) => value > 1)(1)).toBe(true);
+  expect(helpers.partition([1, 2, 3], (value) => value % 2 === 1)).toEqual([
+    [1, 3],
+    [2],
+  ]);
+  expect(
+    helpers.partitionMany(
+      [1, 2, 3],
+      [(value) => value === 1, (value) => value === 3],
+    ),
+  ).toEqual([[1], [3], [2]]);
+  await expect(
+    helpers.asyncPartition([1, 2, 3], async (value) => value > 1),
+  ).resolves.toEqual([[2, 3], [1]]);
+  expect(helpers.isExcludedUrl("javascript:alert(1)")).toBe(true);
+  expect(helpers.isExcludedUrl("chrome-extension://abc/placeholder.html")).toBe(
+    false,
+  );
+  await expect(
+    helpers.saveUncommittedChanges("item", {
+      label: "New",
+      ignored: undefined,
+    }),
+  ).resolves.toEqual({ label: "New" });
+  await expect(helpers.getUncommittedChanges("item")).resolves.toEqual({
+    label: "New",
+  });
 });
 
 test("typed URL query cleanup module preserves pruning behavior", () => {
