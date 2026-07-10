@@ -11,6 +11,7 @@ import { getOneTabDefaultSettings } from "../src/shared/default-settings";
 import { createOneTabDomTransitionHelpers } from "../src/shared/dom-transition-helpers";
 import { createOneTabImportHelpers } from "../src/shared/import-helpers";
 import { createOneTabModelPredicates } from "../src/shared/model-predicates";
+import { createOneTabPageCommon } from "../src/shared/page-common";
 import { createOneTabRuntimeHelpers } from "../src/shared/runtime-helpers";
 import { createOneTabSearchHelpers } from "../src/shared/search-helpers";
 import {
@@ -702,6 +703,75 @@ test("typed common bundle helpers module preserves collection and URL behavior",
   await expect(helpers.getUncommittedChanges("item")).resolves.toEqual({
     label: "New",
   });
+});
+
+test("typed page common module preserves localization and group labels", async () => {
+  const originalChrome = (globalThis as any).chrome;
+  (globalThis as any).chrome = {
+    i18n: {
+      getMessage: (key: string) =>
+        ({
+          localeId: "fr_FR",
+          tabCount_one: "{COUNT} onglet",
+          tabCount_other: "{COUNT} onglets",
+        })[key] ?? "",
+    },
+  };
+
+  try {
+    const root = { id: "root", type: "group", label: "" };
+    const folder = {
+      id: "folder",
+      type: "group",
+      groupType: "folder",
+      label: "",
+    };
+    const windowGroup = { id: "window", type: "group", label: "" };
+    const cache = {
+      v: (id: string) => ({ root, folder, window: windowGroup })[id],
+      Xi: (id: string) => (id === "window" ? 3 : 0),
+      Hn: async () => [root, folder, windowGroup],
+    };
+    const helpers = createOneTabPageCommon({
+      websiteUrl: "https://www.one-tab.com",
+      translate: (key) =>
+        ({ all: "All", trash: "Trash", untitled: "Untitled" })[key] ?? key,
+      tabCount: (count) => `${count} tabs`,
+      isRoot: (item) => item?.id === "root",
+      isTrash: (item) => item?.id === "trash",
+      isFolder: (item) => item?.groupType === "folder",
+      isMicrosoftEdge: () => false,
+    });
+
+    expect(helpers.localeId()).toBe("fr-FR");
+    expect(helpers.localizedPathPrefix()).toBe("fr-FR/");
+    expect(helpers.helpUrl()).toBe("https://www.one-tab.com/fr-FR/help");
+    expect(helpers.pluralize("tabCount", 2)).toBe("2 onglets");
+    expect(helpers.isJson('{"ok":true}')).toBe(true);
+    expect(helpers.isJson("not json")).toBe(false);
+    expect(helpers.groupDisplayLabel({ groupId: "folder", h: cache })).toBe(
+      "Untitled",
+    );
+    expect(helpers.groupDisplayLabel({ groupId: "window", h: cache })).toBe(
+      "3 tabs",
+    );
+    await expect(
+      helpers.groupPathLabel({ h: cache, itemId: "window", Qo: null }),
+    ).resolves.toBe("Untitled  ➝  3 tabs");
+    expect(
+      helpers.splitOversized({
+        Ep: 2,
+        Fp: [{ id: "a", chunks: [1, 2, 3] }],
+        jp: (entry) => entry.chunks,
+        Bp: ({ Cp: index, Hp: chunks }) => ({ index, chunks }),
+      }),
+    ).toEqual([
+      { index: 0, chunks: [1, 2] },
+      { index: 2, chunks: [3] },
+    ]);
+  } finally {
+    (globalThis as any).chrome = originalChrome;
+  }
 });
 
 test("typed URL query cleanup module preserves pruning behavior", () => {
