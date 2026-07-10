@@ -8,6 +8,7 @@ import { glob } from "tinyglobby";
 import { createOneTabCollectionHelpers } from "../src/shared/collection-helpers";
 import { getOneTabDefaultSettings } from "../src/shared/default-settings";
 import { createOneTabModelPredicates } from "../src/shared/model-predicates";
+import { createOneTabRuntimeHelpers } from "../src/shared/runtime-helpers";
 import {
   createOneTabLocalStorageAdapter,
   createOneTabSessionStorageAdapter,
@@ -395,6 +396,42 @@ test("typed collection helpers module preserves helper behavior", () => {
     { group: "a", order: 1 },
   ]);
   expect(helpers.mergeDefined(2, 3, (left, right) => left + right)).toBe(5);
+});
+
+test("typed runtime helpers module preserves helper behavior", () => {
+  const helpers = createOneTabRuntimeHelpers();
+  const ownPropertyValues: unknown[] = [];
+  const definedValues: unknown[] = [];
+
+  helpers.callIfOwnProperty({ value: 1 }, "value", (value) => {
+    ownPropertyValues.push(value);
+  });
+  helpers.callIfDefined("defined", (value) => {
+    definedValues.push(value);
+  });
+
+  expect(helpers.replaceValueDeep({ a: [1, 2] }, 2, "two")).toEqual({
+    a: [1, "two"],
+  });
+  expect(
+    helpers.mergeObjectsWithSeparators([{ a: 1 }, null, { b: 2 }], () => "|"),
+  ).toEqual({
+    a: 1,
+    separator0: "|",
+    b: 2,
+  });
+  expect(helpers.intersperse(["a", "b", "c"], () => "|")).toEqual([
+    "a",
+    "|",
+    "b",
+    "|",
+    "c",
+  ]);
+  expect(helpers.applyValue(2, (value) => value + 1)).toBe(3);
+  expect(helpers.applyIfTruthy("x", (value) => value.toUpperCase())).toBe("X");
+  expect(helpers.joinUniqueTrimmed(",", " a ", "a", "", " b ")).toBe("a,a,b");
+  expect(ownPropertyValues).toEqual([1]);
+  expect(definedValues).toEqual(["defined"]);
 });
 
 test("migration legacy marker counts do not regress", async () => {

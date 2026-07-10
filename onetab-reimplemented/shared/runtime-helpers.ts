@@ -1,11 +1,45 @@
 // Shared runtime helpers extracted from the original bundles.
 (function () {
-  function createOneTabRuntimeHelpers() {
+  interface OneTabRuntimeHelpers {
+    applyIfTruthy<T, R>(value: T, callback: (value: T) => R): R | undefined;
+    applyValue<T, R>(value: T, callback: (value: T) => R): R;
+    callIfDefined<T>(value: T | undefined, callback: (value: T) => void): void;
+    callIfOwnProperty(
+      source: Record<string, unknown>,
+      key: string,
+      callback: (value: unknown) => void,
+    ): void;
+    delay(ms: number): Promise<unknown>;
+    intersperse<T, S>(items: T[], createSeparator: () => S): Array<T | S>;
+    isBrave(): boolean | undefined;
+    isMicrosoftEdge(): boolean | undefined;
+    isOpera(): boolean | undefined;
+    joinUniqueTrimmed(
+      separator: string,
+      ...values: string[]
+    ): string | undefined;
+    mergeObjectsWithSeparators(
+      items: Array<Record<string, unknown> | undefined | null | false>,
+      createSeparator: () => unknown,
+    ): Record<string, unknown>;
+    replaceValueDeep(
+      value: unknown,
+      searchValue: unknown,
+      replacementValue: unknown,
+    ): unknown;
+    unsleepTab(tab: { id?: number; windowId: number }): Promise<void>;
+  }
+
+  function createOneTabRuntimeHelpers(): OneTabRuntimeHelpers {
     async function delay(ms: number) {
       return new Promise((resolve) => setTimeout(resolve, ms));
     }
 
-    function replaceValueDeep(value: any, searchValue: unknown, replacementValue: unknown): any {
+    function replaceValueDeep(
+      value: any,
+      searchValue: unknown,
+      replacementValue: unknown,
+    ): any {
       return Array.isArray(value)
         ? value.map((item) =>
             replaceValueDeep(item, searchValue, replacementValue),
@@ -52,7 +86,10 @@
         : console.log("unsleepTab: No active tab found");
     }
 
-    function mergeObjectsWithSeparators(items: any[], createSeparator: () => any) {
+    function mergeObjectsWithSeparators(
+      items: Array<Record<string, unknown> | undefined | null | false>,
+      createSeparator: () => unknown,
+    ) {
       items = items.filter((item) => item);
       let result = {};
       for (let index = 0; index < items.length; index++) {
@@ -67,8 +104,8 @@
       return result;
     }
 
-    function intersperse(items: any[], createSeparator: () => any) {
-      const result = [];
+    function intersperse<T, S>(items: T[], createSeparator: () => S) {
+      const result: Array<T | S> = [];
       for (let index = 0; index < items.length; index++) {
         result.push(items[index]);
         index < items.length - 1 && result.push(createSeparator());
@@ -76,11 +113,18 @@
       return result;
     }
 
-    function callIfOwnProperty(source: any, key: string, callback: (value: any) => void) {
+    function callIfOwnProperty(
+      source: Record<string, unknown>,
+      key: string,
+      callback: (value: unknown) => void,
+    ) {
       Object.hasOwn(source, key) && callback(source[key]);
     }
 
-    function callIfDefined(value: any, callback: (value: any) => void) {
+    function callIfDefined<T>(
+      value: T | undefined,
+      callback: (value: T) => void,
+    ) {
       value !== void 0 && callback(value);
     }
 
