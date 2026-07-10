@@ -15,6 +15,7 @@ import {
   createOneTabLocalStorageAdapter,
   createOneTabSessionStorageAdapter,
 } from "../src/shared/storage-adapters";
+import { createOneTabTextHelpers } from "../src/shared/text-helpers";
 
 const testDir = dirname(fileURLToPath(import.meta.url));
 const candidateRoot = resolve(testDir, "..");
@@ -545,6 +546,17 @@ test("typed DOM transition helpers module preserves class behavior", async ({
       fadeInTransition: false,
     },
   });
+});
+
+test("typed text helpers module preserves import normalization behavior", () => {
+  const helpers = createOneTabTextHelpers();
+
+  expect(helpers.normalizeImportedText(null)).toBe("");
+  expect(
+    helpers.normalizeImportedText(
+      "Ａ\u00a0B\u200b\r\nline with tabs\t \rnext\t",
+    ),
+  ).toBe("A B\nline with tabs\nnext");
 });
 
 test("migration legacy marker counts do not regress", async () => {

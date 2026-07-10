@@ -1,6 +1,10 @@
 // Shared text normalization helpers extracted from the original bundles.
 (function () {
-  function createOneTabTextHelpers() {
+  interface OneTabTextHelpers {
+    normalizeImportedText(value: unknown): string;
+  }
+
+  function createOneTabTextHelpers(): OneTabTextHelpers {
     function normalizeImportedText(value: unknown) {
       if (value == null) return "";
       let text = String(value);
