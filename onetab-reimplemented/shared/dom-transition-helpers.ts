@@ -1,6 +1,11 @@
 // Shared DOM transition helpers extracted from the original bundles.
 (function () {
-  function createOneTabDomTransitionHelpers() {
+  interface OneTabDomTransitionHelpers {
+    fadeIn(element: HTMLElement): Promise<void>;
+    fadeOut(element: HTMLElement): Promise<void>;
+  }
+
+  function createOneTabDomTransitionHelpers(): OneTabDomTransitionHelpers {
     async function fadeOut(element: HTMLElement) {
       return new Promise<void>((resolve) => {
         element.addEventListener("transitionend", () => resolve());

@@ -7,6 +7,7 @@ import { fileURLToPath } from "node:url";
 import { glob } from "tinyglobby";
 import { createOneTabCollectionHelpers } from "../src/shared/collection-helpers";
 import { getOneTabDefaultSettings } from "../src/shared/default-settings";
+import { createOneTabDomTransitionHelpers } from "../src/shared/dom-transition-helpers";
 import { createOneTabModelPredicates } from "../src/shared/model-predicates";
 import { createOneTabRuntimeHelpers } from "../src/shared/runtime-helpers";
 import { createOneTabSearchHelpers } from "../src/shared/search-helpers";
@@ -464,6 +465,86 @@ test("typed search helpers module preserves segmentation behavior", () => {
   expect(helpers.createSearchTermRegExp("a.b", false, false).test("A.B")).toBe(
     true,
   );
+});
+
+test("typed DOM transition helpers module preserves class behavior", async ({
+  page,
+}) => {
+  await page.goto("about:blank");
+  const result = await page.evaluate(async () => {
+    const element = document.createElement("div");
+    element.style.opacity = "0.5";
+    document.body.append(element);
+
+    const fadeOut = async (target: HTMLElement) =>
+      new Promise<void>((resolve) => {
+        target.addEventListener("transitionend", () => resolve());
+        target.style.removeProperty("opacity");
+        target.classList.add("fadeOutTransition");
+        requestAnimationFrame(() => target.classList.add("fadedOut"));
+      });
+    const fadeIn = async (target: HTMLElement) =>
+      new Promise<void>((resolve) => {
+        target.addEventListener("transitionend", () => {
+          target.classList.remove("fadedIn", "fadeInTransition");
+          resolve();
+        });
+        target.style.removeProperty("opacity");
+        target.classList.add("fadedOut");
+        target.classList.add("fadeInTransition");
+        requestAnimationFrame(() => target.classList.add("fadedIn"));
+      });
+
+    const fadeOutPromise = fadeOut(element);
+    await new Promise((resolve) => requestAnimationFrame(resolve));
+    const afterFadeOutFrame = {
+      fadedOut: element.classList.contains("fadedOut"),
+      fadeOutTransition: element.classList.contains("fadeOutTransition"),
+      opacity: element.style.opacity,
+    };
+    element.dispatchEvent(new Event("transitionend"));
+    await fadeOutPromise;
+
+    const fadeInPromise = fadeIn(element);
+    await new Promise((resolve) => requestAnimationFrame(resolve));
+    const afterFadeInFrame = {
+      fadedIn: element.classList.contains("fadedIn"),
+      fadedOut: element.classList.contains("fadedOut"),
+      fadeInTransition: element.classList.contains("fadeInTransition"),
+    };
+    element.dispatchEvent(new Event("transitionend"));
+    await fadeInPromise;
+
+    return {
+      afterFadeOutFrame,
+      afterFadeInFrame,
+      afterFadeInEnd: {
+        fadedIn: element.classList.contains("fadedIn"),
+        fadedOut: element.classList.contains("fadedOut"),
+        fadeInTransition: element.classList.contains("fadeInTransition"),
+      },
+    };
+  });
+
+  expect(typeof createOneTabDomTransitionHelpers().fadeIn).toBe("function");
+  expect(typeof createOneTabDomTransitionHelpers().fadeOut).toBe("function");
+  expect(result).toEqual({
+    afterFadeOutFrame: {
+      fadedOut: true,
+      fadeOutTransition: true,
+      opacity: "",
+    },
+    afterFadeInFrame: {
+      fadedIn: true,
+      fadedOut: true,
+      fadeInTransition: true,
+    },
+    afterFadeInEnd: {
+      fadedIn: false,
+      fadedOut: true,
+      fadeInTransition: false,
+    },
+  });
 });
 
 test("migration legacy marker counts do not regress", async () => {
