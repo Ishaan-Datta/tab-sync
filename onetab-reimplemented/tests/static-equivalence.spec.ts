@@ -9,6 +9,7 @@ import { createOneTabCollectionHelpers } from "../src/shared/collection-helpers"
 import { getOneTabDefaultSettings } from "../src/shared/default-settings";
 import { createOneTabModelPredicates } from "../src/shared/model-predicates";
 import { createOneTabRuntimeHelpers } from "../src/shared/runtime-helpers";
+import { createOneTabSearchHelpers } from "../src/shared/search-helpers";
 import {
   createOneTabLocalStorageAdapter,
   createOneTabSessionStorageAdapter,
@@ -432,6 +433,37 @@ test("typed runtime helpers module preserves helper behavior", () => {
   expect(helpers.joinUniqueTrimmed(",", " a ", "a", "", " b ")).toBe("a,a,b");
   expect(ownPropertyValues).toEqual([1]);
   expect(definedValues).toEqual(["defined"]);
+});
+
+test("typed search helpers module preserves segmentation behavior", () => {
+  const helpers = createOneTabSearchHelpers();
+
+  expect(
+    helpers.splitSearchTextWithTerm("Alpha beta alpha", "alpha", false, false),
+  ).toEqual([
+    { s: "", tt: 0 },
+    { s: "Alpha", tt: 1 },
+    { s: " beta ", tt: 0 },
+    { s: "alpha", tt: 1 },
+    { s: "", tt: 0 },
+  ]);
+  expect(
+    helpers.splitSearchText({
+      text: "one two three",
+      ti: ["three", "one"],
+      ei: false,
+      ii: false,
+    }),
+  ).toEqual([
+    { s: "", tt: 0 },
+    { s: "one", tt: 1 },
+    { s: " two ", tt: 0 },
+    { s: "three", tt: 1 },
+    { s: "", tt: 0 },
+  ]);
+  expect(helpers.createSearchTermRegExp("a.b", false, false).test("A.B")).toBe(
+    true,
+  );
 });
 
 test("migration legacy marker counts do not regress", async () => {
