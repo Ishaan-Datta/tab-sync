@@ -16,6 +16,7 @@ import {
   createOneTabSessionStorageAdapter,
 } from "../src/shared/storage-adapters";
 import { createOneTabTextHelpers } from "../src/shared/text-helpers";
+import { createOneTabUrlHelpers } from "../src/shared/url-helpers";
 
 const testDir = dirname(fileURLToPath(import.meta.url));
 const candidateRoot = resolve(testDir, "..");
@@ -557,6 +558,41 @@ test("typed text helpers module preserves import normalization behavior", () => 
       "Ａ\u00a0B\u200b\r\nline with tabs\t \rnext\t",
     ),
   ).toBe("A B\nline with tabs\nnext");
+});
+
+test("typed URL helpers module preserves comparison and safety behavior", () => {
+  const helpers = createOneTabUrlHelpers({
+    normalizeText: (value) => value.trim(),
+    normalizeUrl: (value) => new URL(value).href,
+  });
+
+  expect(helpers.trimTrailingDotOrComma("example.com,")).toBe("example.com");
+  expect(helpers.substringAfter("https://example.com", "://")).toBe(
+    "example.com",
+  );
+  expect(helpers.stripProtocol("https://example.com/path")).toBe(
+    "example.com/path",
+  );
+  expect(
+    helpers.equalIgnoringProtocol("https://example.com", "http://example.com"),
+  ).toBe(true);
+  expect(helpers.safeNormalizeText(123)).toBe("");
+  expect(helpers.canonicalizeTextAsUrl(" example.com/")).toBe("example.com");
+  expect(helpers.areUrlLikeEqual("example.com", "https://example.com/")).toBe(
+    true,
+  );
+  expect(helpers.isYouTubeUrl("https://m.youtube.com/watch?v=1")).toBe(true);
+  expect(
+    helpers.shouldUseCandidateUrl(
+      "youtube",
+      "https://youtu.be/abc",
+      "https://example.com",
+    ),
+  ).toBe(true);
+  expect(helpers.safeNonJavascriptUrl("https://example.com/a")).toBe(
+    "https://example.com/a",
+  );
+  expect(helpers.safeNonJavascriptUrl("javascript:alert(1)")).toBeUndefined();
 });
 
 test("migration legacy marker counts do not regress", async () => {

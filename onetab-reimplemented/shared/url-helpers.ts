@@ -1,6 +1,31 @@
 // Shared URL comparison helpers extracted from the original bundles.
 (function () {
-  function createOneTabUrlHelpers({ normalizeText, normalizeUrl }: { normalizeText: (value: string) => string; normalizeUrl: (value: string) => string }) {
+  interface OneTabUrlHelperDependencies {
+    normalizeText(value: string): string;
+    normalizeUrl(value: string): string;
+  }
+
+  interface OneTabUrlHelpers {
+    trimTrailingDotOrComma(value: string): string;
+    substringAfter(value: string, marker: string): string;
+    stripProtocol(value: string): string;
+    equalIgnoringProtocol(left: string, right: string): boolean;
+    safeNormalizeText(value: unknown): string;
+    canonicalizeTextAsUrl(value: string): string;
+    areUrlLikeEqual(left: unknown, right: unknown): boolean;
+    isYouTubeUrl(value: string): boolean;
+    shouldUseCandidateUrl(
+      current: unknown,
+      target: string,
+      candidate: unknown,
+    ): boolean;
+    safeNonJavascriptUrl(value: string): string | undefined;
+  }
+
+  function createOneTabUrlHelpers({
+    normalizeText,
+    normalizeUrl,
+  }: OneTabUrlHelperDependencies): OneTabUrlHelpers {
     function trimTrailingDotOrComma(value: string) {
       return (
         [...".,"].some((suffix) => value.endsWith(suffix)) &&
@@ -79,7 +104,11 @@
       }
     }
 
-    function shouldUseCandidateUrl(current: unknown, target: string, candidate: unknown) {
+    function shouldUseCandidateUrl(
+      current: unknown,
+      target: string,
+      candidate: unknown,
+    ) {
       const normalizedCandidate = safeNormalizeText(candidate);
       if (!normalizedCandidate) return false;
       const normalizedCurrent = safeNormalizeText(current);
