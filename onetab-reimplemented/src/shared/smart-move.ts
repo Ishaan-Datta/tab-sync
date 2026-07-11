@@ -1,4 +1,4 @@
-interface OneTabSmartMoveDependencies {
+export interface OneTabSmartMoveDependencies {
   core: any;
   createNewEmptyWindowGroup(options: {
     O: string;
@@ -21,15 +21,19 @@ interface OneTabSmartMoveDependencies {
   partition<T>(items: T[], predicate: (item: T) => unknown): [T[], T[]];
 }
 
-interface OneTabSmartMoveOptions {
+export interface OneTabSmartMoveOptions {
   rt: any[];
   O: string;
   N?: number;
 }
 
-(globalThis as any).createOneTabSmartMove = function createOneTabSmartMove(
+export type OneTabSmartMove = (
+  options: OneTabSmartMoveOptions,
+) => Promise<void>;
+
+export function createOneTabSmartMove(
   deps: OneTabSmartMoveDependencies,
-) {
+): OneTabSmartMove {
   return async function smartMove({ rt, O, N }: OneTabSmartMoveOptions) {
     const {
       core,
@@ -63,7 +67,9 @@ interface OneTabSmartMoveOptions {
     let selectedTypes = new Set(selectedItems.map(itemType));
     if (selectedTypes.size > 1)
       throw new Error(
-        `Can't mix the following types during smart move: ${[...selectedTypes].join()}`,
+        `Can't mix the following types during smart move: ${[
+          ...selectedTypes,
+        ].join()}`,
       );
     {
       let cache = new ItemCache();
@@ -235,4 +241,4 @@ interface OneTabSmartMoveOptions {
       (await core.move({ rt, O, N }), await core.Oe(deletedIds));
     }
   };
-};
+}

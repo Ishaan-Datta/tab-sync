@@ -14,6 +14,7 @@ import { createOneTabModelPredicates } from "../src/shared/model-predicates";
 import { createOneTabPageCommon } from "../src/shared/page-common";
 import { createOneTabRuntimeHelpers } from "../src/shared/runtime-helpers";
 import { createOneTabSearchHelpers } from "../src/shared/search-helpers";
+import { createOneTabSmartMove } from "../src/shared/smart-move";
 import {
   createOneTabLocalStorageAdapter,
   createOneTabSessionStorageAdapter,
@@ -772,6 +773,59 @@ test("typed page common module preserves localization and group labels", async (
   } finally {
     (globalThis as any).chrome = originalChrome;
   }
+});
+
+test("typed smart move module preserves validation behavior", async () => {
+  class EmptyCache {
+    async ke() {}
+    async getItems() {
+      return [];
+    }
+  }
+  const items = new Map([
+    ["tab", { id: "tab", type: "tab" }],
+    ["folder", { id: "folder", type: "group", groupType: "folder" }],
+    ["window", { id: "window", type: "group", groupType: "window" }],
+  ]);
+  const createSmartMove = (selectedIds: string[], targetId: string) =>
+    createOneTabSmartMove({
+      core: { gs: async () => [], move: async () => {}, Oe: async () => {} },
+      createNewEmptyWindowGroup: async () => "new-window",
+      defaultTabGroupColor: "grey",
+      getId: (item) => item.id,
+      getItemById: async (id) => items.get(id),
+      getItems: async () => selectedIds.map((id) => items.get(id)),
+      isFolder: (item) => item?.groupType === "folder",
+      isGroup: (item) => item?.type === "group",
+      isNotQuickList: (value) => value !== "quickList",
+      isTab: (item) => item?.type === "tab",
+      isTabGroup: (item) => item?.groupType === "tabGroup",
+      isWindowGroup: (item) => item?.groupType === "window",
+      itemType: (item) => item.type,
+      ItemCache: EmptyCache,
+      moveItemRef: (options) => options,
+      not: (predicate) => (value) => !predicate(value),
+      partition: (values, predicate) => [
+        values.filter((value) => predicate(value)),
+        values.filter((value) => !predicate(value)),
+      ],
+    });
+
+  await expect(
+    createSmartMove(
+      ["folder"],
+      "window",
+    )({ rt: [{ itemId: "folder" }], O: "window" }),
+  ).rejects.toThrow("folder should not have been allowed");
+  await expect(
+    createSmartMove(
+      ["tab", "window"],
+      "folder",
+    )({
+      rt: [{ itemId: "tab" }, { itemId: "window" }],
+      O: "folder",
+    }),
+  ).rejects.toThrow("Can't mix tabs with groups during smart move");
 });
 
 test("typed URL query cleanup module preserves pruning behavior", () => {
