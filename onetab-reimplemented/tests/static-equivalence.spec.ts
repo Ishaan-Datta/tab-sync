@@ -10,6 +10,7 @@ import { createOneTabCollectionHelpers } from "../src/shared/collection-helpers"
 import { getOneTabDefaultSettings } from "../src/shared/default-settings";
 import { createOneTabDomTransitionHelpers } from "../src/shared/dom-transition-helpers";
 import { createOneTabImportHelpers } from "../src/shared/import-helpers";
+import { runOneTabLocalisationBundle } from "../src/shared/localisation";
 import { createOneTabModelPredicates } from "../src/shared/model-predicates";
 import { createOneTabPageCommon } from "../src/shared/page-common";
 import { createOneTabRuntimeHelpers } from "../src/shared/runtime-helpers";
@@ -826,6 +827,14 @@ test("typed smart move module preserves validation behavior", async () => {
       O: "folder",
     }),
   ).rejects.toThrow("Can't mix tabs with groups during smart move");
+});
+
+test("typed localisation runner invokes permission page common factory", () => {
+  const calls: unknown[] = [];
+
+  runOneTabLocalisationBundle((deps) => calls.push(deps));
+
+  expect(calls).toEqual([undefined]);
 });
 
 test("typed URL query cleanup module preserves pruning behavior", () => {
